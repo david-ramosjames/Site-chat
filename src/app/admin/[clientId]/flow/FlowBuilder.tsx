@@ -24,6 +24,9 @@ type Step = {
   thumbnailUrl: string;
   altText: string;
   mediaDisplayStyle: "above" | "below" | "background";
+  translations: {
+    es: { question: string; options: Option[] };
+  };
 };
 
 const INPUT_TYPES: Step["inputType"][] = [
@@ -62,15 +65,18 @@ function blankStep(index: number): Step {
     thumbnailUrl: "",
     altText: "",
     mediaDisplayStyle: "above",
+    translations: { es: { question: "", options: [] } },
   };
 }
 
 export default function FlowBuilder({
   clientId,
   initialSteps,
+  translationsEnabled,
 }: {
   clientId: string;
   initialSteps: Step[];
+  translationsEnabled: boolean;
 }) {
   const [steps, setSteps] = useState<Step[]>(
     initialSteps.length ? initialSteps : [blankStep(0)]
@@ -113,6 +119,12 @@ export default function FlowBuilder({
             mediaUrl: s.mediaUrl || null,
             thumbnailUrl: s.thumbnailUrl || null,
             altText: s.altText || null,
+            translations: {
+              es: {
+                question: s.translations.es.question || undefined,
+                options: s.inputType === "multiple_choice" ? s.translations.es.options : undefined,
+              },
+            },
           })),
         }),
       });
@@ -338,6 +350,69 @@ export default function FlowBuilder({
                   </div>
                 )}
               </div>
+
+              {translationsEnabled && (
+                <div className="md:col-span-2 rounded-lg border border-ink-300/60 bg-ink-100/40 p-4">
+                  <p className="text-sm font-semibold">Spanish (es)</p>
+                  <div className="mt-3 grid gap-3 md:grid-cols-2">
+                    <div className="md:col-span-2">
+                      <label className="label">Question — Spanish</label>
+                      <textarea
+                        rows={2}
+                        className="input"
+                        placeholder="¿Con qué tipo de asunto legal podemos ayudarle?"
+                        value={s.translations.es.question}
+                        onChange={(e) =>
+                          update(i, {
+                            translations: {
+                              es: {
+                                ...s.translations.es,
+                                question: e.target.value,
+                              },
+                            },
+                          })
+                        }
+                      />
+                    </div>
+                    {s.inputType === "multiple_choice" && s.options.length > 0 && (
+                      <div className="md:col-span-2">
+                        <label className="label">Choice labels — Spanish</label>
+                        <div className="space-y-2">
+                          {s.options.map((opt, idx) => {
+                            const esOpt = s.translations.es.options.find((o) => o.value === opt.value);
+                            return (
+                              <div key={idx} className="flex items-center gap-2">
+                                <span className="w-32 truncate text-xs text-ink-500">{opt.label}</span>
+                                <input
+                                  className="input mt-0 flex-1"
+                                  placeholder={`Spanish for "${opt.label}"`}
+                                  value={esOpt?.label ?? ""}
+                                  onChange={(e) => {
+                                    const others = s.translations.es.options.filter(
+                                      (o) => o.value !== opt.value
+                                    );
+                                    update(i, {
+                                      translations: {
+                                        es: {
+                                          ...s.translations.es,
+                                          options: [
+                                            ...others,
+                                            { value: opt.value, label: e.target.value },
+                                          ],
+                                        },
+                                      },
+                                    });
+                                  }}
+                                />
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
             </div>
           </li>
         ))}

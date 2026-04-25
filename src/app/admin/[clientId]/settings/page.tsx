@@ -12,12 +12,15 @@ export default async function SettingsPage({ params }: { params: { clientId: str
   if (!client) notFound();
 
   const ws = client.widgetSettings;
+  const translations =
+    (ws?.translations as { es?: { welcomeMessage?: string; bubbleText?: string; bubbleTooltip?: string } } | null) ??
+    null;
 
   return (
     <div className="space-y-6">
       <div>
         <h2 className="text-base font-semibold">Widget settings</h2>
-        <p className="text-sm text-ink-500">Branding and copy shown on the chat widget.</p>
+        <p className="text-sm text-ink-500">Branding, intro video, bubble appearance, and translations.</p>
       </div>
       <SettingsForm
         clientId={client.id}
@@ -31,6 +34,19 @@ export default async function SettingsPage({ params }: { params: { clientId: str
           bubbleText: ws?.bubbleText ?? "Chat with us",
           widgetPosition: (ws?.widgetPosition as "bottom-right" | "bottom-left") ?? "bottom-right",
           isActive: ws?.isActive ?? true,
+          introVideoEnabled: ws?.introVideoEnabled ?? false,
+          introVideoUrl: ws?.introVideoUrl ?? "",
+          introPosterUrl: ws?.introPosterUrl ?? "",
+          bubbleImageUrl: ws?.bubbleImageUrl ?? "",
+          bubbleTooltip: ws?.bubbleTooltip ?? "",
+          enableTranslation: ws?.enableTranslation ?? false,
+          translations: {
+            es: {
+              welcomeMessage: translations?.es?.welcomeMessage ?? "",
+              bubbleText: translations?.es?.bubbleText ?? "",
+              bubbleTooltip: translations?.es?.bubbleTooltip ?? "",
+            },
+          },
         }}
       />
     </div>

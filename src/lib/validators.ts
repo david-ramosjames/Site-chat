@@ -1,15 +1,38 @@
 import { z } from "zod";
 
+const optionalUrl = z.string().url().or(z.literal("")).optional().nullable();
+
 export const widgetSettingsSchema = z.object({
   primaryColor: z.string().regex(/^#([0-9a-fA-F]{3}){1,2}$/, "Use a hex color like #2563eb"),
   accentColor: z.string().regex(/^#([0-9a-fA-F]{3}){1,2}$/, "Use a hex color like #1d4ed8"),
-  logoUrl: z.string().url().or(z.literal("")).optional().nullable(),
+  logoUrl: optionalUrl,
   welcomeMessage: z.string().min(1).max(280),
   bubbleText: z.string().min(1).max(80),
   widgetPosition: z.enum(["bottom-right", "bottom-left"]),
   isActive: z.boolean(),
   businessName: z.string().min(1).max(120),
   industry: z.string().min(1).max(80),
+
+  introVideoEnabled: z.boolean().default(false),
+  introVideoUrl: optionalUrl,
+  introPosterUrl: optionalUrl,
+
+  bubbleImageUrl: optionalUrl,
+  bubbleTooltip: z.string().max(200).optional().nullable(),
+
+  enableTranslation: z.boolean().default(false),
+  translations: z
+    .object({
+      es: z
+        .object({
+          welcomeMessage: z.string().max(280).optional().nullable(),
+          bubbleText: z.string().max(80).optional().nullable(),
+          bubbleTooltip: z.string().max(200).optional().nullable(),
+        })
+        .optional(),
+    })
+    .optional()
+    .nullable(),
 });
 
 export const featureTogglesSchema = z.object({
@@ -64,6 +87,20 @@ export const flowStepInputSchema = z.object({
   thumbnailUrl: z.string().url().or(z.literal("")).optional().nullable(),
   altText: z.string().max(200).optional().nullable(),
   mediaDisplayStyle: z.enum(["above", "below", "background"]).default("above"),
+  translations: z
+    .object({
+      es: z
+        .object({
+          question: z.string().max(500).optional().nullable(),
+          options: z
+            .array(z.object({ value: z.string(), label: z.string() }))
+            .optional()
+            .nullable(),
+        })
+        .optional(),
+    })
+    .optional()
+    .nullable(),
 });
 
 export const flowUpdateSchema = z.object({

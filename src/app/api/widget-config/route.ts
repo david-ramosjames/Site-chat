@@ -49,6 +49,13 @@ export async function GET(req: NextRequest) {
         welcomeMessage: client.widgetSettings.welcomeMessage,
         bubbleText: client.widgetSettings.bubbleText,
         widgetPosition: client.widgetSettings.widgetPosition,
+        introVideoEnabled: client.widgetSettings.introVideoEnabled,
+        introVideoUrl: client.widgetSettings.introVideoUrl,
+        introPosterUrl: client.widgetSettings.introPosterUrl,
+        bubbleImageUrl: client.widgetSettings.bubbleImageUrl,
+        bubbleTooltip: client.widgetSettings.bubbleTooltip,
+        enableTranslation: client.widgetSettings.enableTranslation,
+        translations: client.widgetSettings.translations,
       },
       features: client.featureToggles,
       flow: client.flowSteps.map((s) => ({
@@ -64,6 +71,7 @@ export async function GET(req: NextRequest) {
         thumbnailUrl: s.thumbnailUrl,
         altText: s.altText,
         mediaDisplayStyle: s.mediaDisplayStyle,
+        translations: s.translations,
       })),
     })
   );

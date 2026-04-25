@@ -36,8 +36,22 @@ model WidgetSettings {
   logoUrl         String?
   welcomeMessage  String  @default("Hi! How can we help?")
   bubbleText      String  @default("Chat with us")
-  widgetPosition  String  @default("bottom-right") // bottom-right | bottom-left
+  widgetPosition  String  @default("bottom-right")
   isActive        Boolean @default(true)
+
+  // Optional intro video shown at the top of the chat panel when it opens.
+  introVideoEnabled Boolean @default(false)
+  introVideoUrl     String?
+  introPosterUrl    String?
+
+  // Optional headshot/avatar on the floating bubble plus the speech-bubble tooltip.
+  bubbleImageUrl String?
+  bubbleTooltip  String?
+
+  // Optional Spanish (or future multi-locale) copy. Shape:
+  // { es: { welcomeMessage, bubbleText, bubbleTooltip } }
+  enableTranslation Boolean @default(false)
+  translations      Json?
 
   client Client @relation(fields: [clientId], references: [id], onDelete: Cascade)
 }
@@ -92,6 +106,9 @@ model FlowStep {
   thumbnailUrl     String?
   altText          String?
   mediaDisplayStyle String @default("above") // above | below | background
+
+  // Optional translated copy. Shape: { es: { question, options: [{value,label}] } }
+  translations Json?
 
   client Client @relation(fields: [clientId], references: [id], onDelete: Cascade)
 

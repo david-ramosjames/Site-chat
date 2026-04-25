@@ -29,6 +29,7 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
         thumbnailUrl: s.thumbnailUrl || null,
         altText: s.altText || null,
         mediaDisplayStyle: s.mediaDisplayStyle,
+        translations: (s.translations ?? undefined) as object | undefined,
       })),
     }),
   ]);

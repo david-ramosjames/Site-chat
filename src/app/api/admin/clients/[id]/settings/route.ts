@@ -4,13 +4,37 @@ import { widgetSettingsSchema } from "@/lib/validators";
 
 export const dynamic = "force-dynamic";
 
+function nullable(v: string | null | undefined) {
+  return v && v.length ? v : null;
+}
+
 export async function PUT(req: NextRequest, { params }: { params: { id: string } }) {
   const body = await req.json().catch(() => null);
   const parsed = widgetSettingsSchema.safeParse(body);
   if (!parsed.success) {
-    return NextResponse.json({ error: "invalid_payload", issues: parsed.error.flatten() }, { status: 400 });
+    return NextResponse.json(
+      { error: "invalid_payload", issues: parsed.error.flatten() },
+      { status: 400 }
+    );
   }
-  const { businessName, industry, ...widget } = parsed.data;
+  const { businessName, industry, translations, ...rest } = parsed.data;
+
+  const widget = {
+    primaryColor: rest.primaryColor,
+    accentColor: rest.accentColor,
+    logoUrl: nullable(rest.logoUrl),
+    welcomeMessage: rest.welcomeMessage,
+    bubbleText: rest.bubbleText,
+    widgetPosition: rest.widgetPosition,
+    isActive: rest.isActive,
+    introVideoEnabled: rest.introVideoEnabled,
+    introVideoUrl: nullable(rest.introVideoUrl),
+    introPosterUrl: nullable(rest.introPosterUrl),
+    bubbleImageUrl: nullable(rest.bubbleImageUrl),
+    bubbleTooltip: nullable(rest.bubbleTooltip),
+    enableTranslation: rest.enableTranslation,
+    translations: (translations as object | null | undefined) ?? undefined,
+  };
 
   const client = await prisma.client.update({
     where: { id: params.id },
@@ -18,10 +42,7 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
       name: businessName,
       industry,
       widgetSettings: {
-        upsert: {
-          create: { ...widget, logoUrl: widget.logoUrl || null },
-          update: { ...widget, logoUrl: widget.logoUrl || null },
-        },
+        upsert: { create: widget, update: widget },
       },
     },
     include: { widgetSettings: true },
