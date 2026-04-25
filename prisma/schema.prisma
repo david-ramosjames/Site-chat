@@ -1,0 +1,129 @@
+// ChatToConvert - multi-tenant schema
+// Each Client is a SaaS tenant. One row per business.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Client {
+  id            String   @id @default(cuid())
+  name          String
+  industry      String
+  websiteUrl    String
+  status        String   @default("active") // active | inactive
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  widgetSettings       WidgetSettings?
+  featureToggles       FeatureToggles?
+  notificationSettings NotificationSettings?
+  flowSteps            FlowStep[]
+  leads                Lead[]
+
+  @@index([status])
+}
+
+model WidgetSettings {
+  id              String  @id @default(cuid())
+  clientId        String  @unique
+  primaryColor    String  @default("#2563eb")
+  accentColor     String  @default("#1d4ed8")
+  logoUrl         String?
+  welcomeMessage  String  @default("Hi! How can we help?")
+  bubbleText      String  @default("Chat with us")
+  widgetPosition  String  @default("bottom-right") // bottom-right | bottom-left
+  isActive        Boolean @default(true)
+
+  client Client @relation(fields: [clientId], references: [id], onDelete: Cascade)
+}
+
+model FeatureToggles {
+  id                    String  @id @default(cuid())
+  clientId              String  @unique
+  showProgress          Boolean @default(true)
+  allowFileUpload       Boolean @default(false)
+  collectUtm            Boolean @default(true)
+  collectPageUrl        Boolean @default(true)
+  collectReferrer       Boolean @default(true)
+  enableAiSummary       Boolean @default(false)
+  enableLeadScoring     Boolean @default(false)
+  enableAfterHours      Boolean @default(false)
+  enableSmsAlerts       Boolean @default(false)
+  enableEmailAlerts     Boolean @default(true)
+  enableSlackAlerts     Boolean @default(false)
+  enableGoogleSheetSync Boolean @default(false)
+  enableCrmWebhook      Boolean @default(false)
+  enableMedia           Boolean @default(true)
+  enableFallbackForm    Boolean @default(true)
+  enableSpamProtection  Boolean @default(true)
+
+  client Client @relation(fields: [clientId], references: [id], onDelete: Cascade)
+}
+
+model NotificationSettings {
+  id                   String  @id @default(cuid())
+  clientId             String  @unique
+  email                String?
+  phone                String?
+  slackWebhookUrl      String?
+  crmWebhookUrl        String?
+  googleSheetWebhookUrl String?
+
+  client Client @relation(fields: [clientId], references: [id], onDelete: Cascade)
+}
+
+model FlowStep {
+  id               String  @id @default(cuid())
+  clientId         String
+  stepKey          String
+  order            Int
+  question         String
+  inputType        String  // text | phone | email | multiple_choice | yes_no | textarea | date | zip
+  isRequired       Boolean @default(true)
+  options          Json?   // [{ value, label }] or yes/no labels
+  nextLogic        Json?   // optional branching
+  mediaType        String  @default("none") // none | image | video
+  mediaUrl         String?
+  thumbnailUrl     String?
+  altText          String?
+  mediaDisplayStyle String @default("above") // above | below | background
+
+  client Client @relation(fields: [clientId], references: [id], onDelete: Cascade)
+
+  @@unique([clientId, stepKey])
+  @@index([clientId, order])
+}
+
+model Lead {
+  id               String   @id @default(cuid())
+  clientId         String
+  name             String?
+  phone            String?
+  email            String?
+  serviceRequested String?
+  urgency          String?
+  status           String   @default("new") // new | contacted | booked | lost | spam
+  sourceUrl        String?
+  referrer         String?
+  utmSource        String?
+  utmMedium        String?
+  utmCampaign      String?
+  userAgent        String?
+  transcript       Json?    // [{ role, text, stepKey }]
+  answers          Json?    // { stepKey: value }
+  aiSummary        String?
+  leadScore        Int?
+  notes            String?
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  client Client @relation(fields: [clientId], references: [id], onDelete: Cascade)
+
+  @@index([clientId, createdAt])
+  @@index([clientId, status])
+}
