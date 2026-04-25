@@ -1,25 +1,28 @@
+import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
-import { DEMO_CLIENT_ID } from "@/lib/demo";
 import FlowBuilder from "./FlowBuilder";
 
 export const dynamic = "force-dynamic";
 
-export default async function FlowPage() {
+export default async function FlowPage({ params }: { params: { clientId: string } }) {
+  const client = await prisma.client.findUnique({ where: { id: params.clientId } });
+  if (!client) notFound();
+
   const steps = await prisma.flowStep.findMany({
-    where: { clientId: DEMO_CLIENT_ID },
+    where: { clientId: params.clientId },
     orderBy: { order: "asc" },
   });
 
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-xl font-semibold">Flow builder</h1>
+        <h2 className="text-base font-semibold">Flow builder</h2>
         <p className="text-sm text-ink-500">
           The questions your widget asks visitors. Reorder, edit, or add steps — click Save when you&apos;re done.
         </p>
       </div>
       <FlowBuilder
-        clientId={DEMO_CLIENT_ID}
+        clientId={params.clientId}
         initialSteps={steps.map((s) => ({
           stepKey: s.stepKey,
           order: s.order,

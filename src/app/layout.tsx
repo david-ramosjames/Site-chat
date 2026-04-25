@@ -2,9 +2,9 @@ import type { Metadata } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "ChatToConvert — Turn website visitors into booked jobs",
+  title: "RJL-Chat admin",
   description:
-    "A lightweight chat widget for home services businesses. One script, guided intake, more booked jobs.",
+    "Admin for Ramos James Law's embeddable chat intake widget. Manage businesses, flows, and leads.",
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

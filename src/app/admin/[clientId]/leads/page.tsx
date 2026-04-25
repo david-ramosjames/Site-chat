@@ -1,6 +1,6 @@
 import Link from "next/link";
+import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
-import { DEMO_CLIENT_ID } from "@/lib/demo";
 
 export const dynamic = "force-dynamic";
 
@@ -16,9 +16,12 @@ function formatDate(d: Date) {
   return new Intl.DateTimeFormat("en-US", { dateStyle: "medium", timeStyle: "short" }).format(d);
 }
 
-export default async function LeadsPage() {
+export default async function LeadsPage({ params }: { params: { clientId: string } }) {
+  const client = await prisma.client.findUnique({ where: { id: params.clientId } });
+  if (!client) notFound();
+
   const leads = await prisma.lead.findMany({
-    where: { clientId: DEMO_CLIENT_ID },
+    where: { clientId: params.clientId },
     orderBy: { createdAt: "desc" },
   });
 
@@ -26,7 +29,7 @@ export default async function LeadsPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-xl font-semibold">Leads</h1>
+          <h2 className="text-base font-semibold">Leads</h2>
           <p className="text-sm text-ink-500">Every chat submission, newest first.</p>
         </div>
         <span className="pill">{leads.length} total</span>
@@ -36,9 +39,9 @@ export default async function LeadsPage() {
         <div className="card p-10 text-center">
           <p className="text-sm font-medium">No leads yet.</p>
           <p className="mt-1 text-xs text-ink-500">
-            Install the widget on your site or try the demo preview to create one.
+            Install the widget on this site or open the install page for the snippet.
           </p>
-          <Link href="/admin/install" className="btn-primary mt-4 inline-flex">
+          <Link href={`/admin/${params.clientId}/install`} className="btn-primary mt-4 inline-flex">
             Get install script
           </Link>
         </div>
@@ -73,15 +76,16 @@ export default async function LeadsPage() {
                   </td>
                   <td className="px-4 py-3 text-xs text-ink-500">{l.utmSource ?? "—"}</td>
                   <td className="px-4 py-3">
-                    <span
-                      className={`pill border capitalize ${statusStyles[l.status] ?? "bg-ink-100"}`}
-                    >
+                    <span className={`pill border capitalize ${statusStyles[l.status] ?? "bg-ink-100"}`}>
                       {l.status}
                     </span>
                   </td>
                   <td className="px-4 py-3 text-xs text-ink-500">{formatDate(l.createdAt)}</td>
                   <td className="px-4 py-3 text-right">
-                    <Link href={`/admin/leads/${l.id}`} className="text-xs font-semibold text-brand-600 hover:underline">
+                    <Link
+                      href={`/admin/${params.clientId}/leads/${l.id}`}
+                      className="text-xs font-semibold text-brand-600 hover:underline"
+                    >
                       Open
                     </Link>
                   </td>

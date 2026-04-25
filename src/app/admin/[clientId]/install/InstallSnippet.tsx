@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 
 export default function InstallSnippet({ clientId, baseUrl }: { clientId: string; baseUrl: string }) {
-  const [origin, setOrigin] = useState<string>(baseUrl || "https://chatto-convert.com");
+  const [origin, setOrigin] = useState<string>(baseUrl || "https://rjl-chat.example.com");
   useEffect(() => {
     if (!baseUrl && typeof window !== "undefined") setOrigin(window.location.origin);
   }, [baseUrl]);

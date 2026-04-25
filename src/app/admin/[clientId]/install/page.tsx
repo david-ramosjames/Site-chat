@@ -1,20 +1,21 @@
+import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
-import { DEMO_CLIENT_ID } from "@/lib/demo";
 import InstallSnippet from "./InstallSnippet";
 
 export const dynamic = "force-dynamic";
 
-export default async function InstallPage() {
-  const client = await prisma.client.findUnique({ where: { id: DEMO_CLIENT_ID } });
-  if (!client) return <p className="card p-8 text-sm">No client found.</p>;
+export default async function InstallPage({ params }: { params: { clientId: string } }) {
+  const client = await prisma.client.findUnique({ where: { id: params.clientId } });
+  if (!client) notFound();
 
   const base = process.env.NEXT_PUBLIC_APP_URL || "";
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-xl font-semibold">Install script</h1>
+        <h2 className="text-base font-semibold">Install script</h2>
         <p className="text-sm text-ink-500">
-          Paste this snippet into your site to turn on the chat widget.
+          Paste this snippet into <strong>{client.name}</strong>&apos;s website to turn on the
+          chat widget.
         </p>
       </div>
       <InstallSnippet clientId={client.id} baseUrl={base} />

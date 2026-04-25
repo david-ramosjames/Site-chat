@@ -7,8 +7,14 @@ export const dynamic = "force-dynamic";
 
 type TranscriptEntry = { role: "bot" | "user"; text: string; stepKey?: string };
 
-export default async function LeadDetail({ params }: { params: { id: string } }) {
-  const lead = await prisma.lead.findUnique({ where: { id: params.id } });
+export default async function LeadDetail({
+  params,
+}: {
+  params: { clientId: string; id: string };
+}) {
+  const lead = await prisma.lead.findFirst({
+    where: { id: params.id, clientId: params.clientId },
+  });
   if (!lead) notFound();
 
   const transcript = (lead.transcript as TranscriptEntry[] | null) ?? [];
@@ -17,10 +23,13 @@ export default async function LeadDetail({ params }: { params: { id: string } })
   return (
     <div className="space-y-6">
       <div>
-        <Link href="/admin/leads" className="text-xs text-ink-500 hover:text-ink-700">
+        <Link
+          href={`/admin/${params.clientId}/leads`}
+          className="text-xs text-ink-500 hover:text-ink-700"
+        >
           ← Back to leads
         </Link>
-        <h1 className="mt-2 text-xl font-semibold">{lead.name ?? "Anonymous lead"}</h1>
+        <h2 className="mt-2 text-lg font-semibold">{lead.name ?? "Anonymous lead"}</h2>
         <p className="text-sm text-ink-500">
           {lead.serviceRequested ?? "Service not specified"} · Received{" "}
           {new Intl.DateTimeFormat("en-US", { dateStyle: "medium", timeStyle: "short" }).format(lead.createdAt)}

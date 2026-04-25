@@ -48,8 +48,21 @@ export async function POST(req: NextRequest) {
     client.featureToggles?.enableSpamProtection &&
     looksLikeSpam({ name: pick("name"), email: pick("email"), notes: pick("notes") });
 
-  const serviceRequested = pick("service") ?? pick("serviceRequested");
-  const urgency = pick("urgency");
+  // Best-effort mapping for the leads table. Each industry tends to use a
+  // different step key for "what do you need" / "how soon" — list the common
+  // ones so the admin's table columns stay populated.
+  const serviceRequested =
+    pick("service") ??
+    pick("serviceRequested") ??
+    pick("matter_type") ??
+    pick("service_type") ??
+    pick("request_type");
+  const urgency =
+    pick("urgency") ??
+    pick("incident_when") ??
+    pick("when") ??
+    pick("timing") ??
+    pick("pickup_date");
 
   const lead = await prisma.lead.create({
     data: {

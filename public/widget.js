@@ -1,10 +1,10 @@
-/* ChatToConvert embeddable widget.
+/* RJL-Chat embeddable widget.
    Loaded via: <script src="/widget.js" data-client-id="..." async></script>
    Everything lives in a Shadow DOM so host-site styles cannot leak in. */
 (function () {
   "use strict";
-  if (window.__chatToConvertLoaded) return;
-  window.__chatToConvertLoaded = true;
+  if (window.__rjlChatLoaded) return;
+  window.__rjlChatLoaded = true;
 
   var currentScript =
     document.currentScript ||
@@ -20,7 +20,7 @@
 
   var clientId = currentScript.getAttribute("data-client-id");
   if (!clientId) {
-    console.warn("[ChatToConvert] Missing data-client-id attribute on script tag.");
+    console.warn("[RJL-Chat] Missing data-client-id attribute on script tag.");
     return;
   }
   var scriptOrigin = (function () {
@@ -154,7 +154,7 @@
 
     function mount() {
       host = document.createElement("div");
-      host.setAttribute("data-chatto-convert", "");
+      host.setAttribute("data-rjl-chat", "");
       var shadow = host.attachShadow({ mode: "open" });
       var style = document.createElement("style");
       style.textContent = buildStyles(config.widget.primaryColor, config.widget.accentColor);
@@ -227,7 +227,7 @@
       footer = el("div", { className: "footer" });
       panel.appendChild(footer);
 
-      panel.appendChild(el("div", { className: "brand-foot" }, ["Powered by ChatToConvert"]));
+      panel.appendChild(el("div", { className: "brand-foot" }, ["Powered by RJL-Chat"]));
       root.appendChild(panel);
     }
 
@@ -458,7 +458,7 @@
         ChatWidget(cfg);
       })
       .catch(function (err) {
-        console.warn("[ChatToConvert] Failed to load:", err);
+        console.warn("[RJL-Chat] Failed to load:", err);
       });
   }
 
