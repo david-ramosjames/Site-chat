@@ -258,24 +258,20 @@ async function main() {
   for (const c of clients) {
     await prisma.client.upsert({
       where: { id: c.id },
+      // Update only the top-level identity fields. Do NOT overwrite child
+      // settings on update — that wipes any customization the user has done
+      // through the admin (logo, colors, intro video, notifications, etc.).
       update: {
         name: c.name,
         industry: c.industry,
         websiteUrl: c.websiteUrl,
         status: "active",
-        widgetSettings: {
-          upsert: { create: c.widget, update: c.widget },
-        },
-        featureToggles: {
-          upsert: {
-            create: { enableMedia: false },
-            update: {},
-          },
-        },
+        widgetSettings: { upsert: { create: c.widget, update: {} } },
+        featureToggles: { upsert: { create: { enableMedia: false }, update: {} } },
         notificationSettings: {
           upsert: {
             create: { email: c.notificationEmail },
-            update: { email: c.notificationEmail },
+            update: {},
           },
         },
       },
@@ -291,24 +287,28 @@ async function main() {
       },
     });
 
-    await prisma.flowStep.deleteMany({ where: { clientId: c.id } });
-    for (const step of c.flow) {
-      await prisma.flowStep.create({
-        data: {
-          clientId: c.id,
-          stepKey: step.stepKey,
-          order: step.order,
-          question: step.question,
-          inputType: step.inputType,
-          isRequired: step.isRequired ?? true,
-          options: step.options ?? undefined,
-          mediaType: step.mediaType ?? "none",
-          mediaUrl: step.mediaUrl ?? null,
-          thumbnailUrl: step.thumbnailUrl ?? null,
-          altText: step.altText ?? null,
-          mediaDisplayStyle: step.mediaDisplayStyle ?? "above",
-        },
-      });
+    // Only seed the default flow if the client has no flow steps yet, so
+    // re-running the seed never wipes user-edited flows.
+    const existingFlowCount = await prisma.flowStep.count({ where: { clientId: c.id } });
+    if (existingFlowCount === 0) {
+      for (const step of c.flow) {
+        await prisma.flowStep.create({
+          data: {
+            clientId: c.id,
+            stepKey: step.stepKey,
+            order: step.order,
+            question: step.question,
+            inputType: step.inputType,
+            isRequired: step.isRequired ?? true,
+            options: step.options ?? undefined,
+            mediaType: step.mediaType ?? "none",
+            mediaUrl: step.mediaUrl ?? null,
+            thumbnailUrl: step.thumbnailUrl ?? null,
+            altText: step.altText ?? null,
+            mediaDisplayStyle: step.mediaDisplayStyle ?? "above",
+          },
+        });
+      }
     }
 
     const existingLeads = await prisma.lead.count({ where: { clientId: c.id } });
