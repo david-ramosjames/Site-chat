@@ -110,12 +110,15 @@
       ".intro video,.intro iframe{display:block;width:100%;height:200px;border:0;}" +
       ".intro .skip{position:absolute;top:8px;right:8px;background:rgba(0,0,0,.55);color:#fff;border:none;border-radius:999px;padding:4px 10px;font-size:12px;font-weight:600;cursor:pointer;}" +
       // Full-bleed background-video mode.
-      ".intro-bg{position:absolute;inset:0;z-index:0;background:#000;}" +
-      ".intro-bg video,.intro-bg iframe{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;border:0;}" +
+      ".intro-bg{position:absolute;inset:0;z-index:0;background:#000;cursor:pointer;}" +
+      ".intro-bg video,.intro-bg iframe{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;border:0;pointer-events:none;}" +
+      ".intro-bg .play-overlay{position:absolute;inset:0;display:none;align-items:center;justify-content:center;background:rgba(0,0,0,.35);color:#fff;font-size:48px;pointer-events:none;}" +
+      ".intro-bg.is-paused .play-overlay{display:flex;}" +
+      // Anchor initial messages to the lower half of the panel so the video remains visible.
+      ".panel.video-bg .body{position:relative;z-index:2;background:transparent;justify-content:flex-end;padding-top:40%;}" +
       ".panel.video-bg .header{position:relative;z-index:3;background:linear-gradient(180deg,rgba(0,0,0,.55),rgba(0,0,0,0));}" +
       ".panel.video-bg .header .lang{background:rgba(0,0,0,.4);border-color:rgba(255,255,255,.55);}" +
       ".panel.video-bg .progress{position:relative;z-index:3;background:rgba(0,0,0,.35);}" +
-      ".panel.video-bg .body{position:relative;z-index:2;background:transparent;}" +
       ".panel.video-bg .msg.bot{background:rgba(0,0,0,.55);color:#fff;border-color:rgba(255,255,255,.18);backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px);}" +
       ".panel.video-bg .msg.user{background:rgba(255,255,255,.96);color:#0b1220;}" +
       ".panel.video-bg .footer{position:relative;z-index:3;background:linear-gradient(0deg,rgba(0,0,0,.55),rgba(0,0,0,0));border-top:none;}" +
@@ -125,7 +128,13 @@
       ".panel.video-bg .typing{background:rgba(0,0,0,.55);border-color:rgba(255,255,255,.18);}" +
       ".panel.video-bg .typing i{background:#cbd5e1;}" +
       ".panel.video-bg .brand-foot{position:relative;z-index:3;background:transparent;color:rgba(255,255,255,.85);border-top:none;}" +
-      ".panel.video-bg .mute-btn{position:absolute;top:60px;right:12px;z-index:4;background:rgba(0,0,0,.55);color:#fff;border:none;border-radius:999px;width:34px;height:34px;cursor:pointer;font-size:14px;}" +
+      ".mute-btn{position:absolute;top:60px;right:12px;z-index:4;background:rgba(0,0,0,.55);color:#fff;border:none;border-radius:999px;width:34px;height:34px;cursor:pointer;font-size:14px;display:flex;align-items:center;justify-content:center;}" +
+      ".mute-btn:hover{background:rgba(0,0,0,.8);}" +
+      // After the first answer the video shrinks to a small inline thumbnail
+      // that sits at the top of the conversation (not overlaying it).
+      ".panel.video-mini .intro-bg{position:relative;inset:auto;width:96px;height:140px;border-radius:14px;overflow:hidden;background:#000;align-self:flex-start;flex-shrink:0;box-shadow:0 6px 18px rgba(0,0,0,.18);}" +
+      ".panel.video-mini .intro-bg .play-overlay{font-size:28px;}" +
+      ".panel.video-mini .intro-bg .mute-btn{top:auto;bottom:6px;right:6px;left:auto;width:24px;height:24px;font-size:11px;}" +
       ".body{flex:1;overflow-y:auto;padding:16px;background:#f8fafc;display:flex;flex-direction:column;gap:10px;}" +
       ".msg{max-width:85%;padding:10px 14px;border-radius:16px;font-size:14px;line-height:1.35;white-space:pre-wrap;}" +
       ".msg.bot{background:#fff;color:#0b1220;border:1px solid #e2e8f0;border-top-left-radius:4px;align-self:flex-start;}" +
@@ -144,6 +153,11 @@
       ".options{display:flex;flex-wrap:wrap;gap:6px;}" +
       ".opt{background:#fff;color:" + primary + ";border:1px solid " + primary + ";border-radius:999px;padding:6px 12px;font-size:13px;font-weight:600;cursor:pointer;}" +
       ".opt:hover{background:" + primary + ";color:#fff;}" +
+      ".undo-row{display:flex;align-self:flex-end;align-items:center;gap:6px;margin-top:-4px;}" +
+      ".undo-btn{background:#fff;color:" + primary + ";border:1px solid " + primary + ";border-radius:999px;padding:3px 10px;font-size:11px;font-weight:600;cursor:pointer;display:inline-flex;align-items:center;gap:4px;}" +
+      ".undo-btn:hover{background:" + primary + ";color:#fff;}" +
+      ".panel.video-bg .undo-btn{background:rgba(0,0,0,.55);color:#fff;border-color:rgba(255,255,255,.7);}" +
+      ".panel.video-bg .undo-btn:hover{background:rgba(255,255,255,.95);color:#0b1220;}" +
       ".input-row{display:flex;gap:8px;align-items:stretch;}" +
       "input.tc-input,textarea.tc-input{flex:1;border:1px solid #cbd5e1;border-radius:10px;padding:10px 12px;font-size:14px;outline:none;background:#fff;color:#0b1220;}" +
       "input.tc-input:focus,textarea.tc-input:focus{border-color:" + primary + ";box-shadow:0 0 0 3px " + primary + "33;}" +
@@ -170,6 +184,8 @@
       skip: "Skip",
       yes: "Yes",
       no: "No",
+      undo: "Undo",
+      unmute: "Tap for sound",
       langSwitch: "Español",
       placeholders: {
         phone: "(555) 555-0100",
@@ -189,6 +205,8 @@
       skip: "Omitir",
       yes: "Sí",
       no: "No",
+      undo: "Deshacer",
+      unmute: "Toca para sonido",
       langSwitch: "English",
       placeholders: {
         phone: "(555) 555-0100",
@@ -259,6 +277,12 @@
     var currentLocale = "en";
     var currentStepInputState = null; // { step } so we can rerender on locale change
     var introCleared = false;
+    var introBgEl = null;        // .intro-bg wrapper for background-mode video
+    var introVideoEl = null;     // the underlying <video> element (null for iframes)
+    var muteBtn = null;          // mute toggle anchored to the panel
+    var historyStack = [];       // [{ step, userRow, botRow, undoEl, prevBotMsgEl }]
+    var miniMode = false;        // true once first answer transitioned us out of full bg
+    var askVersion = 0;          // bumped on every askNext + on undo to cancel pending typing
 
     var translationsAvailable =
       !!(config.widget && config.widget.enableTranslation &&
@@ -456,12 +480,12 @@
     }
 
     function buildIntroVideoNode(opts) {
-      // opts: { background: bool }
+      // opts: { background: bool }. Returns { node, video } where `video` is
+      // the underlying <video> element (or null if it's an iframe embed).
       var url = config.widget.introVideoUrl;
       var isYouTube = /youtube\.com\/embed/.test(url);
       var isVimeo = /player\.vimeo\.com/.test(url);
       var isEmbed = isYouTube || isVimeo;
-      var node;
       if (isEmbed) {
         var src = url;
         var join = src.indexOf("?") === -1 ? "?" : "&";
@@ -476,29 +500,28 @@
         } else {
           src += join + "autoplay=1&playsinline=1&rel=0";
         }
-        node = el("iframe", {
+        var iframe = el("iframe", {
           src: src,
           allow: "accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture",
           allowfullscreen: "true",
           frameborder: "0",
         });
-      } else {
-        var v = el("video", {
-          autoplay: "true",
-          playsinline: "true",
-          "webkit-playsinline": "true",
-          poster: config.widget.introPosterUrl || undefined,
-        });
-        if (opts.background) {
-          v.setAttribute("loop", "true");
-        } else {
-          v.setAttribute("controls", "true");
-        }
-        v.muted = true;
-        v.appendChild(el("source", { src: url }));
-        node = v;
+        return { node: iframe, video: null };
       }
-      return node;
+      var v = el("video", {
+        autoplay: "true",
+        playsinline: "true",
+        "webkit-playsinline": "true",
+        poster: config.widget.introPosterUrl || undefined,
+      });
+      if (opts.background) {
+        v.setAttribute("loop", "true");
+      } else {
+        v.setAttribute("controls", "true");
+      }
+      v.muted = true; // browsers require muted for autoplay
+      v.appendChild(el("source", { src: url }));
+      return { node: v, video: v };
     }
 
     function maybeRenderIntroVideo() {
@@ -507,14 +530,30 @@
 
       if (style === "background") {
         if (panel.className.indexOf("video-bg") === -1) panel.className += " video-bg";
-        var bg = el("div", { className: "intro-bg" }, [buildIntroVideoNode({ background: true })]);
-        panel.insertBefore(bg, panel.firstChild);
+        var built = buildIntroVideoNode({ background: true });
+        var overlay = el("span", { className: "play-overlay" }, ["▶"]);
+        introBgEl = el("div", { className: "intro-bg" }, [built.node, overlay]);
+        introVideoEl = built.video;
+        // Click the video to toggle play/pause (HTML5 only; iframe embeds
+        // don't expose controls without postMessage).
+        if (introVideoEl) {
+          introBgEl.addEventListener("click", togglePlayPause);
+          introVideoEl.addEventListener("pause", function () {
+            introBgEl.classList.add("is-paused");
+          });
+          introVideoEl.addEventListener("play", function () {
+            introBgEl.classList.remove("is-paused");
+          });
+        }
+        panel.insertBefore(introBgEl, panel.firstChild);
+        renderMuteButton();
         return;
       }
 
       // Default "top" mode: a 200px-tall block above the conversation, with a Skip button.
       var wrap = el("div", { className: "intro" });
-      wrap.appendChild(buildIntroVideoNode({ background: false }));
+      var topBuilt = buildIntroVideoNode({ background: false });
+      wrap.appendChild(topBuilt.node);
       wrap.appendChild(
         el("button", {
           className: "skip",
@@ -528,20 +567,73 @@
       panel.insertBefore(wrap, body);
     }
 
+    function togglePlayPause() {
+      if (!introVideoEl) return;
+      if (introVideoEl.paused) introVideoEl.play(); else introVideoEl.pause();
+    }
+
+    function renderMuteButton() {
+      if (!introVideoEl) return; // iframe embeds: no mute control (handled by their own UI)
+      muteBtn = el("button", {
+        className: "mute-btn",
+        type: "button",
+        "aria-label": "Toggle sound",
+        title: strings().unmute,
+        onClick: function (e) {
+          e.stopPropagation();
+          if (!introVideoEl) return;
+          introVideoEl.muted = !introVideoEl.muted;
+          updateMuteIcon();
+        },
+      }, [muteIcon(true)]);
+      panel.appendChild(muteBtn);
+    }
+
+    function muteIcon(muted) {
+      // Simple unicode glyphs to keep widget.js dependency-free.
+      return muted ? "🔇" : "🔊";
+    }
+
+    function updateMuteIcon() {
+      if (!muteBtn || !introVideoEl) return;
+      while (muteBtn.firstChild) muteBtn.removeChild(muteBtn.firstChild);
+      muteBtn.appendChild(document.createTextNode(muteIcon(introVideoEl.muted)));
+    }
+
+    function transitionToMiniVideo() {
+      if (miniMode) return;
+      if (!introBgEl || !panel || !body) return;
+      if (config.widget.introVideoStyle !== "background") return;
+      miniMode = true;
+      panel.classList.remove("video-bg");
+      panel.classList.add("video-mini");
+      // Move the video out of its full-bleed slot and into the conversation
+      // as a small inline thumbnail at the top.
+      if (introBgEl.parentNode) introBgEl.parentNode.removeChild(introBgEl);
+      body.insertBefore(introBgEl, body.firstChild);
+      // Move the mute button onto the thumbnail so it stays accessible.
+      if (muteBtn) {
+        if (muteBtn.parentNode) muteBtn.parentNode.removeChild(muteBtn);
+        introBgEl.appendChild(muteBtn);
+      }
+    }
+
+    // Returns { msg, container } where container is the outer DOM node
+    // appended to body (the bot-row when an avatar is shown, otherwise the
+    // msg itself). Caller can hold container to remove the whole entry later.
     function addMsg(role, text) {
       transcript.push({ role: role, text: text });
       var msg = el("div", { className: "msg " + role }, [text]);
+      var container = msg;
       if (role === "bot" && config.widget.chatAvatarUrl) {
         var av = el("div", { className: "chat-avatar" }, [
           renderAvatarMedia(config.widget.chatAvatarUrl, config.business.name),
         ]);
-        var row = el("div", { className: "bot-row" }, [av, msg]);
-        body.appendChild(row);
-      } else {
-        body.appendChild(msg);
+        container = el("div", { className: "bot-row" }, [av, msg]);
       }
+      body.appendChild(container);
       body.scrollTop = body.scrollHeight;
-      return msg;
+      return { msg: msg, container: container };
     }
 
     function addMedia(step) {
@@ -568,11 +660,13 @@
     }
 
     var lastBotMsgEl = null;
+    var lastBotContainer = null;
     function greet() {
       var t = showTyping();
       setTimeout(function () {
         t.remove();
-        lastBotMsgEl = addMsg("bot", tWelcome());
+        var greeted = addMsg("bot", tWelcome());
+        lastBotMsgEl = greeted.msg;
         askNext();
       }, 400);
     }
@@ -592,10 +686,18 @@
 
       if (mediaAllowed && step.mediaDisplayStyle !== "below") addMedia(step);
 
+      var myVersion = ++askVersion;
       var t = showTyping();
       setTimeout(function () {
-        t.remove();
-        lastBotMsgEl = addMsg("bot", tStepQuestion(step));
+        if (myVersion !== askVersion) {
+          // Undo (or another askNext) invalidated this in-flight question.
+          if (t && t.parentNode) t.parentNode.removeChild(t);
+          return;
+        }
+        if (t && t.parentNode) t.parentNode.removeChild(t);
+        var asked = addMsg("bot", tStepQuestion(step));
+        lastBotMsgEl = asked.msg;
+        lastBotContainer = asked.container;
         if (mediaAllowed && step.mediaDisplayStyle === "below") addMedia(step);
         renderInputFor(step);
       }, 350);
@@ -606,12 +708,115 @@
     }
 
     function accept(step, value, displayText) {
+      var prevAnswer = Object.prototype.hasOwnProperty.call(answers, step.stepKey)
+        ? answers[step.stepKey]
+        : undefined;
       answers[step.stepKey] = value;
-      addMsg("user", displayText != null ? displayText : String(value));
+
+      var added = addMsg("user", displayText != null ? displayText : String(value));
+      var undoBtn = el("button", {
+        className: "undo-btn",
+        type: "button",
+        title: strings().undo,
+        onClick: function () { undoLast(); },
+      }, ["↩ " + strings().undo]);
+      var undoRow = el("div", { className: "undo-row" }, [undoBtn]);
+      body.appendChild(undoRow);
+      body.scrollTop = body.scrollHeight;
+
+      // Snapshot enough state to fully undo this answer.
+      historyStack.push({
+        step: step,
+        prevAnswer: prevAnswer,
+        userContainer: added.container,
+        botContainer: lastBotContainer,
+        undoRow: undoRow,
+      });
+
+      // Drop "Undo" from the previous turn so only the latest is undoable.
+      if (historyStack.length >= 2) {
+        var prev = historyStack[historyStack.length - 2];
+        if (prev.undoRow && prev.undoRow.parentNode) {
+          prev.undoRow.parentNode.removeChild(prev.undoRow);
+        }
+        prev.undoRow = null;
+      }
+
       stepIndex++;
       currentStepInputState = null;
       clearFooter();
+      // First answer in background mode collapses the video into a thumbnail.
+      transitionToMiniVideo();
       askNext();
+    }
+
+    function undoLast() {
+      var entry = historyStack.pop();
+      if (!entry) return;
+      // Cancel any pending askNext typing animation so a new bot question
+      // doesn't appear after we've reverted to a prior step.
+      askVersion++;
+      // Remove the bot question we just asked (if any) AND any leftover footer
+      // input rows we appended afterwards.
+      if (lastBotContainer && lastBotContainer.parentNode && lastBotContainer !== entry.botContainer) {
+        lastBotContainer.parentNode.removeChild(lastBotContainer);
+      }
+      // Also drop any typing indicator currently in flight.
+      var typingNodes = body.querySelectorAll(".typing");
+      for (var i = 0; i < typingNodes.length; i++) {
+        if (typingNodes[i].parentNode) typingNodes[i].parentNode.removeChild(typingNodes[i]);
+      }
+      if (entry.undoRow && entry.undoRow.parentNode) {
+        entry.undoRow.parentNode.removeChild(entry.undoRow);
+      }
+      if (entry.userContainer && entry.userContainer.parentNode) {
+        entry.userContainer.parentNode.removeChild(entry.userContainer);
+      }
+      // Trim the transcript array to drop the bot question + user answer.
+      // Pop until the user answer is removed.
+      while (transcript.length) {
+        var t = transcript.pop();
+        if (t.role === "user") break;
+      }
+      // Restore prior answer state.
+      if (entry.prevAnswer === undefined) {
+        delete answers[entry.step.stepKey];
+      } else {
+        answers[entry.step.stepKey] = entry.prevAnswer;
+      }
+      // Re-anchor lastBotMsg to the previous bot question (entry.botContainer is
+      // that question's container; its `.msg` child is the bubble).
+      lastBotContainer = entry.botContainer;
+      if (entry.botContainer) {
+        var bubble = entry.botContainer.classList && entry.botContainer.classList.contains("bot-row")
+          ? entry.botContainer.querySelector(".msg.bot")
+          : entry.botContainer;
+        lastBotMsgEl = bubble || null;
+      }
+      // Roll the step pointer back and re-render its input.
+      stepIndex = Math.max(0, stepIndex - 1);
+      clearFooter();
+      currentStepInputState = { step: entry.step };
+      renderInputFor(entry.step);
+      // Restore the prior turn's Undo so the user can keep walking back.
+      if (historyStack.length) {
+        var prevEntry = historyStack[historyStack.length - 1];
+        if (!prevEntry.undoRow || !prevEntry.undoRow.parentNode) {
+          var btn = el("button", {
+            className: "undo-btn",
+            type: "button",
+            onClick: function () { undoLast(); },
+          }, ["↩ " + strings().undo]);
+          prevEntry.undoRow = el("div", { className: "undo-row" }, [btn]);
+          // Insert just after the previous user message.
+          if (prevEntry.userContainer && prevEntry.userContainer.parentNode) {
+            prevEntry.userContainer.parentNode.insertBefore(
+              prevEntry.undoRow,
+              prevEntry.userContainer.nextSibling
+            );
+          }
+        }
+      }
     }
 
     function renderInputFor(step) {
