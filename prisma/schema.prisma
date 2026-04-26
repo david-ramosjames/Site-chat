@@ -43,6 +43,7 @@ model WidgetSettings {
   introVideoEnabled Boolean @default(false)
   introVideoUrl     String?
   introPosterUrl    String?
+  introVideoStyle   String  @default("top") // top | background
 
   // Optional headshot/avatar on the floating bubble plus the speech-bubble tooltip.
   bubbleImageUrl String?

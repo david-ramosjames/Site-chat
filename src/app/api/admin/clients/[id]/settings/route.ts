@@ -30,6 +30,7 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
     introVideoEnabled: rest.introVideoEnabled,
     introVideoUrl: nullable(rest.introVideoUrl),
     introPosterUrl: nullable(rest.introPosterUrl),
+    introVideoStyle: rest.introVideoStyle,
     bubbleImageUrl: nullable(rest.bubbleImageUrl),
     bubbleTooltip: nullable(rest.bubbleTooltip),
     chatAvatarUrl: nullable(rest.chatAvatarUrl),

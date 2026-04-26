@@ -52,6 +52,7 @@ export async function GET(req: NextRequest) {
         introVideoEnabled: client.widgetSettings.introVideoEnabled,
         introVideoUrl: client.widgetSettings.introVideoUrl,
         introPosterUrl: client.widgetSettings.introPosterUrl,
+        introVideoStyle: client.widgetSettings.introVideoStyle,
         bubbleImageUrl: client.widgetSettings.bubbleImageUrl,
         bubbleTooltip: client.widgetSettings.bubbleTooltip,
         chatAvatarUrl: client.widgetSettings.chatAvatarUrl,

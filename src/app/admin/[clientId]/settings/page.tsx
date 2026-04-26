@@ -37,6 +37,7 @@ export default async function SettingsPage({ params }: { params: { clientId: str
           introVideoEnabled: ws?.introVideoEnabled ?? false,
           introVideoUrl: ws?.introVideoUrl ?? "",
           introPosterUrl: ws?.introPosterUrl ?? "",
+          introVideoStyle: (ws?.introVideoStyle as "top" | "background") ?? "top",
           bubbleImageUrl: ws?.bubbleImageUrl ?? "",
           bubbleTooltip: ws?.bubbleTooltip ?? "",
           chatAvatarUrl: ws?.chatAvatarUrl ?? "",

@@ -15,6 +15,7 @@ type Initial = {
   introVideoEnabled: boolean;
   introVideoUrl: string;
   introPosterUrl: string;
+  introVideoStyle: "top" | "background";
   bubbleImageUrl: string;
   bubbleTooltip: string;
   chatAvatarUrl: string;
@@ -217,11 +218,17 @@ export default function SettingsForm({ clientId, initial }: { clientId: string; 
           </label>
           {form.introVideoEnabled && (
             <div className="mt-4 grid gap-5 sm:grid-cols-2">
-              <Field
-                label="Video URL"
-                help="MP4 from your CDN, or a YouTube/Vimeo embed URL."
-                full
-              >
+              <Field label="Layout" help="Top: a 200px-tall video block above the conversation. Background: full-bleed behind the messages and options (best with a portrait/vertical video).">
+                <select
+                  className="select"
+                  value={form.introVideoStyle}
+                  onChange={(e) => set("introVideoStyle", e.target.value as "top" | "background")}
+                >
+                  <option value="top">Top of panel</option>
+                  <option value="background">Full background</option>
+                </select>
+              </Field>
+              <Field label="Video URL" help="MP4 from your CDN works best for background mode. YouTube/Vimeo embeds work too." full>
                 <input
                   className="input"
                   placeholder="https://www.youtube.com/embed/..."

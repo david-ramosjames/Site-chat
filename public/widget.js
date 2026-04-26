@@ -109,6 +109,23 @@
       ".intro{position:relative;background:#000;}" +
       ".intro video,.intro iframe{display:block;width:100%;height:200px;border:0;}" +
       ".intro .skip{position:absolute;top:8px;right:8px;background:rgba(0,0,0,.55);color:#fff;border:none;border-radius:999px;padding:4px 10px;font-size:12px;font-weight:600;cursor:pointer;}" +
+      // Full-bleed background-video mode.
+      ".intro-bg{position:absolute;inset:0;z-index:0;background:#000;}" +
+      ".intro-bg video,.intro-bg iframe{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;border:0;}" +
+      ".panel.video-bg .header{position:relative;z-index:3;background:linear-gradient(180deg,rgba(0,0,0,.55),rgba(0,0,0,0));}" +
+      ".panel.video-bg .header .lang{background:rgba(0,0,0,.4);border-color:rgba(255,255,255,.55);}" +
+      ".panel.video-bg .progress{position:relative;z-index:3;background:rgba(0,0,0,.35);}" +
+      ".panel.video-bg .body{position:relative;z-index:2;background:transparent;}" +
+      ".panel.video-bg .msg.bot{background:rgba(0,0,0,.55);color:#fff;border-color:rgba(255,255,255,.18);backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px);}" +
+      ".panel.video-bg .msg.user{background:rgba(255,255,255,.96);color:#0b1220;}" +
+      ".panel.video-bg .footer{position:relative;z-index:3;background:linear-gradient(0deg,rgba(0,0,0,.55),rgba(0,0,0,0));border-top:none;}" +
+      ".panel.video-bg .opt{background:rgba(0,0,0,.35);color:#fff;border-color:rgba(255,255,255,.7);backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px);}" +
+      ".panel.video-bg .opt:hover{background:rgba(255,255,255,.95);color:#0b1220;border-color:#fff;}" +
+      ".panel.video-bg input.tc-input,.panel.video-bg textarea.tc-input{background:rgba(255,255,255,.95);}" +
+      ".panel.video-bg .typing{background:rgba(0,0,0,.55);border-color:rgba(255,255,255,.18);}" +
+      ".panel.video-bg .typing i{background:#cbd5e1;}" +
+      ".panel.video-bg .brand-foot{position:relative;z-index:3;background:transparent;color:rgba(255,255,255,.85);border-top:none;}" +
+      ".panel.video-bg .mute-btn{position:absolute;top:60px;right:12px;z-index:4;background:rgba(0,0,0,.55);color:#fff;border:none;border-radius:999px;width:34px;height:34px;cursor:pointer;font-size:14px;}" +
       ".body{flex:1;overflow-y:auto;padding:16px;background:#f8fafc;display:flex;flex-direction:column;gap:10px;}" +
       ".msg{max-width:85%;padding:10px 14px;border-radius:16px;font-size:14px;line-height:1.35;white-space:pre-wrap;}" +
       ".msg.bot{background:#fff;color:#0b1220;border:1px solid #e2e8f0;border-top-left-radius:4px;align-self:flex-start;}" +
@@ -438,37 +455,76 @@
       root.appendChild(panel);
     }
 
-    function maybeRenderIntroVideo() {
-      if (!config.widget.introVideoEnabled || !config.widget.introVideoUrl) return;
+    function buildIntroVideoNode(opts) {
+      // opts: { background: bool }
       var url = config.widget.introVideoUrl;
-      var isEmbed = /youtube\.com\/embed|player\.vimeo\.com/.test(url);
-      var wrap = el("div", { className: "intro" });
-      var skipBtn = el("button", {
-        className: "skip",
-        type: "button",
-        onClick: function () {
-          if (wrap.parentNode) wrap.parentNode.removeChild(wrap);
-          introCleared = true;
-        },
-      }, [currentLocale === "es" ? "Saltar" : "Skip"]);
+      var isYouTube = /youtube\.com\/embed/.test(url);
+      var isVimeo = /player\.vimeo\.com/.test(url);
+      var isEmbed = isYouTube || isVimeo;
+      var node;
       if (isEmbed) {
-        wrap.appendChild(el("iframe", {
-          src: url + (url.indexOf("?") === -1 ? "?" : "&") + "rel=0&autoplay=1&playsinline=1",
+        var src = url;
+        var join = src.indexOf("?") === -1 ? "?" : "&";
+        if (opts.background) {
+          src += join + "autoplay=1&mute=1&controls=0&playsinline=1&modestbranding=1&showinfo=0&rel=0";
+          if (isYouTube) {
+            var m = url.match(/\/embed\/([a-zA-Z0-9_-]+)/);
+            if (m) src += "&loop=1&playlist=" + m[1];
+          } else if (isVimeo) {
+            src += "&loop=1&background=1";
+          }
+        } else {
+          src += join + "autoplay=1&playsinline=1&rel=0";
+        }
+        node = el("iframe", {
+          src: src,
           allow: "accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture",
           allowfullscreen: "true",
           frameborder: "0",
-        }));
+        });
       } else {
         var v = el("video", {
           autoplay: "true",
           playsinline: "true",
-          controls: "true",
+          "webkit-playsinline": "true",
           poster: config.widget.introPosterUrl || undefined,
         });
+        if (opts.background) {
+          v.setAttribute("loop", "true");
+        } else {
+          v.setAttribute("controls", "true");
+        }
+        v.muted = true;
         v.appendChild(el("source", { src: url }));
-        wrap.appendChild(v);
+        node = v;
       }
-      wrap.appendChild(skipBtn);
+      return node;
+    }
+
+    function maybeRenderIntroVideo() {
+      if (!config.widget.introVideoEnabled || !config.widget.introVideoUrl) return;
+      var style = config.widget.introVideoStyle || "top";
+
+      if (style === "background") {
+        if (panel.className.indexOf("video-bg") === -1) panel.className += " video-bg";
+        var bg = el("div", { className: "intro-bg" }, [buildIntroVideoNode({ background: true })]);
+        panel.insertBefore(bg, panel.firstChild);
+        return;
+      }
+
+      // Default "top" mode: a 200px-tall block above the conversation, with a Skip button.
+      var wrap = el("div", { className: "intro" });
+      wrap.appendChild(buildIntroVideoNode({ background: false }));
+      wrap.appendChild(
+        el("button", {
+          className: "skip",
+          type: "button",
+          onClick: function () {
+            if (wrap.parentNode) wrap.parentNode.removeChild(wrap);
+            introCleared = true;
+          },
+        }, [currentLocale === "es" ? "Saltar" : "Skip"])
+      );
       panel.insertBefore(wrap, body);
     }
 
