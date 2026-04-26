@@ -125,8 +125,10 @@
       ".intro img.end-image{display:block;width:100%;height:200px;object-fit:cover;}" +
       ".intro-bg .play-overlay{position:absolute;inset:0;display:none;align-items:center;justify-content:center;background:rgba(0,0,0,.35);color:#fff;font-size:48px;pointer-events:none;}" +
       ".intro-bg.is-paused .play-overlay{display:flex;}" +
-      // Anchor initial messages to the lower half of the panel so the video remains visible.
-      ".panel.video-bg .body{position:relative;z-index:2;background:transparent;justify-content:flex-end;padding-top:55%;}" +
+      // Anchor initial messages to the lower portion of the panel so the video
+      // remains visible. min-height holds the spacer steady; when content
+      // overflows the body becomes scrollable.
+      ".panel.video-bg .body{position:relative;z-index:2;background:transparent;justify-content:flex-end;padding-top:65%;}" +
       ".panel.video-bg .header{position:relative;z-index:3;background:linear-gradient(180deg,rgba(0,0,0,.55),rgba(0,0,0,0));}" +
       ".panel.video-bg .header .lang{background:rgba(0,0,0,.4);border-color:rgba(255,255,255,.55);}" +
       ".panel.video-bg .progress{position:relative;z-index:3;background:rgba(0,0,0,.35);}" +
@@ -401,16 +403,22 @@
       shadow.appendChild(root);
       document.body.appendChild(host);
 
-      renderBubble();
-      renderSideButtons();
-      scheduleSecondWelcome();
-
       // Auto-open is desktop-only — on mobile we keep the floating bubble
       // so visitors aren't smacked with a full-screen panel uninvited.
-      if (config.widget.openOnLoad && !isMobileViewport()) {
+      var willAutoOpen = !!(config.widget.openOnLoad && !isMobileViewport());
+
+      if (!willAutoOpen) {
+        renderBubble();
+        scheduleSecondWelcome();
+      }
+      renderSideButtons();
+
+      if (willAutoOpen) {
+        // Skip the floating bubble entirely; go straight to the panel.
+        // If the visitor closes the panel they'll get the avatar after.
         setTimeout(function () {
           if (!isOpen) open();
-        }, 600);
+        }, 100);
       }
     }
 
@@ -629,7 +637,10 @@
       centeredMode = false;
       if (panel && panel.parentNode) panel.parentNode.removeChild(panel);
       panel = null;
-      if (openBtn) openBtn.style.display = "";
+      // After auto-open the avatar may not yet exist; create it now so the
+      // visitor can re-open the chat. Otherwise just unhide the existing one.
+      if (!openBtn || !openBtn.parentNode) renderBubble();
+      else openBtn.style.display = "";
     }
 
     function buildHeader() {
