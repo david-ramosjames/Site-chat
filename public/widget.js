@@ -84,9 +84,12 @@
       ".bubble .dot{width:8px;height:8px;background:#22c55e;border-radius:999px;}" +
       ".avatar-wrap{display:flex;flex-direction:column;align-items:flex-end;gap:8px;}" +
       ".root.left .avatar-wrap{align-items:flex-start;}" +
-      ".tooltip{position:relative;background:#fff;color:#0b1220;border:1px solid #e2e8f0;padding:10px 32px 10px 14px;border-radius:18px;font-size:14px;font-weight:500;max-width:240px;box-shadow:0 8px 24px rgba(15,23,42,.18);}" +
+      ".tooltip{position:relative;background:#fff;color:#0b1220;border:1px solid #e2e8f0;padding:10px 32px 10px 14px;border-radius:18px;font-size:14px;font-weight:500;max-width:240px;box-shadow:0 8px 24px rgba(15,23,42,.18);transform-origin:100% 100%;animation:tc-fanout .55s cubic-bezier(.34,1.56,.64,1) .5s both,tc-fanout-glow 3.2s ease-in-out 1.4s infinite;}" +
+      ".root.left .tooltip{transform-origin:0% 100%;}" +
       ".tooltip .x{position:absolute;top:6px;right:8px;background:transparent;border:none;cursor:pointer;color:#94a3b8;font-size:14px;line-height:1;padding:2px;}" +
       ".tooltip .x:hover{color:#0b1220;}" +
+      "@keyframes tc-fanout{0%{transform:scale(.55) translateY(8px);opacity:0;}55%{transform:scale(1.06) translateY(-1px);opacity:1;}80%{transform:scale(.98);}100%{transform:scale(1);opacity:1;}}" +
+      "@keyframes tc-fanout-glow{0%,100%{box-shadow:0 8px 24px rgba(15,23,42,.18),0 0 0 0 " + primary + "33;}50%{box-shadow:0 8px 24px rgba(15,23,42,.18),0 0 0 6px " + primary + "00;}}" +
       ".avatar-btn{width:64px;height:64px;border-radius:999px;border:3px solid " + primary + ";background:#fff;cursor:pointer;padding:0;overflow:hidden;box-shadow:0 8px 24px rgba(15,23,42,.18);position:relative;animation:tc-pulse 2.6s ease-in-out infinite;}" +
       ".avatar-btn:hover{transform:scale(1.04);transition:transform .15s ease;}" +
       ".avatar-btn img,.avatar-btn video{width:100%;height:100%;object-fit:cover;display:block;}" +
@@ -128,13 +131,17 @@
       ".panel.video-bg .typing{background:rgba(0,0,0,.55);border-color:rgba(255,255,255,.18);}" +
       ".panel.video-bg .typing i{background:#cbd5e1;}" +
       ".panel.video-bg .brand-foot{position:relative;z-index:3;background:transparent;color:rgba(255,255,255,.85);border-top:none;}" +
-      ".mute-btn{position:absolute;top:60px;right:12px;z-index:4;background:rgba(0,0,0,.55);color:#fff;border:none;border-radius:999px;width:34px;height:34px;cursor:pointer;font-size:14px;display:flex;align-items:center;justify-content:center;}" +
-      ".mute-btn:hover{background:rgba(0,0,0,.8);}" +
+      ".mute-btn{position:absolute;top:60px;right:12px;z-index:4;background:rgba(0,0,0,.7);color:#fff;border:1px solid rgba(255,255,255,.6);border-radius:999px;padding:8px 14px;font-size:13px;font-weight:600;cursor:pointer;display:inline-flex;align-items:center;gap:6px;backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px);}" +
+      ".mute-btn:hover{background:rgba(0,0,0,.9);}" +
+      ".mute-btn.muted{animation:tc-mute-pulse 1.8s ease-in-out infinite;}" +
+      ".mute-btn .icon{font-size:14px;line-height:1;}" +
+      "@keyframes tc-mute-pulse{0%,100%{box-shadow:0 0 0 0 rgba(255,255,255,.65);}50%{box-shadow:0 0 0 10px rgba(255,255,255,0);}}" +
       // After the first answer the video shrinks to a small inline thumbnail
       // that sits at the top of the conversation (not overlaying it).
       ".panel.video-mini .intro-bg{position:relative;inset:auto;width:96px;height:140px;border-radius:14px;overflow:hidden;background:#000;align-self:flex-start;flex-shrink:0;box-shadow:0 6px 18px rgba(0,0,0,.18);}" +
       ".panel.video-mini .intro-bg .play-overlay{font-size:28px;}" +
-      ".panel.video-mini .intro-bg .mute-btn{top:auto;bottom:6px;right:6px;left:auto;width:24px;height:24px;font-size:11px;}" +
+      ".panel.video-mini .intro-bg .mute-btn{top:auto;bottom:6px;right:6px;left:auto;padding:4px 8px;font-size:11px;}" +
+      ".panel.video-mini .intro-bg .mute-btn .label{display:none;}" +
       ".body{flex:1;overflow-y:auto;padding:16px;background:#f8fafc;display:flex;flex-direction:column;gap:10px;}" +
       ".msg{max-width:85%;padding:10px 14px;border-radius:16px;font-size:14px;line-height:1.35;white-space:pre-wrap;}" +
       ".msg.bot{background:#fff;color:#0b1220;border:1px solid #e2e8f0;border-top-left-radius:4px;align-self:flex-start;}" +
@@ -575,18 +582,18 @@
     function renderMuteButton() {
       if (!introVideoEl) return; // iframe embeds: no mute control (handled by their own UI)
       muteBtn = el("button", {
-        className: "mute-btn",
+        className: "mute-btn muted",
         type: "button",
         "aria-label": "Toggle sound",
-        title: strings().unmute,
         onClick: function (e) {
           e.stopPropagation();
           if (!introVideoEl) return;
           introVideoEl.muted = !introVideoEl.muted;
           updateMuteIcon();
         },
-      }, [muteIcon(true)]);
+      }, []);
       panel.appendChild(muteBtn);
+      updateMuteIcon();
     }
 
     function muteIcon(muted) {
@@ -597,7 +604,14 @@
     function updateMuteIcon() {
       if (!muteBtn || !introVideoEl) return;
       while (muteBtn.firstChild) muteBtn.removeChild(muteBtn.firstChild);
-      muteBtn.appendChild(document.createTextNode(muteIcon(introVideoEl.muted)));
+      var muted = introVideoEl.muted;
+      muteBtn.appendChild(el("span", { className: "icon" }, [muteIcon(muted)]));
+      if (muted) {
+        muteBtn.classList.add("muted");
+        muteBtn.appendChild(el("span", { className: "label" }, [strings().unmute]));
+      } else {
+        muteBtn.classList.remove("muted");
+      }
     }
 
     function transitionToMiniVideo() {
