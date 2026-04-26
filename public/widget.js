@@ -114,7 +114,8 @@
       ".intro .skip{position:absolute;top:8px;right:8px;background:rgba(0,0,0,.55);color:#fff;border:none;border-radius:999px;padding:4px 10px;font-size:12px;font-weight:600;cursor:pointer;}" +
       // Full-bleed background-video mode.
       ".intro-bg{position:absolute;inset:0;z-index:0;background:#000;cursor:pointer;}" +
-      ".intro-bg video,.intro-bg iframe{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;border:0;pointer-events:none;}" +
+      ".intro-bg video,.intro-bg iframe,.intro-bg img.end-image{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;border:0;pointer-events:none;}" +
+      ".intro img.end-image{display:block;width:100%;height:200px;object-fit:cover;}" +
       ".intro-bg .play-overlay{position:absolute;inset:0;display:none;align-items:center;justify-content:center;background:rgba(0,0,0,.35);color:#fff;font-size:48px;pointer-events:none;}" +
       ".intro-bg.is-paused .play-overlay{display:flex;}" +
       // Anchor initial messages to the lower half of the panel so the video remains visible.
@@ -175,7 +176,9 @@
       ".success .check{width:48px;height:48px;border-radius:999px;background:" + primary + ";color:#fff;font-size:24px;display:flex;align-items:center;justify-content:center;}" +
       ".brand-foot{text-align:center;font-size:11px;color:#64748b;padding:8px;background:#fff;border-top:1px solid #e2e8f0;}" +
       // Side action buttons stack (Phone / SMS / Messenger / WhatsApp).
-      ".side-stack{position:fixed;bottom:16px;left:16px;z-index:2147482999;display:flex;flex-direction:column-reverse;gap:10px;}" +
+      ".side-stack{position:fixed;left:16px;z-index:2147482999;display:flex;flex-direction:column-reverse;gap:10px;}" +
+      ".side-stack.bottom{bottom:16px;}" +
+      ".side-stack.center{top:50%;transform:translateY(-50%);}" +
       ".side-btn{width:48px;height:48px;border-radius:999px;background:#fff;border:none;box-shadow:0 8px 22px rgba(15,23,42,.2);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:22px;text-decoration:none;color:#0b1220;transition:transform .15s ease;}" +
       ".side-btn:hover{transform:scale(1.06);}" +
       ".side-btn.phone{background:" + primary + ";color:#fff;}" +
@@ -188,7 +191,7 @@
       ".end-cta{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;background:" + primary + ";color:#fff;padding:11px 14px;border-radius:12px;font-weight:600;font-size:14px;text-decoration:none;border:none;cursor:pointer;}" +
       ".end-cta:hover{filter:brightness(1.05);}" +
       ".end-cta.outline{background:#fff;color:" + primary + ";border:1px solid " + primary + ";}" +
-      "@media (max-width:420px){.panel{width:calc(100vw - 16px);height:calc(100vh - 80px);bottom:80px;} .root.right .panel,.root.left .panel{right:8px;left:8px;} .side-stack{bottom:8px;left:8px;gap:8px;} .side-btn{width:44px;height:44px;}}"
+      "@media (max-width:420px){.panel{width:calc(100vw - 16px);height:calc(100vh - 80px);bottom:80px;} .root.right .panel,.root.left .panel{right:8px;left:8px;} .side-stack{left:8px;gap:8px;} .side-stack.bottom{bottom:8px;} .side-btn{width:44px;height:44px;}}"
     );
   }
 
@@ -414,7 +417,8 @@
       var s = document.createElement("style");
       s.textContent = buildStyles(config.widget.primaryColor, config.widget.accentColor);
       sideShadow.appendChild(s);
-      var stack = el("div", { className: "side-stack" });
+      var posClass = config.widget.sideButtonsPosition === "center" ? "center" : "bottom";
+      var stack = el("div", { className: "side-stack " + posClass });
       visible.forEach(function (b) {
         var href = sideButtonHref(b);
         var icon = sideButtonIcon(b.type);
@@ -682,14 +686,10 @@
       if (isEmbed) {
         var src = url;
         var join = src.indexOf("?") === -1 ? "?" : "&";
+        // Plays once. No loop params on either YouTube or Vimeo.
         if (opts.background) {
           src += join + "autoplay=1&mute=1&controls=0&playsinline=1&modestbranding=1&showinfo=0&rel=0";
-          if (isYouTube) {
-            var m = url.match(/\/embed\/([a-zA-Z0-9_-]+)/);
-            if (m) src += "&loop=1&playlist=" + m[1];
-          } else if (isVimeo) {
-            src += "&loop=1&background=1";
-          }
+          if (isVimeo) src += "&background=1";
         } else {
           src += join + "autoplay=1&playsinline=1&rel=0";
         }
@@ -707,11 +707,8 @@
         "webkit-playsinline": "true",
         poster: config.widget.introPosterUrl || undefined,
       });
-      if (opts.background) {
-        v.setAttribute("loop", "true");
-      } else {
-        v.setAttribute("controls", "true");
-      }
+      // Plays once. controls only in "top" mode where the user expects them.
+      if (!opts.background) v.setAttribute("controls", "true");
       v.muted = true; // browsers require muted for autoplay
       v.appendChild(el("source", { src: url }));
       return { node: v, video: v };
@@ -737,6 +734,9 @@
           introVideoEl.addEventListener("play", function () {
             introBgEl.classList.remove("is-paused");
           });
+          introVideoEl.addEventListener("ended", function () {
+            swapVideoForEndImage(introBgEl);
+          });
         }
         panel.insertBefore(introBgEl, panel.firstChild);
         renderMuteButton();
@@ -747,6 +747,11 @@
       var wrap = el("div", { className: "intro" });
       var topBuilt = buildIntroVideoNode({ background: false });
       wrap.appendChild(topBuilt.node);
+      if (topBuilt.video) {
+        topBuilt.video.addEventListener("ended", function () {
+          swapVideoForEndImage(wrap);
+        });
+      }
       wrap.appendChild(
         el("button", {
           className: "skip",
@@ -758,6 +763,31 @@
         }, [currentLocale === "es" ? "Saltar" : "Skip"])
       );
       panel.insertBefore(wrap, body);
+    }
+
+    function swapVideoForEndImage(container) {
+      var endUrl = config.widget.introVideoEndImageUrl;
+      if (!container) return;
+      // Always remove the (now-finished) video from the DOM so it doesn't
+      // sit on a black last-frame. Drop the mute + paused-overlay too.
+      var video = container.querySelector ? container.querySelector("video") : null;
+      if (video && video.parentNode) video.parentNode.removeChild(video);
+      if (introBgEl && introBgEl.classList) introBgEl.classList.remove("is-paused");
+      if (muteBtn && muteBtn.parentNode) {
+        muteBtn.parentNode.removeChild(muteBtn);
+        muteBtn = null;
+      }
+      introVideoEl = null;
+      if (endUrl) {
+        var img = el("img", {
+          className: "end-image",
+          src: endUrl,
+          alt: "",
+        });
+        // Insert as the first child so it lives where the video did.
+        if (container.firstChild) container.insertBefore(img, container.firstChild);
+        else container.appendChild(img);
+      }
     }
 
     function togglePlayPause() {

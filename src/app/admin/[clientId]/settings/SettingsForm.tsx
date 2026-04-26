@@ -15,6 +15,7 @@ type Initial = {
   introVideoEnabled: boolean;
   introVideoUrl: string;
   introPosterUrl: string;
+  introVideoEndImageUrl: string;
   introVideoStyle: "top" | "background";
   bubbleImageUrl: string;
   bubbleTooltip: string;
@@ -31,6 +32,7 @@ type Initial = {
   secondWelcomeMessage: string;
   secondWelcomeDelaySec: number;
   sideButtons: SideButton[];
+  sideButtonsPosition: "bottom" | "center";
 };
 
 type SideButton = {
@@ -273,6 +275,18 @@ export default function SettingsForm({ clientId, initial }: { clientId: string; 
                   onChange={(e) => set("introPosterUrl", e.target.value)}
                 />
               </Field>
+              <Field
+                label="Image after video ends"
+                help="Optional. When the video finishes playing, this image takes its place. Useful for a smiling close-up or a 'Tap to chat' card."
+                full
+              >
+                <input
+                  className="input"
+                  placeholder="https://cdn.example.com/intro-end.jpg"
+                  value={form.introVideoEndImageUrl}
+                  onChange={(e) => set("introVideoEndImageUrl", e.target.value)}
+                />
+              </Field>
             </div>
           )}
         </Section>
@@ -385,10 +399,22 @@ export default function SettingsForm({ clientId, initial }: { clientId: string; 
           title="Side action buttons"
           subtitle="A floating column of quick actions on the left side of the page (Phone, SMS, Messenger, WhatsApp). Each button is independently shown/hidden by device and language."
         >
-          <SideButtonsEditor
-            buttons={form.sideButtons}
-            onChange={(buttons) => set("sideButtons", buttons)}
-          />
+          <Field label="Vertical alignment" help="Where the whole stack sits on the left edge of the screen.">
+            <select
+              className="select"
+              value={form.sideButtonsPosition}
+              onChange={(e) => set("sideButtonsPosition", e.target.value as "bottom" | "center")}
+            >
+              <option value="bottom">Bottom of left edge</option>
+              <option value="center">Vertically centered</option>
+            </select>
+          </Field>
+          <div className="mt-4">
+            <SideButtonsEditor
+              buttons={form.sideButtons}
+              onChange={(buttons) => set("sideButtons", buttons)}
+            />
+          </div>
         </Section>
 
         <div className="flex items-center gap-3 pt-2">

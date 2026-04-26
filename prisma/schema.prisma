@@ -44,6 +44,8 @@ model WidgetSettings {
   introVideoUrl     String?
   introPosterUrl    String?
   introVideoStyle   String  @default("top") // top | background
+  // Optional image that replaces the video after playback ends.
+  introVideoEndImageUrl String?
 
   // Optional headshot/avatar on the floating bubble plus the speech-bubble tooltip.
   bubbleImageUrl String?
@@ -67,7 +69,8 @@ model WidgetSettings {
   // shown opposite the chat bubble. Each entry has its own device + locale gates.
   // Shape: [{ type, label, destination, showOnDesktop, showOnMobile,
   //           showInEnglish, showInSpanish }]
-  sideButtons Json?
+  sideButtons         Json?
+  sideButtonsPosition String  @default("bottom") // bottom | center
 
   // Optional end-of-flow CTAs shown after a lead submits. Shape:
   // [{ type: 'call'|'text'|'schedule'|'link', label, destination }]

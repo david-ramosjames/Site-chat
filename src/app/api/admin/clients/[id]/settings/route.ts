@@ -30,6 +30,7 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
     introVideoEnabled: rest.introVideoEnabled,
     introVideoUrl: nullable(rest.introVideoUrl),
     introPosterUrl: nullable(rest.introPosterUrl),
+    introVideoEndImageUrl: nullable(rest.introVideoEndImageUrl),
     introVideoStyle: rest.introVideoStyle,
     bubbleImageUrl: nullable(rest.bubbleImageUrl),
     bubbleTooltip: nullable(rest.bubbleTooltip),
@@ -39,6 +40,7 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
     secondWelcomeMessage: nullable(rest.secondWelcomeMessage),
     secondWelcomeDelaySec: rest.secondWelcomeDelaySec,
     sideButtons: (rest.sideButtons as object | null | undefined) ?? undefined,
+    sideButtonsPosition: rest.sideButtonsPosition,
     endCtas: (rest.endCtas as object | null | undefined) ?? undefined,
   };
 

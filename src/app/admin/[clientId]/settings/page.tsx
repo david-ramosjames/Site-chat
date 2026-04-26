@@ -57,6 +57,7 @@ export default async function SettingsPage({ params }: { params: { clientId: str
           introVideoEnabled: ws?.introVideoEnabled ?? false,
           introVideoUrl: ws?.introVideoUrl ?? "",
           introPosterUrl: ws?.introPosterUrl ?? "",
+          introVideoEndImageUrl: ws?.introVideoEndImageUrl ?? "",
           introVideoStyle: (ws?.introVideoStyle as "top" | "background") ?? "top",
           bubbleImageUrl: ws?.bubbleImageUrl ?? "",
           bubbleTooltip: ws?.bubbleTooltip ?? "",
@@ -81,6 +82,7 @@ export default async function SettingsPage({ params }: { params: { clientId: str
             showInEnglish: b.showInEnglish ?? true,
             showInSpanish: b.showInSpanish ?? true,
           })),
+          sideButtonsPosition: (ws?.sideButtonsPosition as "bottom" | "center") ?? "bottom",
         }}
       />
     </div>

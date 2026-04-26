@@ -13,9 +13,11 @@ export const widgetSettingsSchema = z.object({
   businessName: z.string().min(1).max(120),
   industry: z.string().min(1).max(80),
 
-  introVideoEnabled: z.boolean().default(false),
+  introVideoEnabled: z.boolean().default(false)
+,
   introVideoUrl: optionalUrl,
   introPosterUrl: optionalUrl,
+  introVideoEndImageUrl: optionalUrl,
   introVideoStyle: z.enum(["top", "background"]).default("top"),
 
   bubbleImageUrl: optionalUrl,
@@ -56,6 +58,7 @@ export const widgetSettingsSchema = z.object({
     .max(10)
     .optional()
     .nullable(),
+  sideButtonsPosition: z.enum(["bottom", "center"]).default("bottom"),
 
   endCtas: z
     .array(
