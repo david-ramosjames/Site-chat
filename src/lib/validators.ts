@@ -20,6 +20,8 @@ export const widgetSettingsSchema = z.object({
   bubbleImageUrl: optionalUrl,
   bubbleTooltip: z.string().max(200).optional().nullable(),
 
+  chatAvatarUrl: optionalUrl,
+
   enableTranslation: z.boolean().default(false),
   translations: z
     .object({

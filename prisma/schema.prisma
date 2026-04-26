@@ -48,6 +48,10 @@ model WidgetSettings {
   bubbleImageUrl String?
   bubbleTooltip  String?
 
+  // Optional avatar shown next to each bot message inside the chat panel.
+  // Usually a still photo of the same person; bubble avatar can be animated.
+  chatAvatarUrl String?
+
   // Optional Spanish (or future multi-locale) copy. Shape:
   // { es: { welcomeMessage, bubbleText, bubbleTooltip } }
   enableTranslation Boolean @default(false)

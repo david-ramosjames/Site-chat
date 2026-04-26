@@ -32,6 +32,7 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
     introPosterUrl: nullable(rest.introPosterUrl),
     bubbleImageUrl: nullable(rest.bubbleImageUrl),
     bubbleTooltip: nullable(rest.bubbleTooltip),
+    chatAvatarUrl: nullable(rest.chatAvatarUrl),
     enableTranslation: rest.enableTranslation,
     translations: (translations as object | null | undefined) ?? undefined,
   };

@@ -39,6 +39,7 @@ export default async function SettingsPage({ params }: { params: { clientId: str
           introPosterUrl: ws?.introPosterUrl ?? "",
           bubbleImageUrl: ws?.bubbleImageUrl ?? "",
           bubbleTooltip: ws?.bubbleTooltip ?? "",
+          chatAvatarUrl: ws?.chatAvatarUrl ?? "",
           enableTranslation: ws?.enableTranslation ?? false,
           translations: {
             es: {

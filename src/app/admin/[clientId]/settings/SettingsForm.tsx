@@ -17,6 +17,7 @@ type Initial = {
   introPosterUrl: string;
   bubbleImageUrl: string;
   bubbleTooltip: string;
+  chatAvatarUrl: string;
   enableTranslation: boolean;
   translations: {
     es: {
@@ -151,7 +152,7 @@ export default function SettingsForm({ clientId, initial }: { clientId: string; 
           <div className="grid gap-5 sm:grid-cols-2">
             <Field
               label="Bubble avatar URL"
-              help="Static photo, animated GIF, or a muted-looping video clip (.mp4/.webm). The same avatar also appears in the chat panel header."
+              help="Static photo, animated GIF, or a muted-looping video clip (.mp4/.webm). Lives only on the floating bubble — the chat header keeps your logo."
               full
             >
               <input
@@ -181,6 +182,24 @@ export default function SettingsForm({ clientId, initial }: { clientId: string; 
               />
             </Field>
           </div>
+        </Section>
+
+        <Section
+          title="In-chat avatar"
+          subtitle="Small headshot shown next to each bot message inside the chat. Usually a clean still photo, even if the bubble itself is animated."
+        >
+          <Field
+            label="Chat avatar URL"
+            help="Square or circular photo. Recommended ~128×128px."
+            full
+          >
+            <input
+              className="input"
+              placeholder="https://cdn.example.com/attorney-headshot.jpg"
+              value={form.chatAvatarUrl}
+              onChange={(e) => set("chatAvatarUrl", e.target.value)}
+            />
+          </Field>
         </Section>
 
         <Section

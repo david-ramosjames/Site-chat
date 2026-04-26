@@ -113,6 +113,10 @@
       ".msg{max-width:85%;padding:10px 14px;border-radius:16px;font-size:14px;line-height:1.35;white-space:pre-wrap;}" +
       ".msg.bot{background:#fff;color:#0b1220;border:1px solid #e2e8f0;border-top-left-radius:4px;align-self:flex-start;}" +
       ".msg.user{background:" + primary + ";color:#fff;border-top-right-radius:4px;align-self:flex-end;}" +
+      ".bot-row{display:flex;gap:8px;align-items:flex-end;align-self:flex-start;max-width:90%;}" +
+      ".bot-row .msg{max-width:100%;align-self:auto;}" +
+      ".chat-avatar{width:28px;height:28px;border-radius:999px;overflow:hidden;flex-shrink:0;background:#e2e8f0;}" +
+      ".chat-avatar img,.chat-avatar video{width:100%;height:100%;object-fit:cover;display:block;}" +
       ".typing{display:inline-flex;gap:4px;align-self:flex-start;padding:10px 14px;background:#fff;border:1px solid #e2e8f0;border-radius:16px;border-top-left-radius:4px;}" +
       ".typing i{width:6px;height:6px;border-radius:999px;background:#94a3b8;animation:tc-bounce 1s infinite;}" +
       ".typing i:nth-child(2){animation-delay:.15s;} .typing i:nth-child(3){animation-delay:.3s;}" +
@@ -387,28 +391,20 @@
         onClick: close,
       }, ["×"]));
 
-      // Prefer the headshot/avatar in the header for a "real person" feel;
-      // fall back to logo, then to the business initial.
-      var brandNode;
-      if (config.widget.bubbleImageUrl) {
-        brandNode = el("div", { className: "brand-avatar" }, [
-          renderAvatarMedia(config.widget.bubbleImageUrl, config.business.name),
-        ]);
-      } else if (config.widget.logoUrl) {
-        brandNode = el("img", {
-          className: "logo",
-          src: config.widget.logoUrl,
-          alt: config.business.name,
-        });
-      } else {
-        brandNode = el("div", {
-          style: {
-            width: "28px", height: "28px", borderRadius: "999px",
-            background: "rgba(255,255,255,.2)", display: "flex",
-            alignItems: "center", justifyContent: "center", fontWeight: "600",
-          },
-        }, [config.business.name.slice(0, 1)]);
-      }
+      // Header is the company brand. Logo first, then a colored initial.
+      var brandNode = config.widget.logoUrl
+        ? el("img", {
+            className: "logo",
+            src: config.widget.logoUrl,
+            alt: config.business.name,
+          })
+        : el("div", {
+            style: {
+              width: "28px", height: "28px", borderRadius: "999px",
+              background: "rgba(255,255,255,.2)", display: "flex",
+              alignItems: "center", justifyContent: "center", fontWeight: "600",
+            },
+          }, [config.business.name.slice(0, 1)]);
 
       return el("div", { className: "header" }, [
         brandNode,
@@ -479,7 +475,15 @@
     function addMsg(role, text) {
       transcript.push({ role: role, text: text });
       var msg = el("div", { className: "msg " + role }, [text]);
-      body.appendChild(msg);
+      if (role === "bot" && config.widget.chatAvatarUrl) {
+        var av = el("div", { className: "chat-avatar" }, [
+          renderAvatarMedia(config.widget.chatAvatarUrl, config.business.name),
+        ]);
+        var row = el("div", { className: "bot-row" }, [av, msg]);
+        body.appendChild(row);
+      } else {
+        body.appendChild(msg);
+      }
       body.scrollTop = body.scrollHeight;
       return msg;
     }
@@ -492,10 +496,19 @@
     }
 
     function showTyping() {
-      var t = el("div", { className: "typing" }, [el("i"), el("i"), el("i")]);
-      body.appendChild(t);
+      var bubble = el("div", { className: "typing" }, [el("i"), el("i"), el("i")]);
+      var node;
+      if (config.widget.chatAvatarUrl) {
+        var av = el("div", { className: "chat-avatar" }, [
+          renderAvatarMedia(config.widget.chatAvatarUrl, ""),
+        ]);
+        node = el("div", { className: "bot-row" }, [av, bubble]);
+      } else {
+        node = bubble;
+      }
+      body.appendChild(node);
       body.scrollTop = body.scrollHeight;
-      return t;
+      return node;
     }
 
     var lastBotMsgEl = null;

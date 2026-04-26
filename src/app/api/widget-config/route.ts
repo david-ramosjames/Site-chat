@@ -54,6 +54,7 @@ export async function GET(req: NextRequest) {
         introPosterUrl: client.widgetSettings.introPosterUrl,
         bubbleImageUrl: client.widgetSettings.bubbleImageUrl,
         bubbleTooltip: client.widgetSettings.bubbleTooltip,
+        chatAvatarUrl: client.widgetSettings.chatAvatarUrl,
         enableTranslation: client.widgetSettings.enableTranslation,
         translations: client.widgetSettings.translations,
       },
