@@ -42,6 +42,7 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
     sideButtons: (rest.sideButtons as object | null | undefined) ?? undefined,
     sideButtonsPosition: rest.sideButtonsPosition,
     endCtas: (rest.endCtas as object | null | undefined) ?? undefined,
+    openOnLoad: rest.openOnLoad,
   };
 
   const client = await prisma.client.update({

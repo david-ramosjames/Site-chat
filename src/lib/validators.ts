@@ -71,6 +71,8 @@ export const widgetSettingsSchema = z.object({
     .max(5)
     .optional()
     .nullable(),
+
+  openOnLoad: z.boolean().default(false),
 });
 
 export const endCtasUpdateSchema = z.object({

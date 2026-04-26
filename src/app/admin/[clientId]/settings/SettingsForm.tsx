@@ -33,6 +33,7 @@ type Initial = {
   secondWelcomeDelaySec: number;
   sideButtons: SideButton[];
   sideButtonsPosition: "bottom" | "center";
+  openOnLoad: boolean;
 };
 
 type SideButton = {
@@ -125,6 +126,42 @@ export default function SettingsForm({ clientId, initial }: { clientId: string; 
                 required
               />
             </Field>
+          </div>
+        </Section>
+
+        <Section
+          title="How the widget appears on load"
+          subtitle="Pick whether visitors see just the floating avatar/bubble or the chat panel opens automatically (great if you want the intro video to play right away)."
+        >
+          <div className="grid gap-2 sm:grid-cols-2">
+            <button
+              type="button"
+              onClick={() => set("openOnLoad", false)}
+              className={`rounded-lg border p-3 text-left text-sm transition ${
+                !form.openOnLoad
+                  ? "border-brand-500/50 bg-brand-50"
+                  : "border-ink-300 bg-white hover:bg-ink-100"
+              }`}
+            >
+              <p className="font-semibold">Floating avatar / bubble</p>
+              <p className="mt-1 text-xs text-ink-500">
+                Show the chat icon in the corner. Visitor clicks to open. (Default)
+              </p>
+            </button>
+            <button
+              type="button"
+              onClick={() => set("openOnLoad", true)}
+              className={`rounded-lg border p-3 text-left text-sm transition ${
+                form.openOnLoad
+                  ? "border-brand-500/50 bg-brand-50"
+                  : "border-ink-300 bg-white hover:bg-ink-100"
+              }`}
+            >
+              <p className="font-semibold">Open chat automatically</p>
+              <p className="mt-1 text-xs text-ink-500">
+                Panel pops open on page load — the intro video starts immediately.
+              </p>
+            </button>
           </div>
         </Section>
 

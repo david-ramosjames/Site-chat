@@ -76,6 +76,11 @@ model WidgetSettings {
   // [{ type: 'call'|'text'|'schedule'|'link', label, destination }]
   endCtas Json?
 
+  // If true the chat panel auto-opens on page load (instead of starting as
+  // the floating avatar/bubble). Useful when the intro video should be
+  // visible immediately.
+  openOnLoad Boolean @default(false)
+
   client Client @relation(fields: [clientId], references: [id], onDelete: Cascade)
 }
 

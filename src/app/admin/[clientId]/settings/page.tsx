@@ -83,6 +83,7 @@ export default async function SettingsPage({ params }: { params: { clientId: str
             showInSpanish: b.showInSpanish ?? true,
           })),
           sideButtonsPosition: (ws?.sideButtonsPosition as "bottom" | "center") ?? "bottom",
+          openOnLoad: ws?.openOnLoad ?? false,
         }}
       />
     </div>
