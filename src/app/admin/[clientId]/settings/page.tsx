@@ -13,8 +13,28 @@ export default async function SettingsPage({ params }: { params: { clientId: str
 
   const ws = client.widgetSettings;
   const translations =
-    (ws?.translations as { es?: { welcomeMessage?: string; bubbleText?: string; bubbleTooltip?: string } } | null) ??
-    null;
+    (ws?.translations as
+      | {
+          es?: {
+            welcomeMessage?: string;
+            bubbleText?: string;
+            bubbleTooltip?: string;
+            secondWelcomeMessage?: string;
+          };
+        }
+      | null) ?? null;
+  const sideButtons =
+    (ws?.sideButtons as
+      | Array<{
+          type: "phone" | "sms" | "messenger" | "whatsapp" | "custom";
+          label?: string | null;
+          destination: string;
+          showOnDesktop: boolean;
+          showOnMobile: boolean;
+          showInEnglish: boolean;
+          showInSpanish: boolean;
+        }>
+      | null) ?? [];
 
   return (
     <div className="space-y-6">
@@ -47,8 +67,20 @@ export default async function SettingsPage({ params }: { params: { clientId: str
               welcomeMessage: translations?.es?.welcomeMessage ?? "",
               bubbleText: translations?.es?.bubbleText ?? "",
               bubbleTooltip: translations?.es?.bubbleTooltip ?? "",
+              secondWelcomeMessage: translations?.es?.secondWelcomeMessage ?? "",
             },
           },
+          secondWelcomeMessage: ws?.secondWelcomeMessage ?? "",
+          secondWelcomeDelaySec: ws?.secondWelcomeDelaySec ?? 30,
+          sideButtons: sideButtons.map((b) => ({
+            type: b.type,
+            label: b.label ?? "",
+            destination: b.destination,
+            showOnDesktop: b.showOnDesktop ?? true,
+            showOnMobile: b.showOnMobile ?? true,
+            showInEnglish: b.showInEnglish ?? true,
+            showInSpanish: b.showInSpanish ?? true,
+          })),
         }}
       />
     </div>

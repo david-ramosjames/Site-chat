@@ -31,11 +31,55 @@ export const widgetSettingsSchema = z.object({
           welcomeMessage: z.string().max(280).optional().nullable(),
           bubbleText: z.string().max(80).optional().nullable(),
           bubbleTooltip: z.string().max(200).optional().nullable(),
+          secondWelcomeMessage: z.string().max(280).optional().nullable(),
         })
         .optional(),
     })
     .optional()
     .nullable(),
+
+  secondWelcomeMessage: z.string().max(280).optional().nullable(),
+  secondWelcomeDelaySec: z.number().int().min(5).max(600).default(30),
+
+  sideButtons: z
+    .array(
+      z.object({
+        type: z.enum(["phone", "sms", "messenger", "whatsapp", "custom"]),
+        label: z.string().max(40).optional().nullable(),
+        destination: z.string().min(1).max(500),
+        showOnDesktop: z.boolean(),
+        showOnMobile: z.boolean(),
+        showInEnglish: z.boolean(),
+        showInSpanish: z.boolean(),
+      })
+    )
+    .max(10)
+    .optional()
+    .nullable(),
+
+  endCtas: z
+    .array(
+      z.object({
+        type: z.enum(["call", "text", "schedule", "link"]),
+        label: z.string().min(1).max(60),
+        destination: z.string().min(1).max(500),
+      })
+    )
+    .max(5)
+    .optional()
+    .nullable(),
+});
+
+export const endCtasUpdateSchema = z.object({
+  endCtas: z
+    .array(
+      z.object({
+        type: z.enum(["call", "text", "schedule", "link"]),
+        label: z.string().min(1).max(60),
+        destination: z.string().min(1).max(500),
+      })
+    )
+    .max(5),
 });
 
 export const featureTogglesSchema = z.object({

@@ -36,6 +36,10 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
     chatAvatarUrl: nullable(rest.chatAvatarUrl),
     enableTranslation: rest.enableTranslation,
     translations: (translations as object | null | undefined) ?? undefined,
+    secondWelcomeMessage: nullable(rest.secondWelcomeMessage),
+    secondWelcomeDelaySec: rest.secondWelcomeDelaySec,
+    sideButtons: (rest.sideButtons as object | null | undefined) ?? undefined,
+    endCtas: (rest.endCtas as object | null | undefined) ?? undefined,
   };
 
   const client = await prisma.client.update({

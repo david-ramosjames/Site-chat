@@ -25,8 +25,30 @@ type Initial = {
       welcomeMessage: string;
       bubbleText: string;
       bubbleTooltip: string;
+      secondWelcomeMessage: string;
     };
   };
+  secondWelcomeMessage: string;
+  secondWelcomeDelaySec: number;
+  sideButtons: SideButton[];
+};
+
+type SideButton = {
+  type: "phone" | "sms" | "messenger" | "whatsapp" | "custom";
+  label: string;
+  destination: string;
+  showOnDesktop: boolean;
+  showOnMobile: boolean;
+  showInEnglish: boolean;
+  showInSpanish: boolean;
+};
+
+const SIDE_BUTTON_PRESETS: Record<SideButton["type"], { label: string; placeholder: string }> = {
+  phone: { label: "Phone (call)", placeholder: "+15125550100" },
+  sms: { label: "SMS / Text", placeholder: "+15125550100" },
+  messenger: { label: "Facebook Messenger", placeholder: "https://m.me/yourpage" },
+  whatsapp: { label: "WhatsApp", placeholder: "+15125550100 or https://wa.me/15125550100" },
+  custom: { label: "Custom link", placeholder: "https://..." },
 };
 
 export default function SettingsForm({ clientId, initial }: { clientId: string; initial: Initial }) {
@@ -56,8 +78,15 @@ export default function SettingsForm({ clientId, initial }: { clientId: string; 
             welcomeMessage: form.translations.es.welcomeMessage || undefined,
             bubbleText: form.translations.es.bubbleText || undefined,
             bubbleTooltip: form.translations.es.bubbleTooltip || undefined,
+            secondWelcomeMessage: form.translations.es.secondWelcomeMessage || undefined,
           },
         },
+        sideButtons: form.sideButtons
+          .filter((b) => b.destination.trim().length > 0)
+          .map((b) => ({
+            ...b,
+            label: b.label.trim() || null,
+          })),
       };
       const res = await fetch(`/api/admin/clients/${clientId}/settings`, {
         method: "PUT",
@@ -304,6 +333,64 @@ export default function SettingsForm({ clientId, initial }: { clientId: string; 
           )}
         </Section>
 
+        <Section
+          title="Re-engagement"
+          subtitle="Show a second welcome message on the floating bubble after a delay if the visitor hasn't opened the chat yet."
+        >
+          <div className="grid gap-5 sm:grid-cols-[1fr_140px]">
+            <Field label="Second welcome message">
+              <textarea
+                rows={2}
+                className="input"
+                placeholder="Still browsing? Tell us about your case — we reply in minutes."
+                value={form.secondWelcomeMessage}
+                onChange={(e) => set("secondWelcomeMessage", e.target.value)}
+              />
+              <p className="help">
+                Replaces the bubble tooltip after the delay below. Leave blank to disable.
+              </p>
+            </Field>
+            <Field label="Delay (seconds)">
+              <input
+                className="input"
+                type="number"
+                min={5}
+                max={600}
+                value={form.secondWelcomeDelaySec}
+                onChange={(e) =>
+                  set("secondWelcomeDelaySec", Math.max(5, Math.min(600, Number(e.target.value) || 30)))
+                }
+              />
+            </Field>
+          </div>
+          {form.enableTranslation && (
+            <div className="mt-4 rounded-lg border border-ink-300/60 bg-ink-100/40 p-4">
+              <p className="text-xs font-semibold uppercase tracking-wide text-ink-500">
+                Spanish (es)
+              </p>
+              <Field label="Second welcome message — Spanish" full>
+                <textarea
+                  rows={2}
+                  className="input"
+                  placeholder="¿Aún navegando? Cuéntanos sobre tu caso — respondemos en minutos."
+                  value={form.translations.es.secondWelcomeMessage}
+                  onChange={(e) => setEs("secondWelcomeMessage", e.target.value)}
+                />
+              </Field>
+            </div>
+          )}
+        </Section>
+
+        <Section
+          title="Side action buttons"
+          subtitle="A floating column of quick actions on the left side of the page (Phone, SMS, Messenger, WhatsApp). Each button is independently shown/hidden by device and language."
+        >
+          <SideButtonsEditor
+            buttons={form.sideButtons}
+            onChange={(buttons) => set("sideButtons", buttons)}
+          />
+        </Section>
+
         <div className="flex items-center gap-3 pt-2">
           <button className="btn-primary" disabled={saving}>
             {saving ? "Saving…" : "Save changes"}
@@ -410,6 +497,146 @@ function Field({
 
 function isVideoUrl(url: string) {
   return /\.(mp4|webm|mov|m4v|ogg)(\?|#|$)/i.test(url);
+}
+
+function SideButtonsEditor({
+  buttons,
+  onChange,
+}: {
+  buttons: SideButton[];
+  onChange: (next: SideButton[]) => void;
+}) {
+  function update(i: number, patch: Partial<SideButton>) {
+    onChange(buttons.map((b, idx) => (idx === i ? { ...b, ...patch } : b)));
+  }
+  function remove(i: number) {
+    onChange(buttons.filter((_, idx) => idx !== i));
+  }
+  function add() {
+    onChange([
+      ...buttons,
+      {
+        type: "phone",
+        label: "",
+        destination: "",
+        showOnDesktop: true,
+        showOnMobile: true,
+        showInEnglish: true,
+        showInSpanish: true,
+      },
+    ]);
+  }
+
+  return (
+    <div className="space-y-3">
+      {buttons.length === 0 && (
+        <p className="text-xs text-ink-500">
+          No side buttons yet. Click <strong>+ Add button</strong> to add one.
+        </p>
+      )}
+      {buttons.map((b, i) => (
+        <div key={i} className="rounded-lg border border-ink-300/60 bg-white p-4">
+          <div className="grid gap-3 md:grid-cols-[1fr_2fr_auto]">
+            <Field label="Type">
+              <select
+                className="select"
+                value={b.type}
+                onChange={(e) => update(i, { type: e.target.value as SideButton["type"] })}
+              >
+                {(Object.keys(SIDE_BUTTON_PRESETS) as SideButton["type"][]).map((t) => (
+                  <option key={t} value={t}>
+                    {SIDE_BUTTON_PRESETS[t].label}
+                  </option>
+                ))}
+              </select>
+            </Field>
+            <Field label="Destination" help="Phone number for phone/SMS/WhatsApp; URL for Messenger or custom.">
+              <input
+                className="input"
+                placeholder={SIDE_BUTTON_PRESETS[b.type].placeholder}
+                value={b.destination}
+                onChange={(e) => update(i, { destination: e.target.value })}
+              />
+            </Field>
+            <div className="flex items-end">
+              <button
+                type="button"
+                onClick={() => remove(i)}
+                className="rounded-lg border border-rose-200 bg-rose-50 px-3 py-2 text-sm font-medium text-rose-700 hover:bg-rose-100"
+              >
+                Remove
+              </button>
+            </div>
+          </div>
+          <div className="mt-3 grid gap-3 md:grid-cols-2">
+            <Field label="Custom label" help="Optional — overrides the default tooltip when hovering the button.">
+              <input
+                className="input"
+                placeholder="Call us"
+                value={b.label}
+                onChange={(e) => update(i, { label: e.target.value })}
+              />
+            </Field>
+            <div className="flex items-end">
+              <div className="flex flex-wrap gap-2 text-sm">
+                <Toggle
+                  label="Desktop"
+                  checked={b.showOnDesktop}
+                  onChange={(v) => update(i, { showOnDesktop: v })}
+                />
+                <Toggle
+                  label="Mobile"
+                  checked={b.showOnMobile}
+                  onChange={(v) => update(i, { showOnMobile: v })}
+                />
+                <Toggle
+                  label="English"
+                  checked={b.showInEnglish}
+                  onChange={(v) => update(i, { showInEnglish: v })}
+                />
+                <Toggle
+                  label="Spanish"
+                  checked={b.showInSpanish}
+                  onChange={(v) => update(i, { showInSpanish: v })}
+                />
+              </div>
+            </div>
+          </div>
+        </div>
+      ))}
+      <button type="button" className="btn-secondary" onClick={add}>
+        + Add button
+      </button>
+    </div>
+  );
+}
+
+function Toggle({
+  label,
+  checked,
+  onChange,
+}: {
+  label: string;
+  checked: boolean;
+  onChange: (v: boolean) => void;
+}) {
+  return (
+    <label
+      className={`flex cursor-pointer items-center gap-2 rounded-full border px-3 py-1 text-xs font-medium transition ${
+        checked
+          ? "border-brand-500 bg-brand-50 text-brand-700"
+          : "border-ink-300 bg-white text-ink-500"
+      }`}
+    >
+      <input
+        type="checkbox"
+        className="h-3 w-3"
+        checked={checked}
+        onChange={(e) => onChange(e.target.checked)}
+      />
+      {label}
+    </label>
+  );
 }
 
 function ColorInput({ value, onChange }: { value: string; onChange: (v: string) => void }) {

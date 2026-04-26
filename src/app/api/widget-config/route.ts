@@ -58,6 +58,10 @@ export async function GET(req: NextRequest) {
         chatAvatarUrl: client.widgetSettings.chatAvatarUrl,
         enableTranslation: client.widgetSettings.enableTranslation,
         translations: client.widgetSettings.translations,
+        secondWelcomeMessage: client.widgetSettings.secondWelcomeMessage,
+        secondWelcomeDelaySec: client.widgetSettings.secondWelcomeDelaySec,
+        sideButtons: client.widgetSettings.sideButtons ?? [],
+        endCtas: client.widgetSettings.endCtas ?? [],
       },
       features: client.featureToggles,
       flow: client.flowSteps.map((s) => ({

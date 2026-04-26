@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import FlowBuilder from "./FlowBuilder";
+import EndCtasEditor from "./EndCtasEditor";
 
 export const dynamic = "force-dynamic";
 
@@ -8,12 +9,16 @@ type StepTranslations = {
   es?: { question?: string; options?: { value: string; label: string }[] };
 };
 
+type EndCta = { type: "call" | "text" | "schedule" | "link"; label: string; destination: string };
+
 export default async function FlowPage({ params }: { params: { clientId: string } }) {
   const client = await prisma.client.findUnique({
     where: { id: params.clientId },
     include: { widgetSettings: true },
   });
   if (!client) notFound();
+
+  const endCtas = (client.widgetSettings?.endCtas as EndCta[] | null) ?? [];
 
   const steps = await prisma.flowStep.findMany({
     where: { clientId: params.clientId },
@@ -64,6 +69,8 @@ export default async function FlowPage({ params }: { params: { clientId: string 
           };
         })}
       />
+
+      <EndCtasEditor clientId={params.clientId} initial={endCtas} />
     </div>
   );
 }

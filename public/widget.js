@@ -174,7 +174,21 @@
       ".success{display:flex;flex-direction:column;gap:10px;align-items:center;text-align:center;padding:24px;}" +
       ".success .check{width:48px;height:48px;border-radius:999px;background:" + primary + ";color:#fff;font-size:24px;display:flex;align-items:center;justify-content:center;}" +
       ".brand-foot{text-align:center;font-size:11px;color:#64748b;padding:8px;background:#fff;border-top:1px solid #e2e8f0;}" +
-      "@media (max-width:420px){.panel{width:calc(100vw - 16px);height:calc(100vh - 80px);bottom:80px;} .root.right .panel,.root.left .panel{right:8px;left:8px;}}"
+      // Side action buttons stack (Phone / SMS / Messenger / WhatsApp).
+      ".side-stack{position:fixed;bottom:16px;left:16px;z-index:2147482999;display:flex;flex-direction:column-reverse;gap:10px;}" +
+      ".side-btn{width:48px;height:48px;border-radius:999px;background:#fff;border:none;box-shadow:0 8px 22px rgba(15,23,42,.2);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:22px;text-decoration:none;color:#0b1220;transition:transform .15s ease;}" +
+      ".side-btn:hover{transform:scale(1.06);}" +
+      ".side-btn.phone{background:" + primary + ";color:#fff;}" +
+      ".side-btn.sms{background:#0ea5e9;color:#fff;}" +
+      ".side-btn.messenger{background:#0084ff;color:#fff;}" +
+      ".side-btn.whatsapp{background:#25d366;color:#fff;}" +
+      ".side-btn.custom{background:#fff;color:" + primary + ";border:1px solid " + primary + ";}" +
+      // End-of-flow CTA buttons rendered on the success view.
+      ".end-ctas{display:flex;flex-direction:column;gap:8px;width:100%;margin-top:18px;}" +
+      ".end-cta{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;background:" + primary + ";color:#fff;padding:11px 14px;border-radius:12px;font-weight:600;font-size:14px;text-decoration:none;border:none;cursor:pointer;}" +
+      ".end-cta:hover{filter:brightness(1.05);}" +
+      ".end-cta.outline{background:#fff;color:" + primary + ";border:1px solid " + primary + ";}" +
+      "@media (max-width:420px){.panel{width:calc(100vw - 16px);height:calc(100vh - 80px);bottom:80px;} .root.right .panel,.root.left .panel{right:8px;left:8px;} .side-stack{bottom:8px;left:8px;gap:8px;} .side-btn{width:44px;height:44px;}}"
     );
   }
 
@@ -272,6 +286,26 @@
     return wrap;
   }
 
+  function detectInitialLocale(translations) {
+    if (!translations || !translations.es) return "en";
+    try {
+      // 1. URL contains an "/es" path segment.
+      var path = window.location.pathname || "";
+      if (/(^|\/)es(\/|$)/i.test(path)) return "es";
+      // 2. ?lang=es or ?locale=es in query string.
+      if (/[?&](lang|locale)=es\b/i.test(window.location.search || "")) return "es";
+      // 3. <html lang="es"> on the host page.
+      var docLang = (document.documentElement.lang || "").toLowerCase();
+      if (docLang.indexOf("es") === 0) return "es";
+    } catch (_e) {}
+    return "en";
+  }
+
+  function isMobileViewport() {
+    try { return window.matchMedia("(max-width: 768px)").matches; } catch (_e) {}
+    return false;
+  }
+
   function ChatWidget(config) {
     var answers = {};
     var transcript = [];
@@ -281,7 +315,9 @@
     var openBtn, tooltipNode;
     var isOpen = false;
     var panel = null;
-    var currentLocale = "en";
+    var sideStackHost = null;
+    var secondWelcomeTimer = null;
+    var currentLocale = detectInitialLocale(config.widget && config.widget.translations);
     var currentStepInputState = null; // { step } so we can rerender on locale change
     var introCleared = false;
     var introBgEl = null;        // .intro-bg wrapper for background-mode video
@@ -354,6 +390,152 @@
       document.body.appendChild(host);
 
       renderBubble();
+      renderSideButtons();
+      scheduleSecondWelcome();
+    }
+
+    function renderSideButtons() {
+      var list = config.widget.sideButtons || [];
+      if (!list.length) return;
+      var mobile = isMobileViewport();
+      var locale = currentLocale;
+      var visible = list.filter(function (b) {
+        if (!b || !b.destination) return false;
+        if (mobile && !b.showOnMobile) return false;
+        if (!mobile && !b.showOnDesktop) return false;
+        if (locale === "es" && !b.showInSpanish) return false;
+        if (locale === "en" && !b.showInEnglish) return false;
+        return true;
+      });
+      if (!visible.length) return;
+      sideStackHost = document.createElement("div");
+      sideStackHost.setAttribute("data-rjl-side-stack", "");
+      var sideShadow = sideStackHost.attachShadow({ mode: "open" });
+      var s = document.createElement("style");
+      s.textContent = buildStyles(config.widget.primaryColor, config.widget.accentColor);
+      sideShadow.appendChild(s);
+      var stack = el("div", { className: "side-stack" });
+      visible.forEach(function (b) {
+        var href = sideButtonHref(b);
+        var icon = sideButtonIcon(b.type);
+        var title = b.label || sideButtonDefaultLabel(b.type);
+        var node = el("a", {
+          className: "side-btn " + b.type,
+          href: href,
+          target: b.type === "messenger" || b.type === "custom" ? "_blank" : undefined,
+          rel: "noopener",
+          "aria-label": title,
+          title: title,
+        }, [icon]);
+        stack.appendChild(node);
+      });
+      sideShadow.appendChild(stack);
+      document.body.appendChild(sideStackHost);
+    }
+
+    function sideButtonHref(b) {
+      var dest = (b.destination || "").trim();
+      switch (b.type) {
+        case "phone":
+          return "tel:" + dest.replace(/[^+\d]/g, "");
+        case "sms":
+          return "sms:" + dest.replace(/[^+\d]/g, "");
+        case "whatsapp":
+          if (/^https?:\/\//i.test(dest)) return dest;
+          return "https://wa.me/" + dest.replace(/[^+\d]/g, "").replace(/^\+/, "");
+        case "messenger":
+          if (/^https?:\/\//i.test(dest)) return dest;
+          return "https://m.me/" + dest;
+        case "custom":
+        default:
+          return dest;
+      }
+    }
+
+    function sideButtonIcon(type) {
+      // Minimal inline SVGs so the icons render the same on every platform
+      // (vs. emoji which can look very different across OS/browsers).
+      var SVG_NS = "http://www.w3.org/2000/svg";
+      var svg = document.createElementNS(SVG_NS, "svg");
+      svg.setAttribute("width", "22");
+      svg.setAttribute("height", "22");
+      svg.setAttribute("viewBox", "0 0 24 24");
+      svg.setAttribute("fill", "currentColor");
+      svg.setAttribute("aria-hidden", "true");
+      var d;
+      switch (type) {
+        case "phone":
+          d = "M20 15.5c-1.25 0-2.45-.2-3.57-.57-.35-.11-.74-.03-1.02.24l-2.2 2.2c-2.83-1.44-5.15-3.75-6.59-6.59l2.2-2.21c.28-.26.36-.65.25-1C8.7 6.45 8.5 5.25 8.5 4c0-.55-.45-1-1-1H4c-.55 0-1 .45-1 1 0 9.39 7.61 17 17 17 .55 0 1-.45 1-1v-3.5c0-.55-.45-1-1-1z";
+          break;
+        case "sms":
+          d = "M20 2H4c-1.1 0-1.99.9-1.99 2L2 22l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm-2 12H6v-2h12v2zm0-3H6V9h12v2zm0-3H6V6h12v2z";
+          break;
+        case "messenger":
+          d = "M12 2C6.48 2 2 6.16 2 11.13c0 2.84 1.45 5.36 3.7 7l-.04 4.07 3.84-2.1c.79.22 1.62.34 2.5.34 5.52 0 10-4.16 10-9.31C22 6.16 17.52 2 12 2zm1.16 12.13l-2.59-2.74-4.95 2.74 5.45-5.78 2.65 2.74 4.89-2.74-5.45 5.78z";
+          break;
+        case "whatsapp":
+          d = "M17.6 14.5c-.3-.15-1.7-.83-1.95-.93-.27-.1-.46-.15-.65.15-.2.3-.75.93-.92 1.12-.17.2-.35.22-.65.07-.3-.15-1.27-.47-2.42-1.5-.9-.8-1.5-1.78-1.67-2.08-.18-.3-.02-.46.13-.6.13-.13.3-.34.45-.51.15-.18.2-.3.3-.5.1-.2.05-.37-.02-.52-.07-.15-.65-1.58-.9-2.17-.24-.57-.48-.49-.66-.5h-.56c-.2 0-.5.07-.77.37-.27.3-1.04 1.02-1.04 2.49 0 1.47 1.07 2.89 1.22 3.09.15.2 2.1 3.22 5.1 4.51.71.31 1.27.49 1.7.63.71.23 1.36.2 1.87.12.57-.09 1.75-.72 2.0-1.43.25-.7.25-1.31.18-1.43-.07-.13-.27-.2-.57-.35zM12.04 2C6.58 2 2.13 6.45 2.13 11.91c0 1.74.45 3.45 1.32 4.95L2 22l5.25-1.38c1.45.79 3.08 1.21 4.79 1.21h.01c5.46 0 9.91-4.45 9.91-9.91 0-2.65-1.03-5.14-2.91-7.02C17.18 3.03 14.69 2 12.04 2z";
+          break;
+        default:
+          d = "M14 3v2h3.59l-9.83 9.83 1.41 1.41L19 6.41V10h2V3h-7zM5 5h4V3H3v18h18v-6h-2v4H5V5z";
+      }
+      var path = document.createElementNS(SVG_NS, "path");
+      path.setAttribute("d", d);
+      svg.appendChild(path);
+      return svg;
+    }
+
+    function sideButtonDefaultLabel(type) {
+      switch (type) {
+        case "phone": return currentLocale === "es" ? "Llamar" : "Call us";
+        case "sms": return currentLocale === "es" ? "Mensaje" : "Text us";
+        case "messenger": return "Messenger";
+        case "whatsapp": return "WhatsApp";
+        default: return "Link";
+      }
+    }
+
+    function scheduleSecondWelcome() {
+      var msg = currentLocale === "es"
+        && config.widget.translations
+        && config.widget.translations.es
+        && config.widget.translations.es.secondWelcomeMessage
+          ? config.widget.translations.es.secondWelcomeMessage
+          : config.widget.secondWelcomeMessage;
+      if (!msg || isOpen) return;
+      var delaySec = Number(config.widget.secondWelcomeDelaySec) || 30;
+      secondWelcomeTimer = setTimeout(function () {
+        if (isOpen) return;
+        // Replace the existing tooltip with a fresh node so the fan-out
+        // animation fires again — re-engagement should feel like a new
+        // message arrived.
+        var imgUrl = config.widget.bubbleImageUrl;
+        if (!imgUrl || !root) return;
+        var wrap = openBtn;
+        if (!wrap) return;
+        // Strip any existing tooltip first.
+        if (tooltipNode && tooltipNode.parentNode) {
+          tooltipNode.parentNode.removeChild(tooltipNode);
+          tooltipNode = null;
+        }
+        tooltipNode = el("div", { className: "tooltip" }, [
+          msg,
+          el("button", {
+            className: "x",
+            type: "button",
+            "aria-label": "Dismiss",
+            onClick: function (e) {
+              e.stopPropagation();
+              if (tooltipNode && tooltipNode.parentNode) {
+                tooltipNode.parentNode.removeChild(tooltipNode);
+              }
+              tooltipNode = null;
+            },
+          }, ["×"]),
+        ]);
+        if (wrap.firstChild) wrap.insertBefore(tooltipNode, wrap.firstChild);
+        else wrap.appendChild(tooltipNode);
+      }, delaySec * 1000);
     }
 
     function renderBubble() {
@@ -409,6 +591,10 @@
     function open() {
       if (isOpen) return;
       isOpen = true;
+      if (secondWelcomeTimer) {
+        clearTimeout(secondWelcomeTimer);
+        secondWelcomeTimer = null;
+      }
       if (openBtn) openBtn.style.display = "none";
       renderPanel();
       maybeRenderIntroVideo();
@@ -946,6 +1132,12 @@
         header.parentNode.replaceChild(newHeader, header);
         header = newHeader;
       }
+      // Side buttons may have locale-specific visibility; rebuild them.
+      if (sideStackHost && sideStackHost.parentNode) {
+        sideStackHost.parentNode.removeChild(sideStackHost);
+        sideStackHost = null;
+      }
+      renderSideButtons();
       // Retranslate the most recent bot message (current question) in place.
       if (lastBotMsgEl) {
         if (currentStepInputState && currentStepInputState.step) {
@@ -993,13 +1185,44 @@
     function renderSuccess() {
       clearFooter();
       while (body.firstChild) body.removeChild(body.firstChild);
-      var wrap = el("div", { className: "success" }, [
+      var children = [
         el("div", { className: "check" }, ["✓"]),
         el("div", { style: { fontWeight: "600", fontSize: "16px" } }, [strings().successTitle]),
         el("div", { style: { fontSize: "14px", color: "#475569" } }, [strings().successBody(config.business.name)]),
-      ]);
+      ];
+      var ctas = (config.widget.endCtas || []).filter(function (c) {
+        return c && c.label && c.destination;
+      });
+      if (ctas.length) {
+        var ctaWrap = el("div", { className: "end-ctas" });
+        ctas.forEach(function (c, idx) {
+          ctaWrap.appendChild(el("a", {
+            className: "end-cta" + (idx === 0 ? "" : " outline"),
+            href: endCtaHref(c),
+            target: c.type === "schedule" || c.type === "link" ? "_blank" : undefined,
+            rel: "noopener",
+          }, [endCtaIcon(c.type) + "  " + c.label]));
+        });
+        children.push(ctaWrap);
+      }
+      var wrap = el("div", { className: "success" }, children);
       body.appendChild(wrap);
       if (progressBar) progressBar.style.width = "100%";
+    }
+
+    function endCtaHref(c) {
+      var dest = (c.destination || "").trim();
+      if (c.type === "call") return "tel:" + dest.replace(/[^+\d]/g, "");
+      if (c.type === "text") return "sms:" + dest.replace(/[^+\d]/g, "");
+      return dest;
+    }
+    function endCtaIcon(type) {
+      switch (type) {
+        case "call": return "📞";
+        case "text": return "💬";
+        case "schedule": return "📅";
+        default: return "↗";
+      }
     }
 
     mount();

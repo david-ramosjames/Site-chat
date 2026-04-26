@@ -54,9 +54,24 @@ model WidgetSettings {
   chatAvatarUrl String?
 
   // Optional Spanish (or future multi-locale) copy. Shape:
-  // { es: { welcomeMessage, bubbleText, bubbleTooltip } }
+  // { es: { welcomeMessage, bubbleText, bubbleTooltip, secondWelcomeMessage } }
   enableTranslation Boolean @default(false)
   translations      Json?
+
+  // Optional second welcome message that replaces the bubble tooltip after
+  // `secondWelcomeDelaySec` seconds of inactivity (re-engagement).
+  secondWelcomeMessage  String?
+  secondWelcomeDelaySec Int     @default(30)
+
+  // Optional column of action buttons (Phone, SMS, Messenger, WhatsApp, custom)
+  // shown opposite the chat bubble. Each entry has its own device + locale gates.
+  // Shape: [{ type, label, destination, showOnDesktop, showOnMobile,
+  //           showInEnglish, showInSpanish }]
+  sideButtons Json?
+
+  // Optional end-of-flow CTAs shown after a lead submits. Shape:
+  // [{ type: 'call'|'text'|'schedule'|'link', label, destination }]
+  endCtas Json?
 
   client Client @relation(fields: [clientId], references: [id], onDelete: Cascade)
 }
