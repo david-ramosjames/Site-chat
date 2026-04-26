@@ -89,13 +89,15 @@
       ".tooltip .x:hover{color:#0b1220;}" +
       ".avatar-btn{width:64px;height:64px;border-radius:999px;border:3px solid " + primary + ";background:#fff;cursor:pointer;padding:0;overflow:hidden;box-shadow:0 8px 24px rgba(15,23,42,.18);position:relative;animation:tc-pulse 2.6s ease-in-out infinite;}" +
       ".avatar-btn:hover{transform:scale(1.04);transition:transform .15s ease;}" +
-      ".avatar-btn img{width:100%;height:100%;object-fit:cover;display:block;}" +
+      ".avatar-btn img,.avatar-btn video{width:100%;height:100%;object-fit:cover;display:block;}" +
       ".avatar-btn .play{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,.18);color:#fff;font-size:20px;}" +
       "@keyframes tc-pulse{0%,100%{box-shadow:0 8px 24px rgba(15,23,42,.18),0 0 0 0 " + primary + "55;}50%{box-shadow:0 8px 24px rgba(15,23,42,.18),0 0 0 10px " + primary + "00;}}" +
       ".panel{position:fixed;bottom:88px;width:380px;max-width:calc(100vw - 24px);height:600px;max-height:calc(100vh - 110px);background:#fff;border-radius:18px;overflow:hidden;box-shadow:0 20px 50px rgba(15,23,42,.25);display:flex;flex-direction:column;}" +
       ".root.right .panel{right:16px;} .root.left .panel{left:16px;}" +
       ".header{background:" + primary + ";color:#fff;padding:14px 16px;display:flex;align-items:center;gap:10px;}" +
       ".header img.logo{height:22px;max-width:100px;object-fit:contain;}" +
+      ".brand-avatar{width:36px;height:36px;border-radius:999px;overflow:hidden;flex-shrink:0;background:rgba(255,255,255,.18);}" +
+      ".brand-avatar img,.brand-avatar video{width:100%;height:100%;object-fit:cover;display:block;}" +
       ".header .bname{font-weight:600;font-size:14px;}" +
       ".header .sub{font-size:12px;opacity:.85;}" +
       ".header .actions{margin-left:auto;display:flex;align-items:center;gap:6px;}" +
@@ -176,6 +178,29 @@
       },
     },
   };
+
+  function isVideoUrl(url) {
+    return /\.(mp4|webm|mov|m4v|ogg)(\?|#|$)/i.test(url || "");
+  }
+
+  // Renders a still image, animated GIF, or muted-looping video for use as
+  // the floating bubble or the panel header avatar. Returns a node or null.
+  function renderAvatarMedia(url, alt) {
+    if (!url) return null;
+    if (isVideoUrl(url)) {
+      var v = el("video", {
+        autoplay: "true",
+        loop: "true",
+        playsinline: "true",
+        "webkit-playsinline": "true",
+        "aria-hidden": "true",
+      });
+      v.muted = true; // attribute alone won't satisfy iOS Safari autoplay
+      v.appendChild(el("source", { src: url }));
+      return v;
+    }
+    return el("img", { src: url, alt: alt || "" });
+  }
 
   function buildMediaNode(step) {
     if (!step.mediaType || step.mediaType === "none" || !step.mediaUrl) return null;
@@ -308,11 +333,14 @@
           type: "button",
           "aria-label": "Open chat",
           onClick: open,
-        }, [
-          el("img", { src: imgUrl, alt: config.business.name }),
-        ]);
-        // Subtle "play" overlay if an intro video is configured.
-        if (config.widget.introVideoEnabled && config.widget.introVideoUrl) {
+        }, [renderAvatarMedia(imgUrl, config.business.name)]);
+        // Subtle "play" overlay only when the bubble itself is a still image
+        // and an intro video is configured — gives a hint without doubling up.
+        if (
+          !isVideoUrl(imgUrl) &&
+          config.widget.introVideoEnabled &&
+          config.widget.introVideoUrl
+        ) {
           avatar.appendChild(el("span", { className: "play" }, ["▶"]));
         }
         wrap.appendChild(avatar);
@@ -359,16 +387,31 @@
         onClick: close,
       }, ["×"]));
 
+      // Prefer the headshot/avatar in the header for a "real person" feel;
+      // fall back to logo, then to the business initial.
+      var brandNode;
+      if (config.widget.bubbleImageUrl) {
+        brandNode = el("div", { className: "brand-avatar" }, [
+          renderAvatarMedia(config.widget.bubbleImageUrl, config.business.name),
+        ]);
+      } else if (config.widget.logoUrl) {
+        brandNode = el("img", {
+          className: "logo",
+          src: config.widget.logoUrl,
+          alt: config.business.name,
+        });
+      } else {
+        brandNode = el("div", {
+          style: {
+            width: "28px", height: "28px", borderRadius: "999px",
+            background: "rgba(255,255,255,.2)", display: "flex",
+            alignItems: "center", justifyContent: "center", fontWeight: "600",
+          },
+        }, [config.business.name.slice(0, 1)]);
+      }
+
       return el("div", { className: "header" }, [
-        config.widget.logoUrl
-          ? el("img", { className: "logo", src: config.widget.logoUrl, alt: config.business.name })
-          : el("div", {
-              style: {
-                width: "28px", height: "28px", borderRadius: "999px",
-                background: "rgba(255,255,255,.2)", display: "flex",
-                alignItems: "center", justifyContent: "center", fontWeight: "600",
-              },
-            }, [config.business.name.slice(0, 1)]),
+        brandNode,
         el("div", {}, [
           el("div", { className: "bname" }, [config.business.name]),
           el("div", { className: "sub" }, [strings().sub]),

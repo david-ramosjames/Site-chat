@@ -150,13 +150,13 @@ export default function SettingsForm({ clientId, initial }: { clientId: string; 
         >
           <div className="grid gap-5 sm:grid-cols-2">
             <Field
-              label="Bubble image URL"
-              help="Optional. A circular avatar (e.g. attorney headshot)."
+              label="Bubble avatar URL"
+              help="Static photo, animated GIF, or a muted-looping video clip (.mp4/.webm). The same avatar also appears in the chat panel header."
               full
             >
               <input
                 className="input"
-                placeholder="https://cdn.example.com/headshot.jpg"
+                placeholder="https://cdn.example.com/attorney-loop.mp4"
                 value={form.bubbleImageUrl}
                 onChange={(e) => set("bubbleImageUrl", e.target.value)}
               />
@@ -302,15 +302,29 @@ export default function SettingsForm({ clientId, initial }: { clientId: string; 
             </div>
           )}
           {form.bubbleImageUrl ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img
-              src={form.bubbleImageUrl}
-              alt="bubble avatar preview"
-              className={`absolute bottom-4 h-16 w-16 rounded-full border-4 object-cover shadow-card ${
-                form.widgetPosition === "bottom-right" ? "right-4" : "left-4"
-              }`}
-              style={{ borderColor: form.primaryColor }}
-            />
+            isVideoUrl(form.bubbleImageUrl) ? (
+              <video
+                src={form.bubbleImageUrl}
+                autoPlay
+                muted
+                loop
+                playsInline
+                className={`absolute bottom-4 h-16 w-16 rounded-full border-4 object-cover shadow-card ${
+                  form.widgetPosition === "bottom-right" ? "right-4" : "left-4"
+                }`}
+                style={{ borderColor: form.primaryColor }}
+              />
+            ) : (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                src={form.bubbleImageUrl}
+                alt="bubble avatar preview"
+                className={`absolute bottom-4 h-16 w-16 rounded-full border-4 object-cover shadow-card ${
+                  form.widgetPosition === "bottom-right" ? "right-4" : "left-4"
+                }`}
+                style={{ borderColor: form.primaryColor }}
+              />
+            )
           ) : (
             <button
               type="button"
@@ -366,6 +380,10 @@ function Field({
       {help && <p className="help">{help}</p>}
     </div>
   );
+}
+
+function isVideoUrl(url: string) {
+  return /\.(mp4|webm|mov|m4v|ogg)(\?|#|$)/i.test(url);
 }
 
 function ColorInput({ value, onChange }: { value: string; onChange: (v: string) => void }) {
