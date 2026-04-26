@@ -159,7 +159,8 @@ export default function SettingsForm({ clientId, initial }: { clientId: string; 
             >
               <p className="font-semibold">Open chat automatically</p>
               <p className="mt-1 text-xs text-ink-500">
-                Panel pops open on page load — the intro video starts immediately.
+                Desktop only. Panel pops open on page load so the intro video starts immediately.
+                Mobile visitors still see the floating avatar.
               </p>
             </button>
           </div>

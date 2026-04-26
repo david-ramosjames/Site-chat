@@ -106,10 +106,9 @@
       ".header .actions{margin-left:auto;display:flex;align-items:center;gap:6px;}" +
       ".header .lang{background:rgba(255,255,255,.18);border:1px solid rgba(255,255,255,.4);color:#fff;border-radius:999px;padding:5px 11px;font-size:13px;font-weight:600;cursor:pointer;}" +
       ".header .lang:hover{background:rgba(255,255,255,.28);}" +
-      ".header .expand{background:#fbbf24;border:none;color:#1f2937;border-radius:999px;width:34px;height:34px;cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:0 0 0 0 rgba(251,191,36,.6);animation:tc-expand-pulse 2.2s ease-in-out infinite;}" +
-      ".header .expand:hover{filter:brightness(1.05);}" +
+      ".header .expand{background:rgba(255,255,255,.18);border:1px solid rgba(255,255,255,.4);color:#fff;border-radius:999px;width:34px;height:34px;cursor:pointer;display:flex;align-items:center;justify-content:center;}" +
+      ".header .expand:hover{background:rgba(255,255,255,.28);}" +
       ".header .expand svg{width:16px;height:16px;}" +
-      "@keyframes tc-expand-pulse{0%,100%{box-shadow:0 0 0 0 rgba(251,191,36,.55);}50%{box-shadow:0 0 0 8px rgba(251,191,36,0);}}" +
       ".header .close{background:transparent;border:none;color:#fff;font-size:24px;cursor:pointer;padding:4px 8px;line-height:1;}" +
       // Centered modal mode for the panel.
       ".tc-backdrop{position:fixed;inset:0;background:rgba(15,23,42,.55);z-index:2147482998;animation:tc-fade-in .25s ease both;}" +
@@ -127,7 +126,7 @@
       ".intro-bg .play-overlay{position:absolute;inset:0;display:none;align-items:center;justify-content:center;background:rgba(0,0,0,.35);color:#fff;font-size:48px;pointer-events:none;}" +
       ".intro-bg.is-paused .play-overlay{display:flex;}" +
       // Anchor initial messages to the lower half of the panel so the video remains visible.
-      ".panel.video-bg .body{position:relative;z-index:2;background:transparent;justify-content:flex-end;padding-top:40%;}" +
+      ".panel.video-bg .body{position:relative;z-index:2;background:transparent;justify-content:flex-end;padding-top:55%;}" +
       ".panel.video-bg .header{position:relative;z-index:3;background:linear-gradient(180deg,rgba(0,0,0,.55),rgba(0,0,0,0));}" +
       ".panel.video-bg .header .lang{background:rgba(0,0,0,.4);border-color:rgba(255,255,255,.55);}" +
       ".panel.video-bg .progress{position:relative;z-index:3;background:rgba(0,0,0,.35);}" +
@@ -166,7 +165,7 @@
       ".media{margin:6px 0;border-radius:12px;overflow:hidden;background:#000;max-width:90%;align-self:flex-start;}" +
       ".media img,.media video,.media iframe{display:block;width:100%;max-height:180px;object-fit:cover;border:0;}" +
       ".footer{border-top:1px solid #e2e8f0;padding:11px 13px;background:#fff;display:flex;flex-direction:column;gap:8px;}" +
-      ".options{display:flex;flex-wrap:wrap;gap:6px;}" +
+      ".options{display:flex;flex-wrap:wrap;gap:6px;max-height:184px;overflow-y:auto;}" +
       ".opt{background:#fff;color:" + primary + ";border:1px solid " + primary + ";border-radius:999px;padding:7px 14px;font-size:14px;font-weight:600;cursor:pointer;}" +
       ".opt:hover{background:" + primary + ";color:#fff;}" +
       ".undo-row{display:flex;align-self:flex-end;align-items:center;gap:6px;margin-top:-4px;}" +
@@ -199,7 +198,7 @@
       ".end-cta{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;background:" + primary + ";color:#fff;padding:13px 16px;border-radius:12px;font-weight:600;font-size:15px;text-decoration:none;border:none;cursor:pointer;}" +
       ".end-cta:hover{filter:brightness(1.05);}" +
       ".end-cta.outline{background:#fff;color:" + primary + ";border:1px solid " + primary + ";}" +
-      "@media (max-width:420px){.panel{width:calc(100vw - 16px);height:calc(100vh - 80px);bottom:80px;} .root.right .panel,.root.left .panel{right:8px;left:8px;} .side-stack{left:8px;gap:8px;} .side-stack.bottom{bottom:8px;} .side-btn{width:50px;height:50px;}}"
+      "@media (max-width:420px){.panel{width:calc(100vw - 16px);height:calc(100vh - 80px);bottom:80px;} .root.right .panel,.root.left .panel{right:8px;left:8px;} .side-stack{left:8px;gap:8px;} .side-stack.bottom{bottom:8px;} .side-btn{width:53px;height:53px;} .avatar-btn{width:84px;height:84px;}}"
     );
   }
 
@@ -406,9 +405,9 @@
       renderSideButtons();
       scheduleSecondWelcome();
 
-      if (config.widget.openOnLoad) {
-        // Slight delay so the host page can settle (and so the auto-open
-        // doesn't race the avatar/tooltip animations).
+      // Auto-open is desktop-only — on mobile we keep the floating bubble
+      // so visitors aren't smacked with a full-screen panel uninvited.
+      if (config.widget.openOnLoad && !isMobileViewport()) {
         setTimeout(function () {
           if (!isOpen) open();
         }, 600);
