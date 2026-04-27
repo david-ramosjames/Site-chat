@@ -70,6 +70,7 @@ export const widgetSettingsSchema = z.object({
       z.object({
         type: z.enum(["call", "text", "schedule", "link"]),
         label: z.string().min(1).max(60),
+        labelEs: z.string().max(60).optional().nullable(),
         destination: z.string().min(1).max(500),
       })
     )
@@ -86,6 +87,7 @@ export const endCtasUpdateSchema = z.object({
       z.object({
         type: z.enum(["call", "text", "schedule", "link"]),
         label: z.string().min(1).max(60),
+        labelEs: z.string().max(60).optional().nullable(),
         destination: z.string().min(1).max(500),
       })
     )

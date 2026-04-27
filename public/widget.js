@@ -136,9 +136,9 @@
       // content overflows, the strip scrolls internally.
       // Background-mode chat strip: anchored to the bottom of the panel as a
       // strip, but content inside the strip stacks top-to-bottom (newest at
-      // the bottom) with auto-scroll. Generous top padding gives the
-      // visitor scrollable headroom over the face when they scroll up.
-      ".panel.video-bg .body{flex:0 0 auto;margin-top:auto;height:38%;overflow-y:auto;position:relative;z-index:2;background:transparent;padding-top:60px;}" +
+      // the bottom) with auto-scroll suppressed so the welcome message
+      // appears just below the speaker's face on initial load.
+      ".panel.video-bg .body{flex:0 0 auto;margin-top:auto;height:38%;overflow-y:auto;position:relative;z-index:2;background:transparent;}" +
       ".panel.video-bg .header{position:relative;z-index:3;background:linear-gradient(180deg,rgba(0,0,0,.55),rgba(0,0,0,0));}" +
       ".panel.video-bg .header .lang{background:rgba(0,0,0,.4);border-color:rgba(255,255,255,.55);}" +
       ".panel.video-bg .progress{position:relative;z-index:3;background:rgba(0,0,0,.35);}" +
@@ -206,10 +206,19 @@
       ".side-btn.whatsapp{background:#25d366;color:#fff;}" +
       ".side-btn.custom{background:#fff;color:" + primary + ";border:1px solid " + primary + ";}" +
       // End-of-flow CTA buttons rendered on the success view.
-      ".end-ctas{display:flex;flex-direction:column;gap:8px;width:100%;margin-top:18px;}" +
+      ".end-ctas{display:flex;flex-direction:column;gap:10px;width:100%;margin-top:18px;}" +
       ".end-cta{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;background:" + primary + ";color:#fff;padding:13px 16px;border-radius:12px;font-weight:600;font-size:15px;text-decoration:none;border:none;cursor:pointer;}" +
       ".end-cta:hover{filter:brightness(1.05);}" +
       ".end-cta.outline{background:#fff;color:" + primary + ";border:1px solid " + primary + ";}" +
+      // Engaging two-line layout for Call/Text CTAs: prominent pulsing icon
+      // on the left, label on top with the formatted phone number below.
+      ".end-cta.phone{display:flex;align-items:center;justify-content:flex-start;gap:14px;padding:14px 18px;text-align:left;}" +
+      ".end-cta.phone .cta-icon{flex-shrink:0;width:42px;height:42px;border-radius:999px;background:rgba(255,255,255,.22);display:flex;align-items:center;justify-content:center;font-size:20px;animation:tc-call-pulse 2s ease-in-out infinite;}" +
+      ".end-cta.phone.outline .cta-icon{background:" + primary + "1f;color:" + primary + ";}" +
+      "@keyframes tc-call-pulse{0%,100%{box-shadow:0 0 0 0 rgba(255,255,255,.55);}50%{box-shadow:0 0 0 9px rgba(255,255,255,0);}}" +
+      ".end-cta.phone .cta-text{display:flex;flex-direction:column;line-height:1.2;flex:1;min-width:0;}" +
+      ".end-cta.phone .cta-label{font-size:15px;font-weight:700;}" +
+      ".end-cta.phone .cta-sub{font-size:14px;font-weight:600;opacity:.92;letter-spacing:.2px;margin-top:2px;}" +
       "@media (max-width:420px){.panel{width:calc(100vw - 16px);height:calc(100vh - 80px);bottom:80px;} .root.right .panel,.root.left .panel{right:8px;left:8px;} .side-stack{left:8px;gap:8px;} .side-stack.bottom{bottom:8px;} .side-btn{width:53px;height:53px;} .avatar-btn{width:84px;height:84px;}}"
     );
   }
@@ -1404,16 +1413,26 @@
       if (ctas.length) {
         var ctaWrap = el("div", { className: "end-ctas" });
         ctas.forEach(function (c, idx) {
-          var label = c.label;
-          if ((c.type === "call" || c.type === "text") && c.destination) {
-            label = label + " · " + formatPhoneDisplay(c.destination);
-          }
-          ctaWrap.appendChild(el("a", {
-            className: "end-cta" + (idx === 0 ? "" : " outline"),
+          var label = (currentLocale === "es" && c.labelEs) ? c.labelEs : c.label;
+          var outline = idx === 0 ? "" : " outline";
+          var attrs = {
             href: endCtaHref(c),
             target: c.type === "schedule" || c.type === "link" ? "_blank" : undefined,
             rel: "noopener",
-          }, [endCtaIcon(c.type) + "  " + label]));
+          };
+          if (c.type === "call" || c.type === "text") {
+            // Two-line engaging layout with pulsing icon and formatted number.
+            var iconWrap = el("span", { className: "cta-icon" }, [endCtaIcon(c.type)]);
+            var textWrap = el("span", { className: "cta-text" }, [
+              el("span", { className: "cta-label" }, [label]),
+              el("span", { className: "cta-sub" }, [formatPhoneDisplay(c.destination)]),
+            ]);
+            attrs.className = "end-cta phone" + outline;
+            ctaWrap.appendChild(el("a", attrs, [iconWrap, textWrap]));
+          } else {
+            attrs.className = "end-cta" + outline;
+            ctaWrap.appendChild(el("a", attrs, [endCtaIcon(c.type) + "  " + label]));
+          }
         });
         children.push(ctaWrap);
       }

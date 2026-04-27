@@ -11,7 +11,12 @@ type StepTranslations = {
 };
 type StepNextLogic = { byOption?: Record<string, string> | null } | null;
 
-type EndCta = { type: "call" | "text" | "schedule" | "link"; label: string; destination: string };
+type EndCta = {
+  type: "call" | "text" | "schedule" | "link";
+  label: string;
+  labelEs?: string | null;
+  destination: string;
+};
 
 type WidgetTranslations = {
   es?: { declineHeadline?: string; declineMessage?: string };
@@ -78,7 +83,11 @@ export default async function FlowPage({ params }: { params: { clientId: string 
         })}
       />
 
-      <EndCtasEditor clientId={params.clientId} initial={endCtas} />
+      <EndCtasEditor
+        clientId={params.clientId}
+        initial={endCtas}
+        translationsEnabled={ws?.enableTranslation ?? false}
+      />
 
       <DeclineEditor
         clientId={params.clientId}

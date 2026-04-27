@@ -2,7 +2,12 @@
 
 import { useState, useTransition } from "react";
 
-type EndCta = { type: "call" | "text" | "schedule" | "link"; label: string; destination: string };
+type EndCta = {
+  type: "call" | "text" | "schedule" | "link";
+  label: string;
+  labelEs?: string | null;
+  destination: string;
+};
 
 const PRESETS: Record<EndCta["type"], { label: string; placeholder: string; defaultLabel: string }> = {
   call: { label: "Call", placeholder: "+15125550100", defaultLabel: "Call us" },
@@ -18,9 +23,11 @@ const PRESETS: Record<EndCta["type"], { label: string; placeholder: string; defa
 export default function EndCtasEditor({
   clientId,
   initial,
+  translationsEnabled,
 }: {
   clientId: string;
   initial: EndCta[];
+  translationsEnabled: boolean;
 }) {
   const [ctas, setCtas] = useState<EndCta[]>(initial);
   const [saving, startTransition] = useTransition();
@@ -36,7 +43,7 @@ export default function EndCtasEditor({
   function add() {
     setCtas((c) => [
       ...c,
-      { type: "call", label: PRESETS.call.defaultLabel, destination: "" },
+      { type: "call", label: PRESETS.call.defaultLabel, labelEs: "", destination: "" },
     ]);
   }
 
@@ -48,7 +55,12 @@ export default function EndCtasEditor({
         method: "PUT",
         headers: { "content-type": "application/json" },
         body: JSON.stringify({
-          endCtas: ctas.filter((c) => c.destination.trim() && c.label.trim()),
+          endCtas: ctas
+            .filter((c) => c.destination.trim() && c.label.trim())
+            .map((c) => ({
+              ...c,
+              labelEs: (c.labelEs || "").trim() || null,
+            })),
         }),
       });
       if (!res.ok) {
@@ -141,6 +153,17 @@ export default function EndCtasEditor({
                 </button>
               </div>
             </div>
+            {translationsEnabled && (
+              <div className="mt-3 rounded-lg border border-ink-300/60 bg-ink-100/40 p-3">
+                <label className="label">Button label — Spanish</label>
+                <input
+                  className="input"
+                  placeholder={c.type === "call" ? "Llámanos" : c.type === "text" ? "Envía un mensaje" : c.type === "schedule" ? "Reservar cita" : "Más información"}
+                  value={c.labelEs ?? ""}
+                  onChange={(e) => update(i, { labelEs: e.target.value })}
+                />
+              </div>
+            )}
           </li>
         ))}
       </ul>
