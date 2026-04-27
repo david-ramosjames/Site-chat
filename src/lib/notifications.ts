@@ -34,54 +34,33 @@ export async function sendLeadNotifications(
   await Promise.all(tasks);
 }
 
-async function postSlack(url: string, lead: Lead, summary: string, businessName: string) {
-  // Slack incoming webhooks expect { text } or { blocks } — anything else
-  // returns 400 invalid_payload. Build a tidy Block Kit message.
-  const adminBase = (process.env.NEXT_PUBLIC_APP_URL || "").replace(/\/$/, "");
-  const adminLink = adminBase
-    ? `${adminBase}/admin/${lead.clientId}/leads/${lead.id}`
-    : null;
+async function postSlack(url: string, lead: Lead, _summary: string, businessName: string) {
+  // Slack webhooks treat `text` as mrkdwn by default, so a simple
+  // multi-line message renders as a tidy card without the strictness of
+  // Block Kit (which can 400 on tiny config issues like a missing
+  // protocol on a URL or unknown field).
+  const adminLink = safeAdminLink(lead);
 
-  const detail = [
+  const lines = [
+    `🟢 *New lead — ${businessName}*`,
+    "",
     fieldLine("Name", lead.name),
     fieldLine("Phone", lead.phone),
     fieldLine("Email", lead.email),
     fieldLine("Service", lead.serviceRequested),
     fieldLine("Urgency", lead.urgency),
-    fieldLine("From", lead.sourceUrl),
+    lead.sourceUrl ? `*From:* <${lead.sourceUrl}>` : null,
     fieldLine("UTM", utmSummary(lead)),
+    adminLink ? `\n<${adminLink}|Open in admin →>` : null,
   ]
     .filter((s): s is string => !!s)
     .join("\n");
-
-  const blocks: unknown[] = [
-    {
-      type: "header",
-      text: { type: "plain_text", text: `🟢 New lead — ${businessName}`, emoji: true },
-    },
-  ];
-  if (detail) {
-    blocks.push({ type: "section", text: { type: "mrkdwn", text: detail } });
-  }
-  if (adminLink) {
-    blocks.push({
-      type: "actions",
-      elements: [
-        {
-          type: "button",
-          text: { type: "plain_text", text: "Open in admin" },
-          url: adminLink,
-          style: "primary",
-        },
-      ],
-    });
-  }
 
   try {
     const res = await fetch(url, {
       method: "POST",
       headers: { "content-type": "application/json" },
-      body: JSON.stringify({ text: summary, blocks }),
+      body: JSON.stringify({ text: lines }),
     });
     if (!res.ok) {
       const body = await res.text().catch(() => "");
@@ -90,6 +69,20 @@ async function postSlack(url: string, lead: Lead, summary: string, businessName:
   } catch (err) {
     console.warn("Slack webhook failed:", err);
   }
+}
+
+function safeAdminLink(lead: Lead): string | null {
+  let base = (process.env.NEXT_PUBLIC_APP_URL || "").trim().replace(/\/$/, "");
+  if (!base) return null;
+  // Slack rejects link URLs without a scheme, so auto-prepend https:// if
+  // the admin set NEXT_PUBLIC_APP_URL bare (e.g. railway.app/...).
+  if (!/^https?:\/\//i.test(base)) base = "https://" + base;
+  try {
+    new URL(base);
+  } catch {
+    return null;
+  }
+  return `${base}/admin/${lead.clientId}/leads/${lead.id}`;
 }
 
 async function postGenericWebhook(
