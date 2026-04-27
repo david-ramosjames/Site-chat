@@ -6,11 +6,17 @@ import InstallSnippet from "./InstallSnippet";
 export const dynamic = "force-dynamic";
 
 export default async function InstallPage({ params }: { params: { clientId: string } }) {
-  const client = await prisma.client.findUnique({ where: { id: params.clientId } });
+  const client = await prisma.client.findUnique({
+    where: { id: params.clientId },
+    include: { widgetSettings: true },
+  });
   if (!client) notFound();
 
   const base = process.env.NEXT_PUBLIC_APP_URL || "";
-  const previewUrl = `/demo?clientId=${encodeURIComponent(client.id)}`;
+  const previewEn = `/demo?clientId=${encodeURIComponent(client.id)}&lang=en`;
+  const previewEs = `/demo?clientId=${encodeURIComponent(client.id)}&lang=es`;
+  const translationsEnabled = client.widgetSettings?.enableTranslation ?? false;
+
   return (
     <div className="space-y-6">
       <div className="flex flex-wrap items-start justify-between gap-3">
@@ -21,14 +27,16 @@ export default async function InstallPage({ params }: { params: { clientId: stri
             chat widget.
           </p>
         </div>
-        <Link
-          href={previewUrl}
-          className="btn-secondary"
-          target="_blank"
-          rel="noreferrer"
-        >
-          Preview widget ↗
-        </Link>
+        <div className="flex flex-wrap gap-2">
+          <Link href={previewEn} className="btn-secondary" target="_blank" rel="noreferrer">
+            Preview — English ↗
+          </Link>
+          {translationsEnabled && (
+            <Link href={previewEs} className="btn-secondary" target="_blank" rel="noreferrer">
+              Preview — Spanish ↗
+            </Link>
+          )}
+        </div>
       </div>
       <InstallSnippet clientId={client.id} baseUrl={base} />
 

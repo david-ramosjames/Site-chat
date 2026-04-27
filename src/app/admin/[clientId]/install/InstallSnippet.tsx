@@ -18,8 +18,6 @@ export default function InstallSnippet({ clientId, baseUrl }: { clientId: string
     });
   }
 
-  const previewUrl = `/demo?clientId=${encodeURIComponent(clientId)}`;
-
   return (
     <div className="card overflow-hidden">
       <div className="flex items-center justify-between border-b border-ink-300/60 px-5 py-3">
@@ -35,9 +33,6 @@ export default function InstallSnippet({ clientId, baseUrl }: { clientId: string
         <p>
           Client ID: <span className="font-mono text-ink-700">{clientId}</span>
         </p>
-        <a href={previewUrl} className="btn-secondary" target="_blank" rel="noreferrer">
-          Preview widget on demo page →
-        </a>
       </div>
     </div>
   );
