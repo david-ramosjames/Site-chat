@@ -209,6 +209,17 @@ export default function SettingsForm({ clientId, initial }: { clientId: string; 
                 required
               />
             </Field>
+            {form.enableTranslation && (
+              <Field label="Welcome message — Spanish" full>
+                <textarea
+                  rows={2}
+                  className="input"
+                  placeholder="Hola — cuéntanos sobre tu caso y te llamamos pronto."
+                  value={form.translations.es.welcomeMessage}
+                  onChange={(e) => setEs("welcomeMessage", e.target.value)}
+                />
+              </Field>
+            )}
           </div>
           <label className="mt-4 flex items-center gap-2">
             <input
@@ -249,6 +260,16 @@ export default function SettingsForm({ clientId, initial }: { clientId: string; 
                 onChange={(e) => set("bubbleTooltip", e.target.value)}
               />
             </Field>
+            {form.enableTranslation && (
+              <Field label="Tooltip / opener text — Spanish">
+                <input
+                  className="input"
+                  placeholder="Hola, ¿en qué podemos ayudarle?"
+                  value={form.translations.es.bubbleTooltip}
+                  onChange={(e) => setEs("bubbleTooltip", e.target.value)}
+                />
+              </Field>
+            )}
             <Field label="Button label" help="Fallback pill button when no avatar image is set.">
               <input
                 className="input"
@@ -257,6 +278,16 @@ export default function SettingsForm({ clientId, initial }: { clientId: string; 
                 required
               />
             </Field>
+            {form.enableTranslation && (
+              <Field label="Button label — Spanish">
+                <input
+                  className="input"
+                  placeholder="Habla con nuestro equipo"
+                  value={form.translations.es.bubbleText}
+                  onChange={(e) => setEs("bubbleText", e.target.value)}
+                />
+              </Field>
+            )}
           </div>
         </Section>
 
@@ -349,45 +380,15 @@ export default function SettingsForm({ clientId, initial }: { clientId: string; 
             <span className="text-sm">Enable Spanish translation in the widget</span>
           </label>
           {form.enableTranslation && (
-            <div className="mt-4 space-y-4 rounded-lg border border-ink-300/60 bg-ink-100/40 p-4">
-              <p className="text-xs font-semibold uppercase tracking-wide text-ink-500">
-                Spanish (es)
-              </p>
-              <Field label="Welcome message — Spanish" full>
-                <textarea
-                  rows={2}
-                  className="input"
-                  placeholder="Hola — cuéntanos sobre tu caso y te llamamos pronto."
-                  value={form.translations.es.welcomeMessage}
-                  onChange={(e) => setEs("welcomeMessage", e.target.value)}
-                />
-              </Field>
-              <div className="grid gap-5 sm:grid-cols-2">
-                <Field label="Bubble button — Spanish">
-                  <input
-                    className="input"
-                    placeholder="Habla con nuestro equipo"
-                    value={form.translations.es.bubbleText}
-                    onChange={(e) => setEs("bubbleText", e.target.value)}
-                  />
-                </Field>
-                <Field label="Tooltip — Spanish">
-                  <input
-                    className="input"
-                    placeholder="Hola, ¿en qué podemos ayudarle?"
-                    value={form.translations.es.bubbleTooltip}
-                    onChange={(e) => setEs("bubbleTooltip", e.target.value)}
-                  />
-                </Field>
-              </div>
-              <p className="text-xs text-ink-500">
-                Translate each flow step&apos;s question and options on the{" "}
-                <a href={`/admin/${clientId}/flow`} className="text-brand-600 hover:underline">
-                  Flow builder
-                </a>
-                .
-              </p>
-            </div>
+            <p className="mt-3 text-xs text-ink-500">
+              Spanish copy fields appear inline below each English field — Welcome message,
+              Tooltip / opener text, and Button label above. Translate each flow step&apos;s
+              question and options on the{" "}
+              <a href={`/admin/${clientId}/flow`} className="text-brand-600 hover:underline">
+                Flow builder
+              </a>
+              .
+            </p>
           )}
         </Section>
 
