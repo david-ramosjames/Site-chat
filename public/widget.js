@@ -93,6 +93,8 @@
       ".avatar-btn{width:80px;height:80px;border-radius:999px;border:3px solid " + primary + ";background:#fff;cursor:pointer;padding:0;overflow:hidden;box-shadow:0 8px 24px rgba(15,23,42,.18);position:relative;animation:tc-pulse 2.6s ease-in-out infinite;}" +
       ".avatar-btn:hover{transform:scale(1.04);transition:transform .15s ease;}" +
       ".avatar-btn img,.avatar-btn video{width:100%;height:100%;object-fit:cover;display:block;}" +
+      ".avatar-online{position:absolute;bottom:2px;right:2px;width:16px;height:16px;border-radius:999px;background:#22c55e;border:3px solid #fff;box-shadow:0 0 0 0 rgba(34,197,94,.6);animation:tc-online-pulse 2s ease-in-out infinite;}" +
+      "@keyframes tc-online-pulse{0%,100%{box-shadow:0 0 0 0 rgba(34,197,94,.55);}50%{box-shadow:0 0 0 7px rgba(34,197,94,0);}}" +
       ".avatar-btn .play{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,.18);color:#fff;font-size:20px;}" +
       "@keyframes tc-pulse{0%,100%{box-shadow:0 8px 24px rgba(15,23,42,.18),0 0 0 0 " + primary + "55;}50%{box-shadow:0 8px 24px rgba(15,23,42,.18),0 0 0 10px " + primary + "00;}}" +
       ".panel{position:fixed;bottom:88px;width:380px;max-width:calc(100vw - 24px);height:600px;max-height:calc(100vh - 110px);background:#fff;border-radius:18px;overflow:hidden;box-shadow:0 20px 50px rgba(15,23,42,.25);display:flex;flex-direction:column;}" +
@@ -130,8 +132,11 @@
       // and uses the margin-top:auto-on-first-child trick to keep messages
       // anchored to the bottom of the strip when content is small. When
       // content overflows, the strip scrolls internally.
-      ".panel.video-bg .body{flex:0 0 auto;margin-top:auto;height:34%;overflow-y:auto;position:relative;z-index:2;background:transparent;}" +
-      ".panel.video-bg .body > *:first-child{margin-top:auto;}" +
+      // Background-mode chat strip: anchored to the bottom of the panel as a
+      // strip, but content inside the strip stacks top-to-bottom (newest at
+      // the bottom) with auto-scroll. Generous top padding gives the
+      // visitor scrollable headroom over the face when they scroll up.
+      ".panel.video-bg .body{flex:0 0 auto;margin-top:auto;height:38%;overflow-y:auto;position:relative;z-index:2;background:transparent;padding-top:60px;}" +
       ".panel.video-bg .header{position:relative;z-index:3;background:linear-gradient(180deg,rgba(0,0,0,.55),rgba(0,0,0,0));}" +
       ".panel.video-bg .header .lang{background:rgba(0,0,0,.4);border-color:rgba(255,255,255,.55);}" +
       ".panel.video-bg .progress{position:relative;z-index:3;background:rgba(0,0,0,.35);}" +
@@ -616,6 +621,8 @@
           "aria-label": "Open chat",
           onClick: open,
         }, [renderAvatarMedia(imgUrl, config.business.name)]);
+        // Pulsing green "online" badge so the avatar reads as live.
+        avatar.appendChild(el("span", { className: "avatar-online", "aria-hidden": "true" }));
         // Subtle "play" overlay only when the bubble itself is a still image
         // and an intro video is configured — gives a hint without doubling up.
         if (
@@ -1373,12 +1380,16 @@
       if (ctas.length) {
         var ctaWrap = el("div", { className: "end-ctas" });
         ctas.forEach(function (c, idx) {
+          var label = c.label;
+          if ((c.type === "call" || c.type === "text") && c.destination) {
+            label = label + " · " + formatPhoneDisplay(c.destination);
+          }
           ctaWrap.appendChild(el("a", {
             className: "end-cta" + (idx === 0 ? "" : " outline"),
             href: endCtaHref(c),
             target: c.type === "schedule" || c.type === "link" ? "_blank" : undefined,
             rel: "noopener",
-          }, [endCtaIcon(c.type) + "  " + c.label]));
+          }, [endCtaIcon(c.type) + "  " + label]));
         });
         children.push(ctaWrap);
       }
@@ -1405,6 +1416,16 @@
       if (c.type === "call") return "tel:" + dest.replace(/[^+\d]/g, "");
       if (c.type === "text") return "sms:" + dest.replace(/[^+\d]/g, "");
       return dest;
+    }
+    function formatPhoneDisplay(raw) {
+      var digits = String(raw || "").replace(/[^\d]/g, "");
+      if (digits.length === 10) {
+        return "(" + digits.slice(0, 3) + ") " + digits.slice(3, 6) + "-" + digits.slice(6);
+      }
+      if (digits.length === 11 && digits.charAt(0) === "1") {
+        return "+1 (" + digits.slice(1, 4) + ") " + digits.slice(4, 7) + "-" + digits.slice(7);
+      }
+      return String(raw || "").trim();
     }
     function endCtaIcon(type) {
       switch (type) {
