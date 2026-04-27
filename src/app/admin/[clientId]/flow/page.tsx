@@ -19,7 +19,12 @@ type EndCta = {
 };
 
 type WidgetTranslations = {
-  es?: { declineHeadline?: string; declineMessage?: string };
+  es?: {
+    declineHeadline?: string;
+    declineMessage?: string;
+    successHeadline?: string;
+    successMessage?: string;
+  };
 } | null;
 
 export default async function FlowPage({ params }: { params: { clientId: string } }) {
@@ -87,6 +92,12 @@ export default async function FlowPage({ params }: { params: { clientId: string 
         clientId={params.clientId}
         initial={endCtas}
         translationsEnabled={ws?.enableTranslation ?? false}
+        initialCopy={{
+          successHeadline: ws?.successHeadline ?? "",
+          successMessage: ws?.successMessage ?? "",
+          successHeadlineEs: widgetTranslations?.es?.successHeadline ?? "",
+          successMessageEs: widgetTranslations?.es?.successMessage ?? "",
+        }}
       />
 
       <DeclineEditor

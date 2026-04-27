@@ -67,6 +67,8 @@ export async function GET(req: NextRequest) {
         openOnLoad: client.widgetSettings.openOnLoad,
         declineHeadline: client.widgetSettings.declineHeadline,
         declineMessage: client.widgetSettings.declineMessage,
+        successHeadline: client.widgetSettings.successHeadline,
+        successMessage: client.widgetSettings.successMessage,
       },
       features: client.featureToggles,
       flow: client.flowSteps.map((s) => ({

@@ -87,6 +87,11 @@ model WidgetSettings {
   declineHeadline String?
   declineMessage  String?
 
+  // Optional editable success copy shown above the end CTAs after a
+  // lead submits. When blank, falls back to the built-in EN/ES defaults.
+  successHeadline String?
+  successMessage  String?
+
   client Client @relation(fields: [clientId], references: [id], onDelete: Cascade)
 }
 

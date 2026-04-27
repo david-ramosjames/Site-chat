@@ -45,6 +45,8 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
     openOnLoad: rest.openOnLoad,
     declineHeadline: nullable(rest.declineHeadline),
     declineMessage: nullable(rest.declineMessage),
+    successHeadline: nullable(rest.successHeadline),
+    successMessage: nullable(rest.successMessage),
   };
 
   const client = await prisma.client.update({

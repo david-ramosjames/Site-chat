@@ -9,6 +9,13 @@ type EndCta = {
   destination: string;
 };
 
+type SuccessCopy = {
+  successHeadline: string;
+  successMessage: string;
+  successHeadlineEs: string;
+  successMessageEs: string;
+};
+
 const PRESETS: Record<EndCta["type"], { label: string; placeholder: string; defaultLabel: string }> = {
   call: { label: "Call", placeholder: "+15125550100", defaultLabel: "Call us" },
   text: { label: "Text", placeholder: "+15125550100", defaultLabel: "Text us" },
@@ -24,15 +31,22 @@ export default function EndCtasEditor({
   clientId,
   initial,
   translationsEnabled,
+  initialCopy,
 }: {
   clientId: string;
   initial: EndCta[];
   translationsEnabled: boolean;
+  initialCopy: SuccessCopy;
 }) {
   const [ctas, setCtas] = useState<EndCta[]>(initial);
+  const [copy, setCopy] = useState<SuccessCopy>(initialCopy);
   const [saving, startTransition] = useTransition();
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+
+  function updateCopy<K extends keyof SuccessCopy>(k: K, v: SuccessCopy[K]) {
+    setCopy((c) => ({ ...c, [k]: v }));
+  }
 
   function update(i: number, patch: Partial<EndCta>) {
     setCtas((c) => c.map((cta, idx) => (idx === i ? { ...cta, ...patch } : cta)));
@@ -61,6 +75,14 @@ export default function EndCtasEditor({
               ...c,
               labelEs: (c.labelEs || "").trim() || null,
             })),
+          successHeadline: copy.successHeadline.trim() || null,
+          successMessage: copy.successMessage.trim() || null,
+          translations: {
+            es: {
+              successHeadline: copy.successHeadlineEs.trim() || null,
+              successMessage: copy.successMessageEs.trim() || null,
+            },
+          },
         }),
       });
       if (!res.ok) {
@@ -75,9 +97,10 @@ export default function EndCtasEditor({
     <section className="card p-5">
       <div className="mb-4 flex items-center justify-between">
         <div>
-          <h3 className="text-sm font-semibold">End-of-conversation CTAs</h3>
+          <h3 className="text-sm font-semibold">Success state (after a lead submits)</h3>
           <p className="mt-0.5 text-xs text-ink-500">
-            Buttons shown after a lead submits — Call, Text, or Schedule. Up to 5.
+            Headline + message + up to 5 buttons. Leave the message blank to use the default
+            (&quot;Thanks — we got it!&quot; with a generic follow-up line).
           </p>
         </div>
         <div className="flex items-center gap-2">
@@ -85,14 +108,72 @@ export default function EndCtasEditor({
             + Add CTA
           </button>
           <button type="button" className="btn-primary" onClick={save} disabled={saving}>
-            {saving ? "Saving…" : "Save CTAs"}
+            {saving ? "Saving…" : "Save"}
           </button>
         </div>
       </div>
 
+      <div className="mb-5 space-y-3 rounded-lg border border-ink-300/60 bg-ink-100/40 p-4">
+        <p className="text-xs font-semibold uppercase tracking-wide text-ink-500">
+          Success message
+        </p>
+        <div className="grid gap-3">
+          <div>
+            <label className="label">Headline</label>
+            <input
+              className="input"
+              placeholder="Thanks — we got it!"
+              value={copy.successHeadline}
+              onChange={(e) => updateCopy("successHeadline", e.target.value)}
+            />
+          </div>
+          <div>
+            <label className="label">Message</label>
+            <textarea
+              rows={2}
+              className="input"
+              placeholder="The team will reach out shortly."
+              value={copy.successMessage}
+              onChange={(e) => updateCopy("successMessage", e.target.value)}
+            />
+          </div>
+          {translationsEnabled && (
+            <div className="grid gap-3 rounded-lg border border-ink-300/60 bg-white p-3">
+              <p className="text-xs font-semibold uppercase tracking-wide text-ink-500">
+                Spanish (es)
+              </p>
+              <div>
+                <label className="label">Headline — Spanish</label>
+                <input
+                  className="input"
+                  placeholder="¡Gracias — lo recibimos!"
+                  value={copy.successHeadlineEs}
+                  onChange={(e) => updateCopy("successHeadlineEs", e.target.value)}
+                />
+              </div>
+              <div>
+                <label className="label">Message — Spanish</label>
+                <textarea
+                  rows={2}
+                  className="input"
+                  placeholder="El equipo se pondrá en contacto en breve."
+                  value={copy.successMessageEs}
+                  onChange={(e) => updateCopy("successMessageEs", e.target.value)}
+                />
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+
+      <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-ink-500">
+        Buttons (up to 5)
+      </p>
+
       {ctas.length === 0 && (
         <p className="text-xs text-ink-500">
-          No CTAs yet. After someone fills out the form, they&apos;ll just see a thank-you screen.
+          No CTAs yet. After someone fills out the form, they&apos;ll just see the success message
+          above.
         </p>
       )}
 

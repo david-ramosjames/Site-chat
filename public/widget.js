@@ -400,6 +400,16 @@
       if (currentLocale === "es" && es && es.declineMessage) return es.declineMessage;
       return config.widget.declineMessage || strings().declineBody;
     }
+    function tSuccessHeadline() {
+      var es = config.widget.translations && config.widget.translations.es;
+      if (currentLocale === "es" && es && es.successHeadline) return es.successHeadline;
+      return config.widget.successHeadline || strings().successTitle;
+    }
+    function tSuccessMessage() {
+      var es = config.widget.translations && config.widget.translations.es;
+      if (currentLocale === "es" && es && es.successMessage) return es.successMessage;
+      return config.widget.successMessage || strings().successBody(config.business.name);
+    }
     function tStepQuestion(step) {
       if (currentLocale === "es" && step.translations && step.translations.es && step.translations.es.question) {
         return step.translations.es.question;
@@ -1404,8 +1414,10 @@
       while (body.firstChild) body.removeChild(body.firstChild);
       var children = [
         el("div", { className: "check" }, ["✓"]),
-        el("div", { style: { fontWeight: "600", fontSize: "16px" } }, [strings().successTitle]),
-        el("div", { style: { fontSize: "14px", color: "#475569" } }, [strings().successBody(config.business.name)]),
+        el("div", { style: { fontWeight: "600", fontSize: "18px" } }, [tSuccessHeadline()]),
+        el("div", { style: { fontSize: "15px", color: "#475569", lineHeight: "1.45" } }, [
+          tSuccessMessage(),
+        ]),
       ];
       var ctas = (config.widget.endCtas || []).filter(function (c) {
         return c && c.label && c.destination;

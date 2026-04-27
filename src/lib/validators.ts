@@ -36,6 +36,8 @@ export const widgetSettingsSchema = z.object({
           secondWelcomeMessage: z.string().max(280).optional().nullable(),
           declineHeadline: z.string().max(120).optional().nullable(),
           declineMessage: z.string().max(500).optional().nullable(),
+          successHeadline: z.string().max(120).optional().nullable(),
+          successMessage: z.string().max(500).optional().nullable(),
         })
         .optional(),
     })
@@ -44,6 +46,8 @@ export const widgetSettingsSchema = z.object({
 
   declineHeadline: z.string().max(120).optional().nullable(),
   declineMessage: z.string().max(500).optional().nullable(),
+  successHeadline: z.string().max(120).optional().nullable(),
+  successMessage: z.string().max(500).optional().nullable(),
 
   secondWelcomeMessage: z.string().max(280).optional().nullable(),
   secondWelcomeDelaySec: z.number().int().min(5).max(600).default(30),
@@ -92,6 +96,19 @@ export const endCtasUpdateSchema = z.object({
       })
     )
     .max(5),
+  successHeadline: z.string().max(120).optional().nullable(),
+  successMessage: z.string().max(500).optional().nullable(),
+  translations: z
+    .object({
+      es: z
+        .object({
+          successHeadline: z.string().max(120).optional().nullable(),
+          successMessage: z.string().max(500).optional().nullable(),
+        })
+        .optional(),
+    })
+    .optional()
+    .nullable(),
 });
 
 export const declineUpdateSchema = z.object({
