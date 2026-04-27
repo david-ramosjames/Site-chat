@@ -27,8 +27,12 @@ type Initial = {
       bubbleText: string;
       bubbleTooltip: string;
       secondWelcomeMessage: string;
+      declineHeadline: string;
+      declineMessage: string;
     };
   };
+  declineHeadline: string;
+  declineMessage: string;
   secondWelcomeMessage: string;
   secondWelcomeDelaySec: number;
   sideButtons: SideButton[];
@@ -82,6 +86,8 @@ export default function SettingsForm({ clientId, initial }: { clientId: string; 
             bubbleText: form.translations.es.bubbleText || undefined,
             bubbleTooltip: form.translations.es.bubbleTooltip || undefined,
             secondWelcomeMessage: form.translations.es.secondWelcomeMessage || undefined,
+            declineHeadline: form.translations.es.declineHeadline || undefined,
+            declineMessage: form.translations.es.declineMessage || undefined,
           },
         },
         sideButtons: form.sideButtons
@@ -383,6 +389,55 @@ export default function SettingsForm({ clientId, initial }: { clientId: string; 
               </p>
             </div>
           )}
+        </Section>
+
+        <Section
+          title="Decline state"
+          subtitle="Optional 'thanks but we can't help' message. Used when a flow branch routes to 'End with decline'. The lead is still captured; the visitor just sees this courteous message instead of the success CTAs."
+        >
+          <div className="space-y-4">
+            <Field label="Headline">
+              <input
+                className="input"
+                placeholder="Thanks for reaching out"
+                value={form.declineHeadline}
+                onChange={(e) => set("declineHeadline", e.target.value)}
+              />
+            </Field>
+            <Field label="Message">
+              <textarea
+                rows={3}
+                className="input"
+                placeholder="Unfortunately we're not able to take this case. We wish you the best of luck and recommend reaching out to your local bar association for a referral."
+                value={form.declineMessage}
+                onChange={(e) => set("declineMessage", e.target.value)}
+              />
+            </Field>
+            {form.enableTranslation && (
+              <div className="rounded-lg border border-ink-300/60 bg-ink-100/40 p-4">
+                <p className="text-xs font-semibold uppercase tracking-wide text-ink-500">
+                  Spanish (es)
+                </p>
+                <Field label="Headline — Spanish" full>
+                  <input
+                    className="input"
+                    placeholder="Gracias por escribirnos"
+                    value={form.translations.es.declineHeadline}
+                    onChange={(e) => setEs("declineHeadline", e.target.value)}
+                  />
+                </Field>
+                <Field label="Message — Spanish" full>
+                  <textarea
+                    rows={3}
+                    className="input"
+                    placeholder="Lamentablemente no podemos tomar este caso..."
+                    value={form.translations.es.declineMessage}
+                    onChange={(e) => setEs("declineMessage", e.target.value)}
+                  />
+                </Field>
+              </div>
+            )}
+          </div>
         </Section>
 
         <Section

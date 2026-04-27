@@ -87,7 +87,8 @@ function BranchSelect({
       title="Where this answer routes the visitor"
     >
       <option value="">→ Next question</option>
-      <option value="__end">→ End conversation</option>
+      <option value="__end">→ End: success + CTAs</option>
+      <option value="__decline">→ End: thanks, can&apos;t help</option>
       <optgroup label="Jump to step">
         {steps
           .filter((s) => s.stepKey && s.stepKey !== currentStepKey)

@@ -34,11 +34,16 @@ export const widgetSettingsSchema = z.object({
           bubbleText: z.string().max(80).optional().nullable(),
           bubbleTooltip: z.string().max(200).optional().nullable(),
           secondWelcomeMessage: z.string().max(280).optional().nullable(),
+          declineHeadline: z.string().max(120).optional().nullable(),
+          declineMessage: z.string().max(500).optional().nullable(),
         })
         .optional(),
     })
     .optional()
     .nullable(),
+
+  declineHeadline: z.string().max(120).optional().nullable(),
+  declineMessage: z.string().max(500).optional().nullable(),
 
   secondWelcomeMessage: z.string().max(280).optional().nullable(),
   secondWelcomeDelaySec: z.number().int().min(5).max(600).default(30),

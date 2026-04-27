@@ -20,6 +20,8 @@ export default async function SettingsPage({ params }: { params: { clientId: str
             bubbleText?: string;
             bubbleTooltip?: string;
             secondWelcomeMessage?: string;
+            declineHeadline?: string;
+            declineMessage?: string;
           };
         }
       | null) ?? null;
@@ -69,8 +71,12 @@ export default async function SettingsPage({ params }: { params: { clientId: str
               bubbleText: translations?.es?.bubbleText ?? "",
               bubbleTooltip: translations?.es?.bubbleTooltip ?? "",
               secondWelcomeMessage: translations?.es?.secondWelcomeMessage ?? "",
+              declineHeadline: translations?.es?.declineHeadline ?? "",
+              declineMessage: translations?.es?.declineMessage ?? "",
             },
           },
+          declineHeadline: ws?.declineHeadline ?? "",
+          declineMessage: ws?.declineMessage ?? "",
           secondWelcomeMessage: ws?.secondWelcomeMessage ?? "",
           secondWelcomeDelaySec: ws?.secondWelcomeDelaySec ?? 30,
           sideButtons: sideButtons.map((b) => ({

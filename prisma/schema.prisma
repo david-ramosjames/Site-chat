@@ -81,6 +81,12 @@ model WidgetSettings {
   // visible immediately.
   openOnLoad Boolean @default(false)
 
+  // Optional decline ("we can't help you") end state. When a branch routes
+  // to "__decline", the lead still submits but the visitor sees this
+  // headline + message instead of the success view + CTAs.
+  declineHeadline String?
+  declineMessage  String?
+
   client Client @relation(fields: [clientId], references: [id], onDelete: Cascade)
 }
 

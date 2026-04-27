@@ -220,6 +220,8 @@
       undo: "Undo",
       unmute: "Tap for sound",
       langSwitch: "Español",
+      declineTitle: "Thanks for reaching out",
+      declineBody: "Unfortunately we're not able to take this case at this time. We wish you the best of luck.",
       placeholders: {
         phone: "(555) 555-0100",
         email: "you@example.com",
@@ -241,6 +243,8 @@
       undo: "Deshacer",
       unmute: "Toca para sonido",
       langSwitch: "English",
+      declineTitle: "Gracias por escribirnos",
+      declineBody: "Lamentablemente no podemos ayudarte con este caso. Te deseamos lo mejor.",
       placeholders: {
         phone: "(555) 555-0100",
         email: "tu@ejemplo.com",
@@ -340,6 +344,7 @@
     var askVersion = 0;          // bumped on every askNext + on undo to cancel pending typing
     var centeredMode = false;    // panel centered as a modal vs. anchored in the corner
     var backdropEl = null;
+    var endingMode = "success";  // "success" (default + CTAs) or "decline" (no CTAs)
 
     var translationsAvailable =
       !!(config.widget && config.widget.enableTranslation &&
@@ -364,6 +369,16 @@
         return config.widget.translations.es.bubbleTooltip;
       }
       return config.widget.bubbleTooltip || "";
+    }
+    function tDeclineHeadline() {
+      var es = config.widget.translations && config.widget.translations.es;
+      if (currentLocale === "es" && es && es.declineHeadline) return es.declineHeadline;
+      return config.widget.declineHeadline || strings().declineTitle;
+    }
+    function tDeclineMessage() {
+      var es = config.widget.translations && config.widget.translations.es;
+      if (currentLocale === "es" && es && es.declineMessage) return es.declineMessage;
+      return config.widget.declineMessage || strings().declineBody;
     }
     function tStepQuestion(step) {
       if (currentLocale === "es" && step.translations && step.translations.es && step.translations.es.question) {
@@ -1058,6 +1073,7 @@
       var branched = resolveBranchTarget(step, value);
       if (branched.end) {
         stepIndex = steps.length; // forces askNext to submit
+        endingMode = branched.decline ? "decline" : "success";
       } else if (branched.targetIndex >= 0) {
         stepIndex = branched.targetIndex;
       }
@@ -1071,14 +1087,15 @@
 
     function resolveBranchTarget(step, value) {
       var nl = step && step.nextLogic;
-      if (!nl) return { end: false, targetIndex: -1 };
+      if (!nl) return { end: false, decline: false, targetIndex: -1 };
       var rule = (nl.byOption && nl.byOption[value]) || nl.default || null;
-      if (!rule) return { end: false, targetIndex: -1 };
-      if (rule === "__end") return { end: true, targetIndex: -1 };
+      if (!rule) return { end: false, decline: false, targetIndex: -1 };
+      if (rule === "__end") return { end: true, decline: false, targetIndex: -1 };
+      if (rule === "__decline") return { end: true, decline: true, targetIndex: -1 };
       for (var k = 0; k < steps.length; k++) {
-        if (steps[k].stepKey === rule) return { end: false, targetIndex: k };
+        if (steps[k].stepKey === rule) return { end: false, decline: false, targetIndex: k };
       }
-      return { end: false, targetIndex: -1 };
+      return { end: false, decline: false, targetIndex: -1 };
     }
 
     function undoLast() {
@@ -1309,7 +1326,8 @@
             userAgent: navigator.userAgent,
           }),
         }).then(function () {
-          renderSuccess();
+          if (endingMode === "decline") renderDecline();
+          else renderSuccess();
         }).catch(function () {
           addMsg("bot", strings().networkBot);
         });
@@ -1340,6 +1358,19 @@
         children.push(ctaWrap);
       }
       var wrap = el("div", { className: "success" }, children);
+      body.appendChild(wrap);
+      if (progressBar) progressBar.style.width = "100%";
+    }
+
+    function renderDecline() {
+      clearFooter();
+      while (body.firstChild) body.removeChild(body.firstChild);
+      var wrap = el("div", { className: "success" }, [
+        el("div", { style: { fontWeight: "600", fontSize: "18px" } }, [tDeclineHeadline()]),
+        el("div", { style: { fontSize: "15px", color: "#475569", lineHeight: "1.45" } }, [
+          tDeclineMessage(),
+        ]),
+      ]);
       body.appendChild(wrap);
       if (progressBar) progressBar.style.width = "100%";
     }

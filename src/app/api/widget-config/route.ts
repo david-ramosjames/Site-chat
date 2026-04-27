@@ -65,6 +65,8 @@ export async function GET(req: NextRequest) {
         sideButtonsPosition: client.widgetSettings.sideButtonsPosition,
         endCtas: client.widgetSettings.endCtas ?? [],
         openOnLoad: client.widgetSettings.openOnLoad,
+        declineHeadline: client.widgetSettings.declineHeadline,
+        declineMessage: client.widgetSettings.declineMessage,
       },
       features: client.featureToggles,
       flow: client.flowSteps.map((s) => ({
