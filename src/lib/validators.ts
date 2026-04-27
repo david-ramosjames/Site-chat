@@ -92,6 +92,22 @@ export const endCtasUpdateSchema = z.object({
     .max(5),
 });
 
+export const declineUpdateSchema = z.object({
+  declineHeadline: z.string().max(120).optional().nullable(),
+  declineMessage: z.string().max(500).optional().nullable(),
+  translations: z
+    .object({
+      es: z
+        .object({
+          declineHeadline: z.string().max(120).optional().nullable(),
+          declineMessage: z.string().max(500).optional().nullable(),
+        })
+        .optional(),
+    })
+    .optional()
+    .nullable(),
+});
+
 export const featureTogglesSchema = z.object({
   showProgress: z.boolean(),
   allowFileUpload: z.boolean(),

@@ -2,6 +2,7 @@ import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import FlowBuilder from "./FlowBuilder";
 import EndCtasEditor from "./EndCtasEditor";
+import DeclineEditor from "./DeclineEditor";
 
 export const dynamic = "force-dynamic";
 
@@ -12,6 +13,10 @@ type StepNextLogic = { byOption?: Record<string, string> | null } | null;
 
 type EndCta = { type: "call" | "text" | "schedule" | "link"; label: string; destination: string };
 
+type WidgetTranslations = {
+  es?: { declineHeadline?: string; declineMessage?: string };
+} | null;
+
 export default async function FlowPage({ params }: { params: { clientId: string } }) {
   const client = await prisma.client.findUnique({
     where: { id: params.clientId },
@@ -19,7 +24,9 @@ export default async function FlowPage({ params }: { params: { clientId: string 
   });
   if (!client) notFound();
 
-  const endCtas = (client.widgetSettings?.endCtas as EndCta[] | null) ?? [];
+  const ws = client.widgetSettings;
+  const endCtas = (ws?.endCtas as EndCta[] | null) ?? [];
+  const widgetTranslations = (ws?.translations as WidgetTranslations) ?? null;
 
   const steps = await prisma.flowStep.findMany({
     where: { clientId: params.clientId },
@@ -72,6 +79,21 @@ export default async function FlowPage({ params }: { params: { clientId: string 
       />
 
       <EndCtasEditor clientId={params.clientId} initial={endCtas} />
+
+      <DeclineEditor
+        clientId={params.clientId}
+        translationsEnabled={ws?.enableTranslation ?? false}
+        initial={{
+          declineHeadline: ws?.declineHeadline ?? "",
+          declineMessage: ws?.declineMessage ?? "",
+          translations: {
+            es: {
+              declineHeadline: widgetTranslations?.es?.declineHeadline ?? "",
+              declineMessage: widgetTranslations?.es?.declineMessage ?? "",
+            },
+          },
+        }}
+      />
     </div>
   );
 }
