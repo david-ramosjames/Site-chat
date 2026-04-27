@@ -120,10 +120,33 @@ function BranchSelect({
   );
 }
 
-function blankStep(index: number): Step {
+function formatServerError(body: unknown): string | null {
+  // Pull a human-readable line out of either Zod's flatten() shape or a
+  // generic { error } payload.
+  const b = body as
+    | { error?: string; issues?: { formErrors?: string[]; fieldErrors?: Record<string, string[]> } }
+    | undefined;
+  if (!b) return null;
+  if (b.issues?.formErrors?.length) return b.issues.formErrors[0];
+  if (b.issues?.fieldErrors) {
+    for (const [k, msgs] of Object.entries(b.issues.fieldErrors)) {
+      if (msgs?.length) return `${k}: ${msgs[0]}`;
+    }
+  }
+  if (b.error === "invalid_payload") return "Some fields didn't pass validation. Check option values and step keys.";
+  if (b.error) return b.error;
+  return null;
+}
+
+function blankStep(existing: Step[]): Step {
+  // Find the next free `step_N` so we never collide with an existing key
+  // (which would silently fail the save due to the DB unique constraint).
+  const used = new Set(existing.map((s) => s.stepKey.trim()).filter(Boolean));
+  let n = existing.length + 1;
+  while (used.has(`step_${n}`)) n++;
   return {
-    stepKey: `step_${index + 1}`,
-    order: index,
+    stepKey: `step_${n}`,
+    order: existing.length,
     question: "New question",
     inputType: "text",
     isRequired: true,
@@ -148,7 +171,7 @@ export default function FlowBuilder({
   translationsEnabled: boolean;
 }) {
   const [steps, setSteps] = useState<Step[]>(
-    initialSteps.length ? initialSteps : [blankStep(0)]
+    initialSteps.length ? initialSteps : [blankStep([])]
   );
   const [saving, startTransition] = useTransition();
   const [message, setMessage] = useState<string | null>(null);
@@ -170,12 +193,41 @@ export default function FlowBuilder({
   const remove = (i: number) =>
     setSteps((s) => s.filter((_, idx) => idx !== i).map((st, idx) => ({ ...st, order: idx })));
 
-  const addStep = () =>
-    setSteps((s) => [...s, blankStep(s.length)]);
+  const addStep = () => setSteps((s) => [...s, blankStep(s)]);
 
   function save() {
     setError(null);
     setMessage(null);
+
+    // Client-side guards so duplicate / invalid stepKeys don't silently 400.
+    const keys: string[] = [];
+    const dup = new Set<string>();
+    const invalid = new Set<string>();
+    const empty: number[] = [];
+    steps.forEach((s, i) => {
+      const k = s.stepKey.trim();
+      if (!k) empty.push(i + 1);
+      if (k && !/^[a-z0-9_\-]+$/i.test(k)) invalid.add(k);
+      if (k && keys.includes(k)) dup.add(k);
+      keys.push(k);
+    });
+    if (empty.length) {
+      setError(`Step ${empty.join(", ")} is missing a step key.`);
+      return;
+    }
+    if (invalid.size) {
+      setError(
+        `Step keys can only contain letters, numbers, dash, and underscore: ${[...invalid].join(", ")}`
+      );
+      return;
+    }
+    if (dup.size) {
+      setError(
+        `Duplicate step keys: ${[...dup].join(", ")}. Each step needs a unique key.`
+      );
+      return;
+    }
+
     startTransition(async () => {
       const res = await fetch(`/api/admin/clients/${clientId}/flow`, {
         method: "PUT",
@@ -199,8 +251,7 @@ export default function FlowBuilder({
       });
       if (!res.ok) {
         const body = await res.json().catch(() => ({}));
-        const first = body?.issues?.fieldErrors ? JSON.stringify(body.issues.fieldErrors) : "Could not save flow.";
-        setError(first);
+        setError(formatServerError(body) || "Could not save flow.");
         return;
       }
       setMessage("Flow saved.");
