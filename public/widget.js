@@ -126,9 +126,12 @@
       ".intro-bg .play-overlay{position:absolute;inset:0;display:none;align-items:center;justify-content:center;background:rgba(0,0,0,.35);color:#fff;font-size:48px;pointer-events:none;}" +
       ".intro-bg.is-paused .play-overlay{display:flex;}" +
       // Constrain the conversation to a fixed strip at the bottom of the panel
-      // so the speaker stays visible. Body anchors itself low via margin-top:auto
-      // and scrolls internally when more messages arrive — they never grow upward.
-      ".panel.video-bg .body{flex:0 0 auto;margin-top:auto;max-height:32%;overflow-y:auto;position:relative;z-index:2;background:transparent;}" +
+      // so the speaker stays visible. Body is a fixed height (not max-height)
+      // and uses the margin-top:auto-on-first-child trick to keep messages
+      // anchored to the bottom of the strip when content is small. When
+      // content overflows, the strip scrolls internally.
+      ".panel.video-bg .body{flex:0 0 auto;margin-top:auto;height:32%;overflow-y:auto;position:relative;z-index:2;background:transparent;}" +
+      ".panel.video-bg .body > *:first-child{margin-top:auto;}" +
       ".panel.video-bg .header{position:relative;z-index:3;background:linear-gradient(180deg,rgba(0,0,0,.55),rgba(0,0,0,0));}" +
       ".panel.video-bg .header .lang{background:rgba(0,0,0,.4);border-color:rgba(255,255,255,.55);}" +
       ".panel.video-bg .progress{position:relative;z-index:3;background:rgba(0,0,0,.35);}" +
@@ -1186,6 +1189,7 @@
           );
         });
         footer.appendChild(wrap);
+        scrollBodyToBottomSoon();
         return;
       }
 
@@ -1236,6 +1240,18 @@
       }
 
       setTimeout(function () { input.focus(); }, 50);
+      scrollBodyToBottomSoon();
+    }
+
+    // After the footer changes height (new options pile, multi-line input),
+    // body shrinks and the previously-visible latest bubble can be hidden
+    // under the footer. Re-scroll once the layout has settled.
+    function scrollBodyToBottomSoon() {
+      if (!body) return;
+      var raf = window.requestAnimationFrame || function (cb) { return setTimeout(cb, 16); };
+      raf(function () {
+        if (body) body.scrollTop = body.scrollHeight;
+      });
     }
 
     function placeholderFor(step) {
