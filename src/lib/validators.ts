@@ -133,7 +133,16 @@ export const flowStepInputSchema = z.object({
     .array(z.object({ value: z.string(), label: z.string() }))
     .optional()
     .nullable(),
-  nextLogic: z.any().optional().nullable(),
+  nextLogic: z
+    .object({
+      // For multiple_choice / yes_no: map option value -> target stepKey
+      // (or the literal "__end" to finish the flow early).
+      byOption: z.record(z.string()).optional().nullable(),
+      // Optional fallback when no byOption rule matches the chosen value.
+      default: z.string().optional().nullable(),
+    })
+    .optional()
+    .nullable(),
   mediaType: z.enum(["none", "image", "video"]).default("none"),
   mediaUrl: z.string().url().or(z.literal("")).optional().nullable(),
   thumbnailUrl: z.string().url().or(z.literal("")).optional().nullable(),

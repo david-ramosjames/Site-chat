@@ -8,6 +8,7 @@ export const dynamic = "force-dynamic";
 type StepTranslations = {
   es?: { question?: string; options?: { value: string; label: string }[] };
 };
+type StepNextLogic = { byOption?: Record<string, string> | null } | null;
 
 type EndCta = { type: "call" | "text" | "schedule" | "link"; label: string; destination: string };
 
@@ -54,7 +55,7 @@ export default async function FlowPage({ params }: { params: { clientId: string 
               | "zip",
             isRequired: s.isRequired,
             options: (s.options as { value: string; label: string }[] | null) ?? [],
-            nextLogic: s.nextLogic ?? null,
+            nextLogic: (s.nextLogic as StepNextLogic) ?? null,
             mediaType: s.mediaType as "none" | "image" | "video",
             mediaUrl: s.mediaUrl ?? "",
             thumbnailUrl: s.thumbnailUrl ?? "",

@@ -3,6 +3,7 @@
 import { useState, useTransition } from "react";
 
 type Option = { value: string; label: string };
+type NextLogic = { byOption?: Record<string, string> | null } | null;
 type Step = {
   stepKey: string;
   order: number;
@@ -18,7 +19,7 @@ type Step = {
     | "zip";
   isRequired: boolean;
   options: Option[];
-  nextLogic: unknown;
+  nextLogic: NextLogic;
   mediaType: "none" | "image" | "video";
   mediaUrl: string;
   thumbnailUrl: string;
@@ -51,6 +52,55 @@ const INPUT_TYPE_LABELS: Record<Step["inputType"], string> = {
   zip: "ZIP code",
 };
 
+function getBranch(step: Step, optionValue: string): string {
+  return step.nextLogic?.byOption?.[optionValue] ?? "";
+}
+
+function setBranch(
+  current: NextLogic,
+  optionValue: string,
+  target: string | null
+): NextLogic {
+  const byOption: Record<string, string> = { ...(current?.byOption ?? {}) };
+  if (target) byOption[optionValue] = target;
+  else delete byOption[optionValue];
+  if (Object.keys(byOption).length === 0) return null;
+  return { ...(current ?? {}), byOption };
+}
+
+function BranchSelect({
+  value,
+  onChange,
+  steps,
+  currentStepKey,
+}: {
+  value: string;
+  onChange: (target: string | null) => void;
+  steps: Step[];
+  currentStepKey: string;
+}) {
+  return (
+    <select
+      className="select mt-0 w-44"
+      value={value}
+      onChange={(e) => onChange(e.target.value || null)}
+      title="Where this answer routes the visitor"
+    >
+      <option value="">→ Next question</option>
+      <option value="__end">→ End conversation</option>
+      <optgroup label="Jump to step">
+        {steps
+          .filter((s) => s.stepKey && s.stepKey !== currentStepKey)
+          .map((s) => (
+            <option key={s.stepKey} value={s.stepKey}>
+              {s.stepKey}
+            </option>
+          ))}
+      </optgroup>
+    </select>
+  );
+}
+
 function blankStep(index: number): Step {
   return {
     stepKey: `step_${index + 1}`,
@@ -59,7 +109,7 @@ function blankStep(index: number): Step {
     inputType: "text",
     isRequired: true,
     options: [],
-    nextLogic: null,
+    nextLogic: null as NextLogic,
     mediaType: "none",
     mediaUrl: "",
     thumbnailUrl: "",
@@ -233,12 +283,15 @@ export default function FlowBuilder({
 
               {s.inputType === "multiple_choice" && (
                 <div className="md:col-span-2">
-                  <label className="label">Choices</label>
+                  <label className="label">Choices &amp; branching</label>
+                  <p className="help mt-0 mb-2">
+                    Each option can route to a different question, or end the flow early.
+                  </p>
                   <div className="space-y-2">
                     {s.options.map((opt, idx) => (
-                      <div key={idx} className="flex gap-2">
+                      <div key={idx} className="flex flex-wrap items-center gap-2">
                         <input
-                          className="input mt-0 flex-1"
+                          className="input mt-0 flex-1 min-w-[140px]"
                           placeholder="Label"
                           value={opt.label}
                           onChange={(e) =>
@@ -248,7 +301,7 @@ export default function FlowBuilder({
                           }
                         />
                         <input
-                          className="input mt-0 w-40"
+                          className="input mt-0 w-32"
                           placeholder="value"
                           value={opt.value}
                           onChange={(e) =>
@@ -257,11 +310,20 @@ export default function FlowBuilder({
                             })
                           }
                         />
+                        <BranchSelect
+                          value={getBranch(s, opt.value)}
+                          onChange={(target) => update(i, { nextLogic: setBranch(s.nextLogic, opt.value, target) })}
+                          steps={steps}
+                          currentStepKey={s.stepKey}
+                        />
                         <button
                           type="button"
                           className="btn-secondary"
                           onClick={() =>
-                            update(i, { options: s.options.filter((_, j) => j !== idx) })
+                            update(i, {
+                              options: s.options.filter((_, j) => j !== idx),
+                              nextLogic: setBranch(s.nextLogic, opt.value, null),
+                            })
                           }
                         >
                           ×
@@ -279,6 +341,33 @@ export default function FlowBuilder({
                     >
                       + Add option
                     </button>
+                  </div>
+                </div>
+              )}
+
+              {s.inputType === "yes_no" && (
+                <div className="md:col-span-2 rounded-lg border border-ink-300/60 bg-ink-100/40 p-3">
+                  <p className="text-sm font-semibold">Branching</p>
+                  <p className="help mt-0 mb-3">Send Yes and No to different questions if needed.</p>
+                  <div className="grid gap-2 sm:grid-cols-2">
+                    <div className="flex items-center gap-2">
+                      <span className="w-12 text-xs font-semibold text-ink-700">Yes →</span>
+                      <BranchSelect
+                        value={getBranch(s, "yes")}
+                        onChange={(target) => update(i, { nextLogic: setBranch(s.nextLogic, "yes", target) })}
+                        steps={steps}
+                        currentStepKey={s.stepKey}
+                      />
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className="w-12 text-xs font-semibold text-ink-700">No →</span>
+                      <BranchSelect
+                        value={getBranch(s, "no")}
+                        onChange={(target) => update(i, { nextLogic: setBranch(s.nextLogic, "no", target) })}
+                        steps={steps}
+                        currentStepKey={s.stepKey}
+                      />
+                    </div>
                   </div>
                 </div>
               )}

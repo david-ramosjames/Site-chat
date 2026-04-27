@@ -1032,10 +1032,13 @@
       body.appendChild(undoRow);
       body.scrollTop = body.scrollHeight;
 
-      // Snapshot enough state to fully undo this answer.
+      var prevStepIndex = stepIndex;
+      // Snapshot enough state to fully undo this answer (including the
+      // step pointer in case branching jumped us elsewhere).
       historyStack.push({
         step: step,
         prevAnswer: prevAnswer,
+        prevStepIndex: prevStepIndex,
         userContainer: added.container,
         botContainer: lastBotContainer,
         undoRow: undoRow,
@@ -1050,12 +1053,32 @@
         prev.undoRow = null;
       }
 
-      stepIndex++;
+      // Default linear advance, then apply branching overrides.
+      stepIndex = prevStepIndex + 1;
+      var branched = resolveBranchTarget(step, value);
+      if (branched.end) {
+        stepIndex = steps.length; // forces askNext to submit
+      } else if (branched.targetIndex >= 0) {
+        stepIndex = branched.targetIndex;
+      }
+
       currentStepInputState = null;
       clearFooter();
       // First answer in background mode collapses the video into a thumbnail.
       transitionToMiniVideo();
       askNext();
+    }
+
+    function resolveBranchTarget(step, value) {
+      var nl = step && step.nextLogic;
+      if (!nl) return { end: false, targetIndex: -1 };
+      var rule = (nl.byOption && nl.byOption[value]) || nl.default || null;
+      if (!rule) return { end: false, targetIndex: -1 };
+      if (rule === "__end") return { end: true, targetIndex: -1 };
+      for (var k = 0; k < steps.length; k++) {
+        if (steps[k].stepKey === rule) return { end: false, targetIndex: k };
+      }
+      return { end: false, targetIndex: -1 };
     }
 
     function undoLast() {
@@ -1101,8 +1124,11 @@
           : entry.botContainer;
         lastBotMsgEl = bubble || null;
       }
-      // Roll the step pointer back and re-render its input.
-      stepIndex = Math.max(0, stepIndex - 1);
+      // Roll the step pointer back to where it was when the answered step
+      // was on screen (handles branching where the next step wasn't N+1).
+      stepIndex = typeof entry.prevStepIndex === "number"
+        ? entry.prevStepIndex
+        : Math.max(0, stepIndex - 1);
       clearFooter();
       currentStepInputState = { step: entry.step };
       renderInputFor(entry.step);
