@@ -3,7 +3,7 @@
 import { useState, useTransition } from "react";
 
 type Option = { value: string; label: string };
-type NextLogic = { byOption?: Record<string, string> | null } | null;
+type NextLogic = { byOption?: Record<string, string> | null; default?: string | null } | null;
 type Step = {
   stepKey: string;
   order: number;
@@ -64,8 +64,26 @@ function setBranch(
   const byOption: Record<string, string> = { ...(current?.byOption ?? {}) };
   if (target) byOption[optionValue] = target;
   else delete byOption[optionValue];
-  if (Object.keys(byOption).length === 0) return null;
-  return { ...(current ?? {}), byOption };
+  const next: NonNullable<NextLogic> = { ...(current ?? {}) };
+  if (Object.keys(byOption).length === 0) delete (next as { byOption?: unknown }).byOption;
+  else next.byOption = byOption;
+  if (!next.byOption && !(next as { default?: string }).default) return null;
+  return next;
+}
+
+function getDefaultBranch(step: Step): string {
+  return (step.nextLogic as { default?: string } | null)?.default ?? "";
+}
+
+function setDefaultBranch(current: NextLogic, target: string | null): NextLogic {
+  const next: { byOption?: Record<string, string> | null; default?: string } = {
+    ...(current ?? {}),
+    default: undefined,
+  };
+  if (current?.byOption) next.byOption = current.byOption;
+  if (target) next.default = target;
+  if (!next.byOption && !next.default) return null;
+  return next;
 }
 
 function BranchSelect({
@@ -343,6 +361,27 @@ export default function FlowBuilder({
                       + Add option
                     </button>
                   </div>
+                </div>
+              )}
+
+              {(s.inputType === "text" ||
+                s.inputType === "phone" ||
+                s.inputType === "email" ||
+                s.inputType === "zip" ||
+                s.inputType === "date" ||
+                s.inputType === "textarea") && (
+                <div className="md:col-span-2 rounded-lg border border-ink-300/60 bg-ink-100/40 p-3">
+                  <p className="text-sm font-semibold">After this step</p>
+                  <p className="help mt-0 mb-3">
+                    Where to go after the visitor answers. Use this on a final name/phone/email step
+                    to end with success CTAs or with the &quot;can&apos;t help&quot; message.
+                  </p>
+                  <BranchSelect
+                    value={getDefaultBranch(s)}
+                    onChange={(target) => update(i, { nextLogic: setDefaultBranch(s.nextLogic, target) })}
+                    steps={steps}
+                    currentStepKey={s.stepKey}
+                  />
                 </div>
               )}
 

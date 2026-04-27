@@ -130,8 +130,12 @@
       // and uses the margin-top:auto-on-first-child trick to keep messages
       // anchored to the bottom of the strip when content is small. When
       // content overflows, the strip scrolls internally.
-      ".panel.video-bg .body{flex:0 0 auto;margin-top:auto;height:32%;overflow-y:auto;position:relative;z-index:2;background:transparent;}" +
+      ".panel.video-bg .body{flex:0 0 auto;margin-top:auto;height:24%;overflow-y:auto;position:relative;z-index:2;background:transparent;}" +
       ".panel.video-bg .body > *:first-child{margin-top:auto;}" +
+      // Cap the option list more aggressively so the footer doesn't push the
+      // chat strip up into the speaker's face. Visitors scroll the option
+      // list itself when there are many choices.
+      ".panel.video-bg .options{max-height:108px;}" +
       ".panel.video-bg .header{position:relative;z-index:3;background:linear-gradient(180deg,rgba(0,0,0,.55),rgba(0,0,0,0));}" +
       ".panel.video-bg .header .lang{background:rgba(0,0,0,.4);border-color:rgba(255,255,255,.55);}" +
       ".panel.video-bg .progress{position:relative;z-index:3;background:rgba(0,0,0,.35);}" +
