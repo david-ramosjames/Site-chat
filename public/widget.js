@@ -125,10 +125,10 @@
       ".intro img.end-image{display:block;width:100%;height:200px;object-fit:cover;}" +
       ".intro-bg .play-overlay{position:absolute;inset:0;display:none;align-items:center;justify-content:center;background:rgba(0,0,0,.35);color:#fff;font-size:48px;pointer-events:none;}" +
       ".intro-bg.is-paused .play-overlay{display:flex;}" +
-      // Anchor initial messages to the lower portion of the panel so the video
-      // remains visible. min-height holds the spacer steady; when content
-      // overflows the body becomes scrollable.
-      ".panel.video-bg .body{position:relative;z-index:2;background:transparent;justify-content:flex-end;padding-top:65%;}" +
+      // Constrain the conversation to a fixed strip at the bottom of the panel
+      // so the speaker stays visible. Body anchors itself low via margin-top:auto
+      // and scrolls internally when more messages arrive — they never grow upward.
+      ".panel.video-bg .body{flex:0 0 auto;margin-top:auto;max-height:32%;overflow-y:auto;position:relative;z-index:2;background:transparent;}" +
       ".panel.video-bg .header{position:relative;z-index:3;background:linear-gradient(180deg,rgba(0,0,0,.55),rgba(0,0,0,0));}" +
       ".panel.video-bg .header .lang{background:rgba(0,0,0,.4);border-color:rgba(255,255,255,.55);}" +
       ".panel.video-bg .progress{position:relative;z-index:3;background:rgba(0,0,0,.35);}" +
