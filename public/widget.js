@@ -90,12 +90,14 @@
       ".tooltip .x:hover{color:#0b1220;}" +
       "@keyframes tc-fanout{0%{transform:scale(.55) translateY(8px);opacity:0;}55%{transform:scale(1.06) translateY(-1px);opacity:1;}80%{transform:scale(.98);}100%{transform:scale(1);opacity:1;}}" +
       "@keyframes tc-fanout-glow{0%,100%{box-shadow:0 8px 24px rgba(15,23,42,.18),0 0 0 0 " + primary + "33;}50%{box-shadow:0 8px 24px rgba(15,23,42,.18),0 0 0 6px " + primary + "00;}}" +
-      ".avatar-btn{width:80px;height:80px;border-radius:999px;border:3px solid " + primary + ";background:#fff;cursor:pointer;padding:0;overflow:hidden;box-shadow:0 8px 24px rgba(15,23,42,.18);position:relative;animation:tc-pulse 2.6s ease-in-out infinite;}" +
+      ".avatar-btn{width:80px;height:80px;border-radius:999px;border:3px solid " + primary + ";background:#fff;cursor:pointer;padding:0;overflow:visible;box-shadow:0 8px 24px rgba(15,23,42,.18);position:relative;animation:tc-pulse 2.6s ease-in-out infinite;}" +
       ".avatar-btn:hover{transform:scale(1.04);transition:transform .15s ease;}" +
+      ".avatar-img{width:100%;height:100%;border-radius:999px;overflow:hidden;}" +
+      ".avatar-img img,.avatar-img video{width:100%;height:100%;object-fit:cover;display:block;}" +
       ".avatar-btn img,.avatar-btn video{width:100%;height:100%;object-fit:cover;display:block;}" +
-      ".avatar-online{position:absolute;bottom:2px;right:2px;width:16px;height:16px;border-radius:999px;background:#22c55e;border:3px solid #fff;box-shadow:0 0 0 0 rgba(34,197,94,.6);animation:tc-online-pulse 2s ease-in-out infinite;}" +
+      ".avatar-online{position:absolute;bottom:0;right:0;width:18px;height:18px;border-radius:999px;background:#22c55e;border:3px solid #fff;box-shadow:0 0 0 0 rgba(34,197,94,.6);animation:tc-online-pulse 2s ease-in-out infinite;z-index:2;}" +
       "@keyframes tc-online-pulse{0%,100%{box-shadow:0 0 0 0 rgba(34,197,94,.55);}50%{box-shadow:0 0 0 7px rgba(34,197,94,0);}}" +
-      ".avatar-btn .play{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,.18);color:#fff;font-size:20px;}" +
+      ".avatar-btn .play{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,.18);color:#fff;font-size:20px;border-radius:999px;}" +
       "@keyframes tc-pulse{0%,100%{box-shadow:0 8px 24px rgba(15,23,42,.18),0 0 0 0 " + primary + "55;}50%{box-shadow:0 8px 24px rgba(15,23,42,.18),0 0 0 10px " + primary + "00;}}" +
       ".panel{position:fixed;bottom:88px;width:380px;max-width:calc(100vw - 24px);height:600px;max-height:calc(100vh - 110px);background:#fff;border-radius:18px;overflow:hidden;box-shadow:0 20px 50px rgba(15,23,42,.25);display:flex;flex-direction:column;}" +
       ".root.right .panel{right:16px;} .root.left .panel{left:16px;}" +
@@ -615,12 +617,18 @@
           ]);
           wrap.appendChild(tooltipNode);
         }
+        // The image/video lives inside an inner wrapper that clips to the
+        // circle; the button itself has overflow:visible so the green
+        // online dot can sit half-outside the avatar bounds.
+        var imgWrap = el("div", { className: "avatar-img" }, [
+          renderAvatarMedia(imgUrl, config.business.name),
+        ]);
         var avatar = el("button", {
           className: "avatar-btn",
           type: "button",
           "aria-label": "Open chat",
           onClick: open,
-        }, [renderAvatarMedia(imgUrl, config.business.name)]);
+        }, [imgWrap]);
         // Pulsing green "online" badge so the avatar reads as live.
         avatar.appendChild(el("span", { className: "avatar-online", "aria-hidden": "true" }));
         // Subtle "play" overlay only when the bubble itself is a still image
@@ -952,6 +960,16 @@
       }
     }
 
+    function autoScrollToLatest() {
+      if (!body) return;
+      // While in full-bleed video mode (pre-transition) leave the scroll
+      // position at the TOP so the welcome message + first question render
+      // just below the speaker's face. Once the visitor answers we drop
+      // the .video-bg class and normal auto-scroll resumes.
+      if (panel && panel.classList.contains("video-bg")) return;
+      body.scrollTop = body.scrollHeight;
+    }
+
     // Returns { msg, container } where container is the outer DOM node
     // appended to body (the bot-row when an avatar is shown, otherwise the
     // msg itself). Caller can hold container to remove the whole entry later.
@@ -966,7 +984,7 @@
         container = el("div", { className: "bot-row" }, [av, msg]);
       }
       body.appendChild(container);
-      body.scrollTop = body.scrollHeight;
+      autoScrollToLatest();
       return { msg: msg, container: container };
     }
 
@@ -974,7 +992,7 @@
       var node = buildMediaNode(step);
       if (!node) return;
       body.appendChild(node);
-      body.scrollTop = body.scrollHeight;
+      autoScrollToLatest();
     }
 
     function showTyping() {
@@ -989,7 +1007,7 @@
         node = bubble;
       }
       body.appendChild(node);
-      body.scrollTop = body.scrollHeight;
+      autoScrollToLatest();
       return node;
     }
 
@@ -1060,7 +1078,7 @@
       }, ["↩ " + strings().undo]);
       var undoRow = el("div", { className: "undo-row" }, [undoBtn]);
       body.appendChild(undoRow);
-      body.scrollTop = body.scrollHeight;
+      autoScrollToLatest();
 
       var prevStepIndex = stepIndex;
       // Snapshot enough state to fully undo this answer (including the
@@ -1262,8 +1280,14 @@
     // After the footer changes height (new options pile, multi-line input),
     // body shrinks and the previously-visible latest bubble can be hidden
     // under the footer. Re-scroll once the layout has settled.
+    //
+    // Exception: while we're in full-bleed video mode (before the visitor
+    // has answered anything) leave the scroll position at the TOP so the
+    // welcome message + first question sit just below the speaker's face
+    // rather than being auto-scrolled out of view above the strip.
     function scrollBodyToBottomSoon() {
       if (!body) return;
+      if (panel && panel.classList.contains("video-bg")) return;
       var raf = window.requestAnimationFrame || function (cb) { return setTimeout(cb, 16); };
       raf(function () {
         if (body) body.scrollTop = body.scrollHeight;
