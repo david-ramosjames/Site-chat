@@ -25,6 +25,7 @@ type Step = {
   thumbnailUrl: string;
   altText: string;
   mediaDisplayStyle: "above" | "below" | "background";
+  leadField: "" | "name" | "phone" | "email" | "service" | "urgency";
   translations: {
     es: { question: string; options: Option[] };
   };
@@ -157,6 +158,7 @@ function blankStep(existing: Step[]): Step {
     thumbnailUrl: "",
     altText: "",
     mediaDisplayStyle: "above",
+    leadField: "",
     translations: { es: { question: "", options: [] } },
   };
 }
@@ -240,6 +242,7 @@ export default function FlowBuilder({
             mediaUrl: s.mediaUrl || null,
             thumbnailUrl: s.thumbnailUrl || null,
             altText: s.altText || null,
+            leadField: s.leadField || null,
             translations: {
               es: {
                 question: s.translations.es.question || undefined,
@@ -350,6 +353,28 @@ export default function FlowBuilder({
                 />
                 <span className="text-sm">Required</span>
               </label>
+
+              <div className="md:col-span-2">
+                <label className="label">Save answer to lead column</label>
+                <select
+                  className="select"
+                  value={s.leadField}
+                  onChange={(e) =>
+                    update(i, { leadField: e.target.value as Step["leadField"] })
+                  }
+                >
+                  <option value="">— Don&apos;t save to a column (still in answers JSON)</option>
+                  <option value="name">Name</option>
+                  <option value="phone">Phone</option>
+                  <option value="email">Email</option>
+                  <option value="service">Service</option>
+                  <option value="urgency">Urgency</option>
+                </select>
+                <p className="help">
+                  Pick which Lead-table column gets this answer. The full answer is also kept in
+                  the lead&apos;s answers JSON regardless.
+                </p>
+              </div>
 
               {s.inputType === "multiple_choice" && (
                 <div className="md:col-span-2">

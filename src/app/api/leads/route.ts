@@ -35,41 +35,56 @@ export async function POST(req: NextRequest) {
 
   const client = await prisma.client.findUnique({
     where: { id: payload.clientId },
-    include: { featureToggles: true, notificationSettings: true },
+    include: { featureToggles: true, notificationSettings: true, flowSteps: true },
   });
   if (!client || client.status !== "active") {
     return withCors(NextResponse.json({ error: "unknown_client" }, { status: 404 }));
   }
 
   const a = payload.answers as Record<string, unknown>;
-  const pick = (k: string) => (typeof a[k] === "string" ? (a[k] as string) : undefined);
+  const pick = (k: string | undefined | null) =>
+    k && typeof a[k] === "string" ? (a[k] as string) : undefined;
+
+  // Build the lead column → stepKey map from the flow's per-step
+  // leadField setting. Falls back to legacy stepKey-name conventions
+  // when no step has explicitly claimed a column.
+  const fieldMap: Record<string, string> = {};
+  client.flowSteps.forEach((s) => {
+    if (s.leadField && !fieldMap[s.leadField]) fieldMap[s.leadField] = s.stepKey;
+  });
+  const fromMap = (col: string, ...legacyKeys: string[]) =>
+    pick(fieldMap[col]) ?? legacyKeys.map((k) => pick(k)).find((v) => v !== undefined);
+
+  const name = fromMap("name", "name");
+  const phone = fromMap("phone", "phone");
+  const email = fromMap("email", "email");
+  const serviceRequested = fromMap(
+    "service",
+    "service",
+    "serviceRequested",
+    "matter_type",
+    "service_type",
+    "request_type"
+  );
+  const urgency = fromMap(
+    "urgency",
+    "urgency",
+    "incident_when",
+    "when",
+    "timing",
+    "pickup_date"
+  );
 
   const spam =
     client.featureToggles?.enableSpamProtection &&
-    looksLikeSpam({ name: pick("name"), email: pick("email"), notes: pick("notes") });
-
-  // Best-effort mapping for the leads table. Each industry tends to use a
-  // different step key for "what do you need" / "how soon" — list the common
-  // ones so the admin's table columns stay populated.
-  const serviceRequested =
-    pick("service") ??
-    pick("serviceRequested") ??
-    pick("matter_type") ??
-    pick("service_type") ??
-    pick("request_type");
-  const urgency =
-    pick("urgency") ??
-    pick("incident_when") ??
-    pick("when") ??
-    pick("timing") ??
-    pick("pickup_date");
+    looksLikeSpam({ name, email, notes: pick("notes") });
 
   const lead = await prisma.lead.create({
     data: {
       clientId: client.id,
-      name: pick("name"),
-      phone: pick("phone"),
-      email: pick("email"),
+      name,
+      phone,
+      email,
       serviceRequested,
       urgency,
       status: spam ? "spam" : "new",

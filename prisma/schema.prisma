@@ -146,6 +146,11 @@ model FlowStep {
   altText          String?
   mediaDisplayStyle String @default("above") // above | below | background
 
+  // Optional lead-column mapping. If set, the answer to this step
+  // populates that field on the Lead row (name | phone | email |
+  // service | urgency). Falls back to stepKey-name conventions when null.
+  leadField String?
+
   // Optional translated copy. Shape: { es: { question, options: [{value,label}] } }
   translations Json?
 
