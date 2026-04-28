@@ -1410,6 +1410,7 @@
     }
 
     function renderSuccess() {
+      fireConversion();
       clearFooter();
       while (body.firstChild) body.removeChild(body.firstChild);
       var children = [
@@ -1488,6 +1489,37 @@
         case "text": return "💬";
         case "schedule": return "📅";
         default: return "↗";
+      }
+    }
+
+    // Fire conversion / analytics events on the host page when a lead lands
+    // on the success state. Both Google Ads (gtag) and Google Tag Manager
+    // (dataLayer) are supported — admins choose either or both based on how
+    // their site is set up.
+    function fireConversion() {
+      var w = config.widget || {};
+      var id = (w.googleAdsConversionId || "").trim();
+      var label = (w.googleAdsConversionLabel || "").trim();
+
+      if (id && label && typeof window.gtag === "function") {
+        try {
+          window.gtag("event", "conversion", {
+            send_to: id + "/" + label,
+          });
+        } catch (e) {
+          console.warn("[RJL-Chat] gtag conversion failed:", e);
+        }
+      }
+
+      try {
+        window.dataLayer = window.dataLayer || [];
+        window.dataLayer.push({
+          event: "rjl_chat_lead_submitted",
+          clientId: config.clientId,
+          businessName: config.business && config.business.name,
+        });
+      } catch (e) {
+        // dataLayer push is best-effort; never block the success render.
       }
     }
 

@@ -47,6 +47,10 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
     declineMessage: nullable(rest.declineMessage),
     successHeadline: nullable(rest.successHeadline),
     successMessage: nullable(rest.successMessage),
+    googleAdsConversionId: nullable(rest.googleAdsConversionId)
+      ?.replace(/\s+/g, "")
+      .toUpperCase() ?? null,
+    googleAdsConversionLabel: nullable(rest.googleAdsConversionLabel)?.trim() ?? null,
   };
 
   const client = await prisma.client.update({

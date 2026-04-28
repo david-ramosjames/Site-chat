@@ -69,6 +69,8 @@ export async function GET(req: NextRequest) {
         declineMessage: client.widgetSettings.declineMessage,
         successHeadline: client.widgetSettings.successHeadline,
         successMessage: client.widgetSettings.successMessage,
+        googleAdsConversionId: client.widgetSettings.googleAdsConversionId,
+        googleAdsConversionLabel: client.widgetSettings.googleAdsConversionLabel,
       },
       features: client.featureToggles,
       flow: client.flowSteps.map((s) => ({

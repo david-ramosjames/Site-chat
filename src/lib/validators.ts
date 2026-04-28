@@ -48,6 +48,8 @@ export const widgetSettingsSchema = z.object({
   declineMessage: z.string().max(500).optional().nullable(),
   successHeadline: z.string().max(120).optional().nullable(),
   successMessage: z.string().max(500).optional().nullable(),
+  googleAdsConversionId: z.string().max(60).optional().nullable(),
+  googleAdsConversionLabel: z.string().max(60).optional().nullable(),
 
   secondWelcomeMessage: z.string().max(280).optional().nullable(),
   secondWelcomeDelaySec: z.number().int().min(5).max(600).default(30),

@@ -38,6 +38,8 @@ type Initial = {
   sideButtons: SideButton[];
   sideButtonsPosition: "bottom" | "center";
   openOnLoad: boolean;
+  googleAdsConversionId: string;
+  googleAdsConversionLabel: string;
 };
 
 type SideButton = {
@@ -509,6 +511,47 @@ export default function SettingsForm({ clientId, initial }: { clientId: string; 
               onChange={(buttons) => set("sideButtons", buttons)}
             />
           </div>
+        </Section>
+
+        <Section
+          title="Conversion tracking"
+          subtitle="Fires a Google Ads conversion event when a visitor reaches the success state. Requires Google Tag (gtag.js) to already be loaded on the host site."
+        >
+          <div className="grid gap-5 sm:grid-cols-2">
+            <Field
+              label="Google Ads Conversion ID"
+              help="Looks like AW-1234567890. Find it under Google Ads → Goals → Conversions → your action → Tag setup."
+            >
+              <input
+                className="input"
+                placeholder="AW-1234567890"
+                value={form.googleAdsConversionId}
+                onChange={(e) => set("googleAdsConversionId", e.target.value)}
+              />
+            </Field>
+            <Field
+              label="Conversion Label"
+              help="The label shown on the same Tag setup screen, e.g. abcDEF123-."
+            >
+              <input
+                className="input"
+                placeholder="abcDEF123-"
+                value={form.googleAdsConversionLabel}
+                onChange={(e) => set("googleAdsConversionLabel", e.target.value)}
+              />
+            </Field>
+          </div>
+          <p className="mt-3 text-xs text-ink-500">
+            On success the widget calls{" "}
+            <code className="rounded bg-ink-100 px-1">
+              gtag(&apos;event&apos;,&apos;conversion&apos;,&#123; send_to: ID/LABEL &#125;)
+            </code>{" "}
+            on the host page. A{" "}
+            <code className="rounded bg-ink-100 px-1">
+              dataLayer.push(&#123; event:&apos;rjl_chat_lead_submitted&apos; &#125;)
+            </code>{" "}
+            also fires either way so GTM-based setups can pick it up too.
+          </p>
         </Section>
 
         <div className="flex items-center gap-3 pt-2">

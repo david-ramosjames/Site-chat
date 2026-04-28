@@ -90,6 +90,8 @@ export default async function SettingsPage({ params }: { params: { clientId: str
           })),
           sideButtonsPosition: (ws?.sideButtonsPosition as "bottom" | "center") ?? "bottom",
           openOnLoad: ws?.openOnLoad ?? false,
+          googleAdsConversionId: ws?.googleAdsConversionId ?? "",
+          googleAdsConversionLabel: ws?.googleAdsConversionLabel ?? "",
         }}
       />
     </div>

@@ -92,6 +92,13 @@ model WidgetSettings {
   successHeadline String?
   successMessage  String?
 
+  // Optional Google Ads conversion tracking. When both are set the
+  // widget fires gtag('event','conversion', { send_to: id/label }) on
+  // the host page after a successful lead submit. dataLayer push happens
+  // either way so GTM-based setups can pick the event up too.
+  googleAdsConversionId    String?
+  googleAdsConversionLabel String?
+
   client Client @relation(fields: [clientId], references: [id], onDelete: Cascade)
 }
 
