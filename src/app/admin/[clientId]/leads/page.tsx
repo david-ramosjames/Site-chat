@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
+import DeleteLeadButton from "./DeleteLeadButton";
 
 export const dynamic = "force-dynamic";
 
@@ -82,12 +83,15 @@ export default async function LeadsPage({ params }: { params: { clientId: string
                   </td>
                   <td className="px-4 py-3 text-xs text-ink-500">{formatDate(l.createdAt)}</td>
                   <td className="px-4 py-3 text-right">
-                    <Link
-                      href={`/admin/${params.clientId}/leads/${l.id}`}
-                      className="text-xs font-semibold text-brand-600 hover:underline"
-                    >
-                      Open
-                    </Link>
+                    <div className="inline-flex items-center gap-2">
+                      <Link
+                        href={`/admin/${params.clientId}/leads/${l.id}`}
+                        className="text-xs font-semibold text-brand-600 hover:underline"
+                      >
+                        Open
+                      </Link>
+                      <DeleteLeadButton leadId={l.id} name={l.name ?? ""} />
+                    </div>
                   </td>
                 </tr>
               ))}

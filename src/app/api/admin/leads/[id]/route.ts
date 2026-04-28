@@ -24,3 +24,12 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
   const lead = await prisma.lead.update({ where: { id: params.id }, data: parsed.data });
   return NextResponse.json({ lead });
 }
+
+export async function DELETE(_req: NextRequest, { params }: { params: { id: string } }) {
+  try {
+    await prisma.lead.delete({ where: { id: params.id } });
+    return NextResponse.json({ ok: true });
+  } catch {
+    return NextResponse.json({ error: "not_found" }, { status: 404 });
+  }
+}
