@@ -92,6 +92,9 @@ export default async function SettingsPage({ params }: { params: { clientId: str
           openOnLoad: ws?.openOnLoad ?? false,
           googleAdsConversionId: ws?.googleAdsConversionId ?? "",
           googleAdsConversionLabel: ws?.googleAdsConversionLabel ?? "",
+          callRailUseDynamicNumber: ws?.callRailUseDynamicNumber ?? false,
+          callRailSwapWaitMs: ws?.callRailSwapWaitMs ?? 800,
+          callRailDynamicNumberSelector: ws?.callRailDynamicNumberSelector ?? "",
         }}
       />
     </div>

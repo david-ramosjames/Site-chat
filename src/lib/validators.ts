@@ -51,6 +51,10 @@ export const widgetSettingsSchema = z.object({
   googleAdsConversionId: z.string().max(60).optional().nullable(),
   googleAdsConversionLabel: z.string().max(60).optional().nullable(),
 
+  callRailUseDynamicNumber: z.boolean().default(false),
+  callRailSwapWaitMs: z.number().int().min(0).max(5000).default(800),
+  callRailDynamicNumberSelector: z.string().max(200).optional().nullable(),
+
   secondWelcomeMessage: z.string().max(280).optional().nullable(),
   secondWelcomeDelaySec: z.number().int().min(5).max(600).default(30),
 
@@ -154,6 +158,9 @@ export const notificationSettingsSchema = z.object({
   slackWebhookUrl: z.string().url().or(z.literal("")).optional().nullable(),
   crmWebhookUrl: z.string().url().or(z.literal("")).optional().nullable(),
   googleSheetWebhookUrl: z.string().url().or(z.literal("")).optional().nullable(),
+  callRailAccountId: z.string().max(60).optional().nullable(),
+  callRailApiKey: z.string().max(200).optional().nullable(),
+  callRailFormId: z.string().max(60).optional().nullable(),
 });
 
 export const flowStepInputSchema = z.object({
@@ -233,9 +240,15 @@ export const leadSubmissionSchema = z.object({
       source: z.string().optional().nullable(),
       medium: z.string().optional().nullable(),
       campaign: z.string().optional().nullable(),
+      term: z.string().optional().nullable(),
+      content: z.string().optional().nullable(),
     })
     .optional()
     .nullable(),
+  gclid: z.string().max(500).optional().nullable(),
+  msclkid: z.string().max(500).optional().nullable(),
+  landingPageUrl: z.string().url().optional().nullable(),
+  callrailSessionId: z.string().max(200).optional().nullable(),
   userAgent: z.string().optional().nullable(),
 });
 

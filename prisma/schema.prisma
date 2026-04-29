@@ -99,6 +99,14 @@ model WidgetSettings {
   googleAdsConversionId    String?
   googleAdsConversionLabel String?
 
+  // Optional CallRail Dynamic Number Insertion override. When on, the
+  // widget reads the swapped phone from the host page (CallRail's swap.js
+  // must already be loaded there) and uses that for Call/Text/SMS/WhatsApp
+  // destinations instead of the admin-configured number.
+  callRailUseDynamicNumber     Boolean @default(false)
+  callRailSwapWaitMs           Int     @default(800)
+  callRailDynamicNumberSelector String?
+
   client Client @relation(fields: [clientId], references: [id], onDelete: Cascade)
 }
 
@@ -133,6 +141,13 @@ model NotificationSettings {
   slackWebhookUrl      String?
   crmWebhookUrl        String?
   googleSheetWebhookUrl String?
+
+  // CallRail Form Capture API credentials. When account ID + API key are
+  // both set, completed leads are forwarded into CallRail as form
+  // submissions (in addition to the lead row, Slack alerts, etc.).
+  callRailAccountId String?
+  callRailApiKey    String?
+  callRailFormId    String?
 
   client Client @relation(fields: [clientId], references: [id], onDelete: Cascade)
 }
@@ -181,6 +196,13 @@ model Lead {
   utmSource        String?
   utmMedium        String?
   utmCampaign      String?
+  utmTerm          String?
+  utmContent       String?
+  gclid            String?
+  msclkid          String?
+  landingPageUrl   String?
+  callrailSessionId         String?
+  callrailFormSubmissionId  String?
   userAgent        String?
   transcript       Json?    // [{ role, text, stepKey }]
   answers          Json?    // { stepKey: value }

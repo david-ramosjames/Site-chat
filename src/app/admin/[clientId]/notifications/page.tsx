@@ -39,6 +39,9 @@ export default async function NotificationsPage({ params }: { params: { clientId
           slackWebhookUrl: n?.slackWebhookUrl ?? "",
           crmWebhookUrl: n?.crmWebhookUrl ?? "",
           googleSheetWebhookUrl: n?.googleSheetWebhookUrl ?? "",
+          callRailAccountId: n?.callRailAccountId ?? "",
+          callRailApiKey: n?.callRailApiKey ?? "",
+          callRailFormId: n?.callRailFormId ?? "",
         }}
       />
     </div>

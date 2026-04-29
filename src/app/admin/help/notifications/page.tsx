@@ -26,6 +26,7 @@ export default function NotificationsHelp() {
           <li><a className="text-brand-600 hover:underline" href="#slack">Slack webhook</a></li>
           <li><a className="text-brand-600 hover:underline" href="#crm">CRM webhook</a></li>
           <li><a className="text-brand-600 hover:underline" href="#google-sheet">Google Sheet</a></li>
+          <li><a className="text-brand-600 hover:underline" href="#callrail">CallRail</a></li>
           <li><a className="text-brand-600 hover:underline" href="#test">Testing</a></li>
         </ul>
       </nav>
@@ -127,6 +128,54 @@ export default function NotificationsHelp() {
           <li>Action = <strong>Google Sheets → Create Spreadsheet Row</strong>. Pick your sheet and map the lead fields.</li>
           <li>Paste the catch URL into <strong>Google Sheet webhook URL</strong>. Save.</li>
         </Steps>
+      </Section>
+
+      <Section id="callrail" title="CallRail">
+        <p>
+          CallRail&apos;s Form Capture API lets the chatbot deliver completed leads to CallRail
+          alongside calls — so they share the same attribution (GCLID, UTM, landing page,
+          tracking session) and get sent into Google Ads as conversions through CallRail&apos;s
+          existing pipeline.
+        </p>
+        <p className="mt-2 font-semibold">Account ID:</p>
+        <Steps>
+          <li>Look at your CallRail swap.js script tag, e.g.{" "}
+            <code className="rounded bg-ink-100 px-1">
+              {"//cdn.callrail.com/companies/"}<strong>984308652</strong>{"/.../swap.js"}
+            </code>
+            .
+          </li>
+          <li>The number after <code className="rounded bg-ink-100 px-1">/companies/</code> is your
+            Account ID. Paste it into the <strong>CallRail Account ID</strong> field on
+            Notifications.</li>
+        </Steps>
+        <p className="mt-3 font-semibold">API key:</p>
+        <Steps>
+          <li>In CallRail, go to <strong>Settings → Integrations → API Keys</strong>.</li>
+          <li>Click <strong>Create API Key</strong>. Name it <em>RJL-Chat</em> or similar.</li>
+          <li>Copy the generated key and paste it into <strong>CallRail API key</strong>.</li>
+        </Steps>
+        <p className="mt-3 font-semibold">(Optional) Form ID:</p>
+        <p>
+          A short label like <code className="rounded bg-ink-100 px-1">rjl-chat-leads</code> that
+          groups chatbot submissions under one form name in CallRail&apos;s UI. Skip if you
+          don&apos;t need to filter chat-only submissions.
+        </p>
+        <p className="mt-3 font-semibold">Dynamic phone number on the chatbot:</p>
+        <Steps>
+          <li>Open <strong>Widget settings</strong> for the same business.</li>
+          <li>Scroll to <strong>CallRail dynamic phone number</strong> and tick{" "}
+            <em>&quot;Use the CallRail-swapped number from the host page&quot;</em>.</li>
+          <li>If your site has more than one <code className="rounded bg-ink-100 px-1">tel:</code>{" "}
+            link, paste a CSS selector for the canonical phone (e.g.{" "}
+            <code className="rounded bg-ink-100 px-1">.header-phone a</code>).</li>
+        </Steps>
+        <Note>
+          If CallRail is sending conversions to Google Ads for you already, leave the chatbot&apos;s
+          Google Ads Conversion ID/Label fields blank to avoid double-counting. The widget will
+          still push <code className="rounded bg-ink-100 px-1">rjl_chat_lead_submitted</code> to{" "}
+          <code className="rounded bg-ink-100 px-1">window.dataLayer</code> for GTM either way.
+        </Note>
       </Section>
 
       <Section id="test" title="Test it">

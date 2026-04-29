@@ -40,6 +40,9 @@ type Initial = {
   openOnLoad: boolean;
   googleAdsConversionId: string;
   googleAdsConversionLabel: string;
+  callRailUseDynamicNumber: boolean;
+  callRailSwapWaitMs: number;
+  callRailDynamicNumberSelector: string;
 };
 
 type SideButton = {
@@ -550,7 +553,68 @@ export default function SettingsForm({ clientId, initial }: { clientId: string; 
             <code className="rounded bg-ink-100 px-1">
               dataLayer.push(&#123; event:&apos;rjl_chat_lead_submitted&apos; &#125;)
             </code>{" "}
-            also fires either way so GTM-based setups can pick it up too.
+            also fires either way so GTM-based setups can pick it up too. <strong>Tip:</strong> if
+            CallRail is also sending conversions to Google Ads for you, leave these blank to avoid
+            double-counting.
+          </p>
+        </Section>
+
+        <Section
+          title="CallRail dynamic phone number"
+          subtitle="When CallRail's swap.js is on the host page, the chatbot can read the swapped tracking number and use it for Call/Text/SMS/WhatsApp destinations instead of the admin-configured number."
+        >
+          <label className="flex items-center gap-2">
+            <input
+              type="checkbox"
+              checked={form.callRailUseDynamicNumber}
+              onChange={(e) => set("callRailUseDynamicNumber", e.target.checked)}
+              className="h-4 w-4 rounded border-ink-300"
+            />
+            <span className="text-sm">
+              Use the CallRail-swapped number from the host page wherever a phone destination is
+              shown
+            </span>
+          </label>
+          {form.callRailUseDynamicNumber && (
+            <div className="mt-4 grid gap-5 sm:grid-cols-2">
+              <Field
+                label="Swap wait time (ms)"
+                help="How long to wait for swap.js to finish before reading the number. 800ms covers most setups."
+              >
+                <input
+                  className="input"
+                  type="number"
+                  min={0}
+                  max={5000}
+                  value={form.callRailSwapWaitMs}
+                  onChange={(e) =>
+                    set(
+                      "callRailSwapWaitMs",
+                      Math.max(0, Math.min(5000, Number(e.target.value) || 800))
+                    )
+                  }
+                />
+              </Field>
+              <Field
+                label="Phone selector (advanced)"
+                help="Optional CSS selector pointing to the swapped phone link on the host page. Defaults to the first <a href='tel:'> on the page."
+              >
+                <input
+                  className="input"
+                  placeholder=".header-phone a, [data-cr-id] a"
+                  value={form.callRailDynamicNumberSelector}
+                  onChange={(e) => set("callRailDynamicNumberSelector", e.target.value)}
+                />
+              </Field>
+            </div>
+          )}
+          <p className="mt-3 text-xs text-ink-500">
+            Send chatbot leads into CallRail itself (and capture GCLID/UTM for Google Ads
+            attribution) on the{" "}
+            <a href={`/admin/${clientId}/notifications`} className="text-brand-600 hover:underline">
+              Notifications page
+            </a>
+            .
           </p>
         </Section>
 

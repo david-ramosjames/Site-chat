@@ -5,6 +5,7 @@ import { leadSubmissionSchema } from "@/lib/validators";
 import { rateLimit } from "@/lib/rate-limit";
 import { looksLikeSpam } from "@/lib/spam";
 import { sendLeadNotifications } from "@/lib/notifications";
+import { postToCallRail } from "@/lib/callrail";
 
 export const dynamic = "force-dynamic";
 
@@ -93,6 +94,12 @@ export async function POST(req: NextRequest) {
       utmSource: client.featureToggles?.collectUtm ? payload.utm?.source ?? null : null,
       utmMedium: client.featureToggles?.collectUtm ? payload.utm?.medium ?? null : null,
       utmCampaign: client.featureToggles?.collectUtm ? payload.utm?.campaign ?? null : null,
+      utmTerm: client.featureToggles?.collectUtm ? payload.utm?.term ?? null : null,
+      utmContent: client.featureToggles?.collectUtm ? payload.utm?.content ?? null : null,
+      gclid: payload.gclid ?? null,
+      msclkid: payload.msclkid ?? null,
+      landingPageUrl: payload.landingPageUrl ?? null,
+      callrailSessionId: payload.callrailSessionId ?? null,
       userAgent: payload.userAgent ?? null,
       answers: payload.answers as object,
       transcript: payload.transcript as object,
@@ -103,6 +110,36 @@ export async function POST(req: NextRequest) {
     await sendLeadNotifications(lead, client.notificationSettings, client.name).catch((e) =>
       console.warn("Notification dispatch failed:", e)
     );
+
+    // Forward to CallRail if configured. Runs alongside Slack/email/webhook
+    // dispatch — never blocks lead creation, errors only logged.
+    if (
+      client.notificationSettings?.callRailAccountId &&
+      client.notificationSettings?.callRailApiKey
+    ) {
+      const result = await postToCallRail(lead, client.notificationSettings, {
+        formUrl: payload.sourceUrl ?? null,
+        landingPage: payload.landingPageUrl ?? null,
+        referrer: payload.referrer ?? null,
+        utmSource: payload.utm?.source ?? null,
+        utmMedium: payload.utm?.medium ?? null,
+        utmCampaign: payload.utm?.campaign ?? null,
+        utmTerm: payload.utm?.term ?? null,
+        utmContent: payload.utm?.content ?? null,
+        gclid: payload.gclid ?? null,
+        msclkid: payload.msclkid ?? null,
+        trackerSession: payload.callrailSessionId ?? null,
+        answers: payload.answers as Record<string, unknown>,
+      });
+      if (result.ok && result.formSubmissionId) {
+        await prisma.lead
+          .update({
+            where: { id: lead.id },
+            data: { callrailFormSubmissionId: result.formSubmissionId },
+          })
+          .catch((e) => console.warn("Saving CallRail submission id failed:", e));
+      }
+    }
   }
 
   return withCors(NextResponse.json({ ok: true, leadId: lead.id }));

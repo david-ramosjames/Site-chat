@@ -51,6 +51,9 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
       ?.replace(/\s+/g, "")
       .toUpperCase() ?? null,
     googleAdsConversionLabel: nullable(rest.googleAdsConversionLabel)?.trim() ?? null,
+    callRailUseDynamicNumber: rest.callRailUseDynamicNumber,
+    callRailSwapWaitMs: rest.callRailSwapWaitMs,
+    callRailDynamicNumberSelector: nullable(rest.callRailDynamicNumberSelector),
   };
 
   const client = await prisma.client.update({

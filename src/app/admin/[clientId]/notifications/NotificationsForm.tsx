@@ -8,6 +8,9 @@ type Notifications = {
   slackWebhookUrl: string;
   crmWebhookUrl: string;
   googleSheetWebhookUrl: string;
+  callRailAccountId: string;
+  callRailApiKey: string;
+  callRailFormId: string;
 };
 
 export default function NotificationsForm({
@@ -90,6 +93,47 @@ export default function NotificationsForm({
           onChange={(e) => set("googleSheetWebhookUrl", e.target.value)}
         />
       </Field>
+
+      <fieldset className="rounded-lg border border-ink-300/60 bg-ink-100/40 p-4">
+        <legend className="px-1 text-xs font-semibold uppercase tracking-wide text-ink-500">
+          CallRail Form Capture
+        </legend>
+        <p className="mt-1 mb-3 text-xs text-ink-500">
+          Forward completed leads into CallRail as form submissions so they show up alongside calls
+          and are attributed (GCLID, UTM, landing page) for Google Ads conversions.
+        </p>
+        <div className="space-y-3">
+          <Field label="CallRail Account ID" helpAnchor="callrail" help="Numeric ID. Found in your swap.js URL after /companies/, e.g. 984308652.">
+            <input
+              className="input"
+              placeholder="984308652"
+              value={form.callRailAccountId}
+              onChange={(e) => set("callRailAccountId", e.target.value)}
+            />
+          </Field>
+          <Field label="CallRail API key" helpAnchor="callrail" help="Generate at CallRail → Settings → Integrations → API Keys → Create API Key.">
+            <input
+              className="input font-mono"
+              type="password"
+              placeholder="••••••••••••••••••••"
+              value={form.callRailApiKey}
+              onChange={(e) => set("callRailApiKey", e.target.value)}
+            />
+          </Field>
+          <Field
+            label="Form ID (optional)"
+            helpAnchor="callrail"
+            help="Optional. Groups submissions in CallRail's UI."
+          >
+            <input
+              className="input"
+              placeholder="e.g. rjl-chat-leads"
+              value={form.callRailFormId}
+              onChange={(e) => set("callRailFormId", e.target.value)}
+            />
+          </Field>
+        </div>
+      </fieldset>
 
       <div className="flex items-center gap-3 border-t border-ink-300/60 pt-4">
         <button className="btn-primary" disabled={saving}>

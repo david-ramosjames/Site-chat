@@ -71,6 +71,9 @@ export async function GET(req: NextRequest) {
         successMessage: client.widgetSettings.successMessage,
         googleAdsConversionId: client.widgetSettings.googleAdsConversionId,
         googleAdsConversionLabel: client.widgetSettings.googleAdsConversionLabel,
+        callRailUseDynamicNumber: client.widgetSettings.callRailUseDynamicNumber,
+        callRailSwapWaitMs: client.widgetSettings.callRailSwapWaitMs,
+        callRailDynamicNumberSelector: client.widgetSettings.callRailDynamicNumberSelector,
       },
       features: client.featureToggles,
       flow: client.flowSteps.map((s) => ({

@@ -16,6 +16,9 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
     slackWebhookUrl: parsed.data.slackWebhookUrl || null,
     crmWebhookUrl: parsed.data.crmWebhookUrl || null,
     googleSheetWebhookUrl: parsed.data.googleSheetWebhookUrl || null,
+    callRailAccountId: parsed.data.callRailAccountId?.trim() || null,
+    callRailApiKey: parsed.data.callRailApiKey?.trim() || null,
+    callRailFormId: parsed.data.callRailFormId?.trim() || null,
   };
   const notifications = await prisma.notificationSettings.upsert({
     where: { clientId: params.id },

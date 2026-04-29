@@ -44,6 +44,83 @@
     return params;
   }
 
+  // Attribution capture. Persists landing page + first-touch UTM/GCLID into
+  // sessionStorage so the values survive multi-page navigation. Each call
+  // returns the merged snapshot plus the current page URL/referrer.
+  var ATTR_KEY = "rjl_chat_attribution";
+  function captureAttribution() {
+    var params = qs();
+    var stored = {};
+    try {
+      var raw = sessionStorage.getItem(ATTR_KEY);
+      if (raw) stored = JSON.parse(raw);
+    } catch (e) {}
+
+    function pickFirst() {
+      for (var i = 0; i < arguments.length; i++) {
+        if (arguments[i]) return arguments[i];
+      }
+      return null;
+    }
+
+    var snapshot = {
+      utmSource: pickFirst(params.utm_source, stored.utmSource),
+      utmMedium: pickFirst(params.utm_medium, stored.utmMedium),
+      utmCampaign: pickFirst(params.utm_campaign, stored.utmCampaign),
+      utmTerm: pickFirst(params.utm_term, stored.utmTerm),
+      utmContent: pickFirst(params.utm_content, stored.utmContent),
+      gclid: pickFirst(params.gclid, stored.gclid),
+      msclkid: pickFirst(params.msclkid, stored.msclkid),
+      landingPage: stored.landingPage || (window.location && window.location.href) || null,
+    };
+
+    try { sessionStorage.setItem(ATTR_KEY, JSON.stringify(snapshot)); } catch (e) {}
+
+    return {
+      utmSource: snapshot.utmSource,
+      utmMedium: snapshot.utmMedium,
+      utmCampaign: snapshot.utmCampaign,
+      utmTerm: snapshot.utmTerm,
+      utmContent: snapshot.utmContent,
+      gclid: snapshot.gclid,
+      msclkid: snapshot.msclkid,
+      landingPage: snapshot.landingPage,
+      currentPage: (window.location && window.location.href) || null,
+      referrer: document.referrer || null,
+    };
+  }
+
+  // Read CallRail's session ID. swap.js exposes window.CallTrk; older
+  // installs expose window._crqs. Both ways are best-effort — null is OK.
+  function getCallRailSessionId() {
+    try {
+      if (window.CallTrk && typeof window.CallTrk.session === "function") {
+        var s = window.CallTrk.session();
+        if (s && typeof s === "string") return s;
+        if (s && s.session_id) return s.session_id;
+      }
+    } catch (e) {}
+    try {
+      var match = document.cookie.match(/(?:^|;\s*)__ctmid=([^;]+)/);
+      if (match) return decodeURIComponent(match[1]);
+    } catch (e) {}
+    return null;
+  }
+
+  // Pull the swap-replaced phone from the host page. Returns the digits-only
+  // E.164-ish number (whatever's in tel:href) or null.
+  function getDynamicPhone(selector) {
+    try {
+      var sel = (selector && selector.trim()) ||
+        'a[data-cr-id][href^="tel:"], a[data-numberswapper][href^="tel:"], a[href^="tel:"]';
+      var el = document.querySelector(sel);
+      if (!el) return null;
+      var href = el.getAttribute("href") || "";
+      var num = href.replace(/^tel:/i, "").trim();
+      return num || null;
+    } catch (e) { return null; }
+  }
+
   function fetchJson(url, opts) {
     return fetch(url, opts).then(function (r) {
       if (!r.ok) throw new Error("Network " + r.status);
@@ -458,6 +535,11 @@
       }
       renderSideButtons();
 
+      // Snapshot attribution into sessionStorage immediately so we don't
+      // lose first-touch UTM/GCLID if the visitor navigates before opening
+      // the chat. Subsequent submits read the persisted snapshot.
+      try { captureAttribution(); } catch (e) {}
+
       if (willAutoOpen) {
         // Skip the floating bubble entirely; go straight to the panel.
         // If the visitor closes the panel they'll get the avatar after.
@@ -508,7 +590,8 @@
     }
 
     function sideButtonHref(b) {
-      var dest = (b.destination || "").trim();
+      var raw = (b.destination || "").trim();
+      var dest = phoneShapedTypes[b.type] ? resolvePhone(raw) : raw;
       switch (b.type) {
         case "phone":
           return "tel:" + dest.replace(/[^+\d]/g, "");
@@ -518,12 +601,23 @@
           if (/^https?:\/\//i.test(dest)) return dest;
           return "https://wa.me/" + dest.replace(/[^+\d]/g, "").replace(/^\+/, "");
         case "messenger":
-          if (/^https?:\/\//i.test(dest)) return dest;
-          return "https://m.me/" + dest;
+          if (/^https?:\/\//i.test(raw)) return raw;
+          return "https://m.me/" + raw;
         case "custom":
         default:
-          return dest;
+          return raw;
       }
+    }
+
+    var phoneShapedTypes = { phone: true, sms: true, whatsapp: true };
+
+    // When the dynamic-number toggle is on AND swap.js gave us a number,
+    // prefer that over the admin-configured phone. Fall back to configured
+    // when CallRail isn't ready yet (or never loaded).
+    function resolvePhone(configured) {
+      if (!config.widget.callRailUseDynamicNumber) return configured;
+      var dyn = getDynamicPhone(config.widget.callRailDynamicNumberSelector);
+      return dyn || configured;
     }
 
     function sideButtonIcon(type) {
@@ -1383,7 +1477,10 @@
       var t = showTyping();
       setTimeout(function () {
         t.remove();
-        var params = qs();
+        var attr = captureAttribution();
+        var collectPage = !config.features || config.features.collectPageUrl !== false;
+        var collectRef = !config.features || config.features.collectReferrer !== false;
+        var collectUtm = !config.features || config.features.collectUtm !== false;
         fetchJson(apiUrl("/api/leads"), {
           method: "POST",
           headers: { "content-type": "application/json" },
@@ -1391,13 +1488,21 @@
             clientId: config.clientId,
             answers: answers,
             transcript: transcript,
-            sourceUrl: (config.features && config.features.collectPageUrl !== false) ? window.location.href : null,
-            referrer: (config.features && config.features.collectReferrer !== false) ? document.referrer : null,
-            utm: (config.features && config.features.collectUtm !== false) ? {
-              source: params.utm_source || null,
-              medium: params.utm_medium || null,
-              campaign: params.utm_campaign || null,
-            } : null,
+            sourceUrl: collectPage ? attr.currentPage : null,
+            referrer: collectRef ? attr.referrer : null,
+            utm: collectUtm
+              ? {
+                  source: attr.utmSource,
+                  medium: attr.utmMedium,
+                  campaign: attr.utmCampaign,
+                  term: attr.utmTerm,
+                  content: attr.utmContent,
+                }
+              : null,
+            gclid: attr.gclid,
+            msclkid: attr.msclkid,
+            landingPageUrl: collectPage ? attr.landingPage : null,
+            callrailSessionId: getCallRailSessionId(),
             userAgent: navigator.userAgent,
           }),
         }).then(function () {
@@ -1435,10 +1540,11 @@
           };
           if (c.type === "call" || c.type === "text") {
             // Two-line engaging layout with pulsing icon and formatted number.
+            var displayedNumber = resolvePhone(c.destination);
             var iconWrap = el("span", { className: "cta-icon" }, [endCtaIcon(c.type)]);
             var textWrap = el("span", { className: "cta-text" }, [
               el("span", { className: "cta-label" }, [label]),
-              el("span", { className: "cta-sub" }, [formatPhoneDisplay(c.destination)]),
+              el("span", { className: "cta-sub" }, [formatPhoneDisplay(displayedNumber)]),
             ]);
             attrs.className = "end-cta phone" + outline;
             ctaWrap.appendChild(el("a", attrs, [iconWrap, textWrap]));
@@ -1469,8 +1575,8 @@
 
     function endCtaHref(c) {
       var dest = (c.destination || "").trim();
-      if (c.type === "call") return "tel:" + dest.replace(/[^+\d]/g, "");
-      if (c.type === "text") return "sms:" + dest.replace(/[^+\d]/g, "");
+      if (c.type === "call") return "tel:" + resolvePhone(dest).replace(/[^+\d]/g, "");
+      if (c.type === "text") return "sms:" + resolvePhone(dest).replace(/[^+\d]/g, "");
       return dest;
     }
     function formatPhoneDisplay(raw) {
