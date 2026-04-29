@@ -37,14 +37,27 @@ export default function NotificationsForm({
     setMessage(null);
     setError(null);
     startTransition(async () => {
-      const res = await fetch(`/api/admin/clients/${clientId}/notifications`, {
-        method: "PUT",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify(form),
-      });
+      let res: Response;
+      try {
+        res = await fetch(`/api/admin/clients/${clientId}/notifications`, {
+          method: "PUT",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify(form),
+          // No browser/CDN caching for the save round-trip.
+          cache: "no-store",
+        });
+      } catch (networkErr) {
+        setError(`Network error: ${(networkErr as Error).message || "request failed"}`);
+        return;
+      }
       if (!res.ok) {
-        const body = await res.json().catch(() => ({}));
-        setError(body?.issues ? "Please check the highlighted fields." : "Could not save.");
+        // Try JSON first, fall back to text so server errors that don't
+        // emit JSON still surface a useful message.
+        const text = await res.text().catch(() => "");
+        let body: unknown = null;
+        try { body = text ? JSON.parse(text) : null; } catch { /* not JSON */ }
+        const detail = formatNotificationError(body) || text.slice(0, 200) || res.statusText;
+        setError(`Could not save (${res.status}): ${detail}`);
         return;
       }
       setMessage("Saved.");
@@ -210,6 +223,27 @@ export default function NotificationsForm({
       </div>
     </form>
   );
+}
+
+function formatNotificationError(body: unknown): string | null {
+  const b = body as
+    | {
+        error?: string;
+        detail?: string;
+        issues?: { formErrors?: string[]; fieldErrors?: Record<string, string[]> };
+      }
+    | undefined;
+  if (!b) return null;
+  if (b.issues?.formErrors?.length) return b.issues.formErrors[0];
+  if (b.issues?.fieldErrors) {
+    for (const [k, msgs] of Object.entries(b.issues.fieldErrors)) {
+      if (msgs?.length) return `${k}: ${msgs[0]}`;
+    }
+  }
+  if (b.error === "invalid_payload") return "One or more fields failed validation.";
+  if (b.detail) return b.detail;
+  if (b.error) return b.error;
+  return null;
 }
 
 function Field({
