@@ -121,19 +121,46 @@ function BranchSelect({
   );
 }
 
-function formatServerError(body: unknown): string | null {
-  // Pull a human-readable line out of either Zod's flatten() shape or a
-  // generic { error } payload.
+function formatServerError(
+  body: unknown,
+  steps: { stepKey: string }[]
+): string | null {
   const b = body as
-    | { error?: string; issues?: { formErrors?: string[]; fieldErrors?: Record<string, string[]> } }
+    | {
+        error?: string;
+        detail?: string;
+        issues?: { formErrors?: string[]; fieldErrors?: Record<string, string[]> };
+        stepIssues?: { path: (string | number)[]; message: string }[];
+      }
     | undefined;
   if (!b) return null;
+
+  // Step-level issues: path looks like ["steps", N, "stepKey", ...]. Surface
+  // the first one with the human-readable step number and field.
+  if (b.stepIssues?.length) {
+    const first = b.stepIssues.find(
+      (iss) => iss.path && iss.path[0] === "steps" && typeof iss.path[1] === "number"
+    );
+    if (first) {
+      const idx = first.path[1] as number;
+      const field = first.path
+        .slice(2)
+        .map((p) => String(p))
+        .join(".");
+      const stepLabel = steps[idx]?.stepKey ? `"${steps[idx].stepKey}"` : `#${idx + 1}`;
+      return `Step ${idx + 1} ${stepLabel}: ${field || "field"} — ${first.message}`;
+    }
+    // Top-level issue not tied to a step (e.g. body shape).
+    return b.stepIssues[0].message;
+  }
+
   if (b.issues?.formErrors?.length) return b.issues.formErrors[0];
   if (b.issues?.fieldErrors) {
     for (const [k, msgs] of Object.entries(b.issues.fieldErrors)) {
       if (msgs?.length) return `${k}: ${msgs[0]}`;
     }
   }
+  if (b.error === "db_error" && b.detail) return `Database: ${b.detail}`;
   if (b.error === "invalid_payload") return "Some fields didn't pass validation. Check option values and step keys.";
   if (b.error) return b.error;
   return null;
@@ -254,7 +281,7 @@ export default function FlowBuilder({
       });
       if (!res.ok) {
         const body = await res.json().catch(() => ({}));
-        setError(formatServerError(body) || "Could not save flow.");
+        setError(formatServerError(body, steps) || "Could not save flow.");
         return;
       }
       setMessage("Flow saved.");
