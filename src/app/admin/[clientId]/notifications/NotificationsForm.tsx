@@ -37,12 +37,19 @@ export default function NotificationsForm({
     setMessage(null);
     setError(null);
     startTransition(async () => {
+      // Trim every value before submitting so a stray space on a URL or
+      // ID doesn't trip Zod's strict url()/email() and silently kill the
+      // whole save. Empty after-trim values become "" so the server can
+      // clear the column.
+      const trimmed = Object.fromEntries(
+        Object.entries(form).map(([k, v]) => [k, typeof v === "string" ? v.trim() : v])
+      ) as typeof form;
       let res: Response;
       try {
         res = await fetch(`/api/admin/clients/${clientId}/notifications`, {
           method: "PUT",
           headers: { "content-type": "application/json" },
-          body: JSON.stringify(form),
+          body: JSON.stringify(trimmed),
           // No browser/CDN caching for the save round-trip.
           cache: "no-store",
         });
@@ -60,6 +67,9 @@ export default function NotificationsForm({
         setError(`Could not save (${res.status}): ${detail}`);
         return;
       }
+      // Reflect the cleared/trimmed values back into the local form state
+      // so the inputs visibly match what the server now has.
+      setForm(trimmed);
       setMessage("Saved.");
     });
   }

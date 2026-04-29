@@ -6,7 +6,18 @@ export const dynamic = "force-dynamic";
 
 export async function PUT(req: NextRequest, { params }: { params: { id: string } }) {
   const body = await req.json().catch(() => null);
-  const parsed = notificationSettingsSchema.safeParse(body);
+  // Trim all string fields before validating so stray whitespace on a
+  // URL / ID never trips Zod's strict url()/max() and blocks the save.
+  const trimmedBody =
+    body && typeof body === "object"
+      ? Object.fromEntries(
+          Object.entries(body as Record<string, unknown>).map(([k, v]) => [
+            k,
+            typeof v === "string" ? v.trim() : v,
+          ])
+        )
+      : body;
+  const parsed = notificationSettingsSchema.safeParse(trimmedBody);
   if (!parsed.success) {
     return NextResponse.json({ error: "invalid_payload", issues: parsed.error.flatten() }, { status: 400 });
   }
