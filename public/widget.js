@@ -288,14 +288,16 @@
       ".end-cta:hover{filter:brightness(1.05);}" +
       ".end-cta.outline{background:#fff;color:" + primary + ";border:1px solid " + primary + ";}" +
       // Engaging two-line layout for Call/Text CTAs: prominent pulsing icon
-      // on the left, label on top with the formatted phone number below.
-      ".end-cta.phone{display:flex;align-items:center;justify-content:flex-start;gap:14px;padding:14px 18px;text-align:left;}" +
+      // on the left, centered label on top with the formatted phone number
+      // below. Whole button gets a soft halo pulse to draw the eye.
+      ".end-cta.phone{display:flex;align-items:center;justify-content:center;gap:14px;padding:16px 18px;text-align:center;animation:tc-cta-glow 2.2s ease-in-out infinite;}" +
       ".end-cta.phone .cta-icon{flex-shrink:0;width:42px;height:42px;border-radius:999px;background:rgba(255,255,255,.22);display:flex;align-items:center;justify-content:center;font-size:20px;animation:tc-call-pulse 2s ease-in-out infinite;}" +
       ".end-cta.phone.outline .cta-icon{background:" + primary + "1f;color:" + primary + ";}" +
       "@keyframes tc-call-pulse{0%,100%{box-shadow:0 0 0 0 rgba(255,255,255,.55);}50%{box-shadow:0 0 0 9px rgba(255,255,255,0);}}" +
-      ".end-cta.phone .cta-text{display:flex;flex-direction:column;line-height:1.2;flex:1;min-width:0;}" +
-      ".end-cta.phone .cta-label{font-size:15px;font-weight:700;}" +
-      ".end-cta.phone .cta-sub{font-size:14px;font-weight:600;opacity:.92;letter-spacing:.2px;margin-top:2px;}" +
+      "@keyframes tc-cta-glow{0%,100%{box-shadow:0 0 0 0 " + primary + "55, 0 6px 14px rgba(15,23,42,.18);}50%{box-shadow:0 0 0 12px " + primary + "00, 0 6px 14px rgba(15,23,42,.18);}}" +
+      ".end-cta.phone .cta-text{display:flex;flex-direction:column;align-items:center;line-height:1.2;text-align:center;}" +
+      ".end-cta.phone .cta-label{font-size:16px;font-weight:700;letter-spacing:.2px;}" +
+      ".end-cta.phone .cta-sub{font-size:14px;font-weight:600;opacity:.95;letter-spacing:.3px;margin-top:3px;}" +
       "@media (max-width:420px){.panel{width:calc(100vw - 16px);height:calc(100vh - 80px);bottom:80px;} .root.right .panel,.root.left .panel{right:8px;left:8px;} .side-stack{left:8px;gap:8px;} .side-stack.bottom{bottom:8px;} .side-btn{width:53px;height:53px;} .avatar-btn{width:84px;height:84px;}}"
     );
   }
@@ -1518,16 +1520,14 @@
       fireConversion();
       clearFooter();
       while (body.firstChild) body.removeChild(body.firstChild);
-      var children = [
-        el("div", { className: "check" }, ["✓"]),
-        el("div", { style: { fontWeight: "600", fontSize: "18px" } }, [tSuccessHeadline()]),
-        el("div", { style: { fontSize: "15px", color: "#475569", lineHeight: "1.45" } }, [
-          tSuccessMessage(),
-        ]),
-      ];
       var ctas = (config.widget.endCtas || []).filter(function (c) {
         return c && c.label && c.destination;
       });
+
+      var children = [
+        el("div", { className: "check" }, ["✓"]),
+      ];
+
       if (ctas.length) {
         var ctaWrap = el("div", { className: "end-ctas" });
         ctas.forEach(function (c, idx) {
@@ -1555,6 +1555,18 @@
         });
         children.push(ctaWrap);
       }
+
+      // Headline + supporting line render below the CTA so the visitor's
+      // eye lands on the action first.
+      children.push(
+        el("div", { style: { fontWeight: "600", fontSize: "18px", marginTop: "8px" } }, [tSuccessHeadline()])
+      );
+      children.push(
+        el("div", { style: { fontSize: "15px", color: "#475569", lineHeight: "1.45" } }, [
+          tSuccessMessage(),
+        ])
+      );
+
       var wrap = el("div", { className: "success" }, children);
       body.appendChild(wrap);
       if (progressBar) progressBar.style.width = "100%";

@@ -17,8 +17,8 @@ type SuccessCopy = {
 };
 
 const PRESETS: Record<EndCta["type"], { label: string; placeholder: string; defaultLabel: string }> = {
-  call: { label: "Call", placeholder: "+15125550100", defaultLabel: "Call us" },
-  text: { label: "Text", placeholder: "+15125550100", defaultLabel: "Text us" },
+  call: { label: "Call", placeholder: "+15125550100", defaultLabel: "Call Now" },
+  text: { label: "Text", placeholder: "+15125550100", defaultLabel: "Text Now" },
   schedule: {
     label: "Schedule",
     placeholder: "https://calendly.com/yourteam/30min",
