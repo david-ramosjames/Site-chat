@@ -159,6 +159,7 @@ export const notificationSettingsSchema = z.object({
   crmWebhookUrl: z.string().url().or(z.literal("")).optional().nullable(),
   googleSheetWebhookUrl: z.string().url().or(z.literal("")).optional().nullable(),
   callRailAccountId: z.string().max(60).optional().nullable(),
+  callRailCompanyId: z.string().max(60).optional().nullable(),
   callRailApiKey: z.string().max(200).optional().nullable(),
   callRailFormId: z.string().max(60).optional().nullable(),
   slackHeaderPriorityReferral: z.string().max(200).optional().nullable(),

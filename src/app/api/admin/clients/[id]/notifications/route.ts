@@ -17,6 +17,7 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
     crmWebhookUrl: parsed.data.crmWebhookUrl || null,
     googleSheetWebhookUrl: parsed.data.googleSheetWebhookUrl || null,
     callRailAccountId: parsed.data.callRailAccountId?.trim() || null,
+    callRailCompanyId: parsed.data.callRailCompanyId?.trim() || null,
     callRailApiKey: parsed.data.callRailApiKey?.trim() || null,
     callRailFormId: parsed.data.callRailFormId?.trim() || null,
     slackHeaderPriorityReferral: parsed.data.slackHeaderPriorityReferral?.trim() || null,

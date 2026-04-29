@@ -138,6 +138,19 @@ export default function NotificationsHelp() {
           existing pipeline.
         </p>
         <p className="mt-2 font-semibold">Account ID:</p>
+        <p>
+          Alphanumeric, looks like <code className="rounded bg-ink-100 px-1">ACC0892c4fd…</code>.
+          This is <em>not</em> the same as the company ID in your swap.js URL.
+        </p>
+        <Steps>
+          <li>Log into CallRail and look at the dashboard URL — it looks like{" "}
+            <code className="rounded bg-ink-100 px-1">{"app.callrail.com/dashboard/{ACCOUNT_ID}/calls"}</code>.
+            Copy the <code className="rounded bg-ink-100 px-1">{"{ACCOUNT_ID}"}</code> portion.</li>
+          <li>Or go to <strong>Settings → Account → Account info</strong> — the Account ID is listed there.</li>
+          <li>Paste it into <strong>CallRail Account ID</strong> on Notifications.</li>
+        </Steps>
+        <p className="mt-3 font-semibold">Company ID:</p>
+        <p>Numeric, the value from your swap.js URL after <code className="rounded bg-ink-100 px-1">/companies/</code>.</p>
         <Steps>
           <li>Look at your CallRail swap.js script tag, e.g.{" "}
             <code className="rounded bg-ink-100 px-1">
@@ -146,8 +159,7 @@ export default function NotificationsHelp() {
             .
           </li>
           <li>The number after <code className="rounded bg-ink-100 px-1">/companies/</code> is your
-            Account ID. Paste it into the <strong>CallRail Account ID</strong> field on
-            Notifications.</li>
+            Company ID. Paste it into <strong>CallRail Company ID</strong> on Notifications.</li>
         </Steps>
         <p className="mt-3 font-semibold">API key:</p>
         <Steps>

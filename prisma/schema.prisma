@@ -145,7 +145,11 @@ model NotificationSettings {
   // CallRail Form Capture API credentials. When account ID + API key are
   // both set, completed leads are forwarded into CallRail as form
   // submissions (in addition to the lead row, Slack alerts, etc.).
+  // accountId is the alphanumeric ACC… ID (top-level container).
+  // companyId is the numeric ID after /companies/ in the swap.js URL —
+  // required in the form submission body.
   callRailAccountId String?
+  callRailCompanyId String?
   callRailApiKey    String?
   callRailFormId    String?
 

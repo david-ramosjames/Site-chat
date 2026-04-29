@@ -9,6 +9,7 @@ type Notifications = {
   crmWebhookUrl: string;
   googleSheetWebhookUrl: string;
   callRailAccountId: string;
+  callRailCompanyId: string;
   callRailApiKey: string;
   callRailFormId: string;
   slackHeaderPriorityReferral: string;
@@ -160,12 +161,20 @@ export default function NotificationsForm({
           and are attributed (GCLID, UTM, landing page) for Google Ads conversions.
         </p>
         <div className="space-y-3">
-          <Field label="CallRail Account ID" helpAnchor="callrail" help="Numeric ID. Found in your swap.js URL after /companies/, e.g. 984308652.">
+          <Field label="CallRail Account ID" helpAnchor="callrail" help="Alphanumeric ID, e.g. ACC… Find it in CallRail dashboard URL after /a/, or via Settings → Account.">
+            <input
+              className="input font-mono"
+              placeholder="ACC0892c4fdc5f74b7195adcd44e3b6b3a3"
+              value={form.callRailAccountId}
+              onChange={(e) => set("callRailAccountId", e.target.value)}
+            />
+          </Field>
+          <Field label="CallRail Company ID" helpAnchor="callrail" help="Numeric ID from your swap.js URL — the part after /companies/, e.g. 984308652.">
             <input
               className="input"
               placeholder="984308652"
-              value={form.callRailAccountId}
-              onChange={(e) => set("callRailAccountId", e.target.value)}
+              value={form.callRailCompanyId}
+              onChange={(e) => set("callRailCompanyId", e.target.value)}
             />
           </Field>
           <Field label="CallRail API key" helpAnchor="callrail" help="Generate at CallRail → Settings → Integrations → API Keys → Create API Key.">

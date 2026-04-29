@@ -40,6 +40,7 @@ export async function postToCallRail(
   ctx: CallRailContext
 ): Promise<CallRailResult> {
   const accountId = settings.callRailAccountId?.trim();
+  const companyId = settings.callRailCompanyId?.trim();
   const apiKey = settings.callRailApiKey?.trim();
   if (!accountId || !apiKey) return { ok: false, error: "missing_credentials" };
 
@@ -75,6 +76,8 @@ export async function postToCallRail(
     form_url: formUrl,
     form_data: formData,
   };
+  // company_id is required by CallRail's Form Capture API.
+  if (companyId) body["company_id"] = companyId;
   if (lead.name) body["name"] = lead.name;
   if (phone) body["phone_number"] = phone;
   if (email) body["email"] = email;
