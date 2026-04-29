@@ -81,15 +81,23 @@ export async function postToCallRail(
   if (lead.name) body["name"] = lead.name;
   if (phone) body["phone_number"] = phone;
   if (email) body["email"] = email;
-  if (ctx.referrer) body["referrer"] = ctx.referrer;
-  if (ctx.landingPage) body["landing_page"] = ctx.landingPage;
+
+  // CallRail requires either session_id, or all three of referrer +
+  // referring_url + landing_page_url. Send session_id when we have it
+  // and ALWAYS send the trio as a fallback so the request never 400s
+  // with "either session_id or all 3 of … are required". Use formUrl
+  // as the safe default when a specific URL is missing.
+  if (ctx.trackerSession) body["session_id"] = ctx.trackerSession;
+  body["referrer"] = ctx.referrer || formUrl;
+  body["referring_url"] = formUrl;
+  body["landing_page_url"] = ctx.landingPage || formUrl;
+
   if (ctx.gclid) body["gclid"] = ctx.gclid;
   if (ctx.utmSource) body["utm_source"] = ctx.utmSource;
   if (ctx.utmMedium) body["utm_medium"] = ctx.utmMedium;
   if (ctx.utmCampaign) body["utm_campaign"] = ctx.utmCampaign;
   if (ctx.utmTerm) body["utm_term"] = ctx.utmTerm;
   if (ctx.utmContent) body["utm_content"] = ctx.utmContent;
-  if (ctx.trackerSession) body["tracker_session"] = ctx.trackerSession;
   if (settings.callRailFormId) body["form_id"] = settings.callRailFormId;
 
   const url = `https://api.callrail.com/v3/a/${encodeURIComponent(accountId)}/form_submissions.json`;
