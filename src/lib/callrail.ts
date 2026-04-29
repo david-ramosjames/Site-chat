@@ -47,7 +47,7 @@ export async function postToCallRail(
   // CallRail's required: form_url AND (email OR phone_number).
   // Synthesize sensible defaults when widget didn't capture them.
   const formUrl = ctx.formUrl || ctx.landingPage || "https://unknown";
-  const phone = (lead.phone || "").trim() || undefined;
+  const phone = normalizePhone(lead.phone) || undefined;
   const email = (lead.email || "").trim() || undefined;
   if (!phone && !email) {
     return { ok: false, error: "missing_phone_or_email" };
@@ -98,6 +98,8 @@ export async function postToCallRail(
   if (ctx.utmCampaign) body["utm_campaign"] = ctx.utmCampaign;
   if (ctx.utmTerm) body["utm_term"] = ctx.utmTerm;
   if (ctx.utmContent) body["utm_content"] = ctx.utmContent;
+  // form_id is an arbitrary free-form identifier CallRail uses to group
+  // submissions; sent only when the admin set one.
   if (settings.callRailFormId) body["form_id"] = settings.callRailFormId;
 
   const url = `https://api.callrail.com/v3/a/${encodeURIComponent(accountId)}/form_submissions.json`;
@@ -113,7 +115,12 @@ export async function postToCallRail(
     });
     const text = await res.text().catch(() => "");
     if (!res.ok) {
-      console.warn(`CallRail form_submissions returned ${res.status}: ${text}`);
+      // Dump the payload (without secrets) alongside the response so we
+      // can diagnose CallRail's frustratingly opaque {"errors":{}} 400s.
+      console.warn(
+        `CallRail form_submissions returned ${res.status}: ${text}\n` +
+          `payload: ${JSON.stringify(body)}`
+      );
       return { ok: false, error: `${res.status}` };
     }
     let parsed: { id?: string } = {};
@@ -127,4 +134,26 @@ export async function postToCallRail(
     console.warn("CallRail form_submissions failed:", err);
     return { ok: false, error: "network_error" };
   }
+}
+
+/**
+ * Normalise the visitor's phone into CallRail-friendly format. CallRail
+ * accepts E.164 (+15125550100) or 10-digit US numbers; anything else
+ * tends to bounce silently. Strips non-digits, then:
+ *   - if the number already has a + prefix, preserves it.
+ *   - if 10 digits, prepends +1 (US default).
+ *   - if 11 digits starting with 1, prepends +.
+ *   - otherwise returns the digits as-is for CallRail to reject loudly.
+ */
+function normalizePhone(raw: string | null | undefined): string {
+  if (!raw) return "";
+  const trimmed = raw.trim();
+  if (!trimmed) return "";
+  const hasPlus = trimmed.startsWith("+");
+  const digits = trimmed.replace(/[^\d]/g, "");
+  if (!digits) return "";
+  if (hasPlus) return "+" + digits;
+  if (digits.length === 10) return "+1" + digits;
+  if (digits.length === 11 && digits.startsWith("1")) return "+" + digits;
+  return digits;
 }
