@@ -149,6 +149,14 @@ model NotificationSettings {
   callRailApiKey    String?
   callRailFormId    String?
 
+  // Optional Slack header overrides — one per "priority state" combination.
+  // Use {{businessName}} as a placeholder; defaults fall back to the
+  // built-in 🔥/🎁/🟢 phrasing when a field is blank.
+  slackHeaderPriorityReferral String?
+  slackHeaderPriority         String?
+  slackHeaderReferral         String?
+  slackHeaderDefault          String?
+
   client Client @relation(fields: [clientId], references: [id], onDelete: Cascade)
 }
 

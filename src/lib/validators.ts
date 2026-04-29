@@ -161,6 +161,10 @@ export const notificationSettingsSchema = z.object({
   callRailAccountId: z.string().max(60).optional().nullable(),
   callRailApiKey: z.string().max(200).optional().nullable(),
   callRailFormId: z.string().max(60).optional().nullable(),
+  slackHeaderPriorityReferral: z.string().max(200).optional().nullable(),
+  slackHeaderPriority: z.string().max(200).optional().nullable(),
+  slackHeaderReferral: z.string().max(200).optional().nullable(),
+  slackHeaderDefault: z.string().max(200).optional().nullable(),
 });
 
 export const flowStepInputSchema = z.object({

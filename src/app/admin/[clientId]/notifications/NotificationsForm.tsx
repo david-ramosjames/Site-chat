@@ -11,6 +11,10 @@ type Notifications = {
   callRailAccountId: string;
   callRailApiKey: string;
   callRailFormId: string;
+  slackHeaderPriorityReferral: string;
+  slackHeaderPriority: string;
+  slackHeaderReferral: string;
+  slackHeaderDefault: string;
 };
 
 export default function NotificationsForm({
@@ -73,6 +77,59 @@ export default function NotificationsForm({
           onChange={(e) => set("slackWebhookUrl", e.target.value)}
         />
       </Field>
+
+      {form.slackWebhookUrl && (
+        <fieldset className="rounded-lg border border-ink-300/60 bg-ink-100/40 p-4">
+          <legend className="px-1 text-xs font-semibold uppercase tracking-wide text-ink-500">
+            Slack header text (optional)
+          </legend>
+          <p className="mt-1 mb-3 text-xs text-ink-500">
+            Override the bold header line on each Slack message based on the lead&apos;s state.
+            Leave blank to use the built-in default. Use{" "}
+            <code className="rounded bg-ink-100 px-1">{"{{businessName}}"}</code> as a
+            placeholder.
+          </p>
+          <div className="space-y-3">
+            <div>
+              <label className="label">Priority + Referral header</label>
+              <input
+                className="input"
+                placeholder="🔥 *PRIORITY + Referral — {{businessName}}*"
+                value={form.slackHeaderPriorityReferral}
+                onChange={(e) => set("slackHeaderPriorityReferral", e.target.value)}
+              />
+            </div>
+            <div>
+              <label className="label">Priority (qualified) header</label>
+              <input
+                className="input"
+                placeholder="🔥 *PRIORITY lead (qualified) — {{businessName}}*"
+                value={form.slackHeaderPriority}
+                onChange={(e) => set("slackHeaderPriority", e.target.value)}
+              />
+            </div>
+            <div>
+              <label className="label">Referral header</label>
+              <input
+                className="input"
+                placeholder="🎁 *Referral — {{businessName}}*"
+                value={form.slackHeaderReferral}
+                onChange={(e) => set("slackHeaderReferral", e.target.value)}
+              />
+            </div>
+            <div>
+              <label className="label">Default header (no priority/referral)</label>
+              <input
+                className="input"
+                placeholder="🟢 *New lead — {{businessName}}*"
+                value={form.slackHeaderDefault}
+                onChange={(e) => set("slackHeaderDefault", e.target.value)}
+              />
+            </div>
+          </div>
+        </fieldset>
+      )}
+
       <Field label="CRM webhook URL" helpAnchor="crm">
         <input
           className="input"

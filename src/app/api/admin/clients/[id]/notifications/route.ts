@@ -19,6 +19,10 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
     callRailAccountId: parsed.data.callRailAccountId?.trim() || null,
     callRailApiKey: parsed.data.callRailApiKey?.trim() || null,
     callRailFormId: parsed.data.callRailFormId?.trim() || null,
+    slackHeaderPriorityReferral: parsed.data.slackHeaderPriorityReferral?.trim() || null,
+    slackHeaderPriority: parsed.data.slackHeaderPriority?.trim() || null,
+    slackHeaderReferral: parsed.data.slackHeaderReferral?.trim() || null,
+    slackHeaderDefault: parsed.data.slackHeaderDefault?.trim() || null,
   };
   const notifications = await prisma.notificationSettings.upsert({
     where: { clientId: params.id },

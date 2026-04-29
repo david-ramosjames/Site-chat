@@ -42,6 +42,10 @@ export default async function NotificationsPage({ params }: { params: { clientId
           callRailAccountId: n?.callRailAccountId ?? "",
           callRailApiKey: n?.callRailApiKey ?? "",
           callRailFormId: n?.callRailFormId ?? "",
+          slackHeaderPriorityReferral: n?.slackHeaderPriorityReferral ?? "",
+          slackHeaderPriority: n?.slackHeaderPriority ?? "",
+          slackHeaderReferral: n?.slackHeaderReferral ?? "",
+          slackHeaderDefault: n?.slackHeaderDefault ?? "",
         }}
       />
     </div>

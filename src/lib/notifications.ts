@@ -20,7 +20,7 @@ export async function sendLeadNotifications(
   const tasks: Promise<void>[] = [];
 
   if (settings.slackWebhookUrl) {
-    tasks.push(postSlack(settings.slackWebhookUrl, lead, summary, businessName));
+    tasks.push(postSlack(settings.slackWebhookUrl, lead, summary, businessName, settings));
   }
   if (settings.crmWebhookUrl) {
     tasks.push(postGenericWebhook(settings.crmWebhookUrl, lead, summary, "CRM"));
@@ -34,22 +34,43 @@ export async function sendLeadNotifications(
   await Promise.all(tasks);
 }
 
-async function postSlack(url: string, lead: Lead, _summary: string, businessName: string) {
+async function postSlack(
+  url: string,
+  lead: Lead,
+  _summary: string,
+  businessName: string,
+  settings: NotificationSettings
+) {
   // Slack webhooks treat `text` as mrkdwn by default, so a simple
   // multi-line message renders as a tidy card without the strictness of
   // Block Kit (which can 400 on tiny config issues like a missing
   // protocol on a URL or unknown field).
   const adminLink = safeAdminLink(lead);
 
-  // Header signals priority at a glance: 🔥 for qualified, 🎁 for referral,
-  // both when applicable. Falls back to the standard 🟢 lead emoji.
+  // Header signals priority at a glance. Each state can be customised on
+  // the Notifications page; {{businessName}} expands to the client's name.
   const isQualified = lead.qualified === "yes";
   const isReferral = lead.referral === "yes";
+  const expand = (tpl: string) =>
+    tpl.replace(/\{\{\s*businessName\s*\}\}/g, businessName);
   let header: string;
-  if (isQualified && isReferral) header = `🔥 *PRIORITY + Referral — ${businessName}*`;
-  else if (isQualified) header = `🔥 *PRIORITY lead (qualified) — ${businessName}*`;
-  else if (isReferral) header = `🎁 *Referral — ${businessName}*`;
-  else header = `🟢 *New lead — ${businessName}*`;
+  if (isQualified && isReferral) {
+    header = settings.slackHeaderPriorityReferral
+      ? expand(settings.slackHeaderPriorityReferral)
+      : `🔥 *PRIORITY + Referral — ${businessName}*`;
+  } else if (isQualified) {
+    header = settings.slackHeaderPriority
+      ? expand(settings.slackHeaderPriority)
+      : `🔥 *PRIORITY lead (qualified) — ${businessName}*`;
+  } else if (isReferral) {
+    header = settings.slackHeaderReferral
+      ? expand(settings.slackHeaderReferral)
+      : `🎁 *Referral — ${businessName}*`;
+  } else {
+    header = settings.slackHeaderDefault
+      ? expand(settings.slackHeaderDefault)
+      : `🟢 *New lead — ${businessName}*`;
+  }
 
   const lines = [
     header,
