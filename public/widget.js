@@ -1526,6 +1526,7 @@
 
       var children = [
         el("div", { className: "check" }, ["✓"]),
+        el("div", { style: { fontWeight: "600", fontSize: "20px" } }, [tSuccessHeadline()]),
       ];
 
       if (ctas.length) {
@@ -1556,13 +1557,10 @@
         children.push(ctaWrap);
       }
 
-      // Headline + supporting line render below the CTA so the visitor's
-      // eye lands on the action first.
+      // Supporting message reads as "or call us… we'll reach out shortly"
+      // when it sits below the CTA, so it stays at the bottom.
       children.push(
-        el("div", { style: { fontWeight: "600", fontSize: "18px", marginTop: "8px" } }, [tSuccessHeadline()])
-      );
-      children.push(
-        el("div", { style: { fontSize: "15px", color: "#475569", lineHeight: "1.45" } }, [
+        el("div", { style: { fontSize: "15px", color: "#475569", lineHeight: "1.45", marginTop: "4px" } }, [
           tSuccessMessage(),
         ])
       );
