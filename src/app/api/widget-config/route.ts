@@ -74,6 +74,7 @@ export async function GET(req: NextRequest) {
         callRailUseDynamicNumber: client.widgetSettings.callRailUseDynamicNumber,
         callRailSwapWaitMs: client.widgetSettings.callRailSwapWaitMs,
         callRailDynamicNumberSelector: client.widgetSettings.callRailDynamicNumberSelector,
+        defaultPhoneCountry: client.widgetSettings.defaultPhoneCountry,
       },
       features: client.featureToggles,
       flow: client.flowSteps.map((s) => ({

@@ -54,6 +54,7 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
     callRailUseDynamicNumber: rest.callRailUseDynamicNumber,
     callRailSwapWaitMs: rest.callRailSwapWaitMs,
     callRailDynamicNumberSelector: nullable(rest.callRailDynamicNumberSelector),
+    defaultPhoneCountry: rest.defaultPhoneCountry,
   };
 
   const client = await prisma.client.update({

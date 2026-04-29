@@ -107,6 +107,12 @@ model WidgetSettings {
   callRailSwapWaitMs           Int     @default(800)
   callRailDynamicNumberSelector String?
 
+  // Default country for normalising visitor-entered phone numbers to E.164
+  // before forwarding to CallRail. "US" prepends +1 to 10-digit numbers,
+  // "MX" prepends +52. Visitor input that already starts with + is
+  // preserved as-is so international entries always win.
+  defaultPhoneCountry String @default("US")
+
   client Client @relation(fields: [clientId], references: [id], onDelete: Cascade)
 }
 

@@ -21,6 +21,8 @@ export type CallRailContext = {
   trackerSession?: string | null;
   /** Original answer payload for the lead (becomes form_data on CallRail). */
   answers?: Record<string, unknown> | null;
+  /** Default phone country for E.164 normalisation ("US" | "MX"). */
+  defaultPhoneCountry?: "US" | "MX" | null;
 };
 
 export type CallRailResult = {
@@ -44,18 +46,23 @@ export async function postToCallRail(
   const apiKey = settings.callRailApiKey?.trim();
   if (!accountId || !apiKey) return { ok: false, error: "missing_credentials" };
 
-  // CallRail's required: form_url AND (email OR phone_number).
-  // Synthesize sensible defaults when widget didn't capture them.
+  // CallRail's required: form_url AND (email OR phone_number) inside form_data.
   const formUrl = ctx.formUrl || ctx.landingPage || "https://unknown";
-  const phone = normalizePhone(lead.phone) || undefined;
+  const phone = normalizePhone(lead.phone, ctx.defaultPhoneCountry || "US") || undefined;
   const email = (lead.email || "").trim() || undefined;
   if (!phone && !email) {
     return { ok: false, error: "missing_phone_or_email" };
   }
 
-  // form_data is a flat object of custom field name -> value. Keep our
-  // structured fields up top so they're easy to map in CallRail's UI.
+  // form_data is a flat object of field name -> value. CallRail expects
+  // name / phone_number / email here (NOT at the top level of the
+  // submission), alongside any custom fields. Use snake_case keys for
+  // the structured fields so they round-trip cleanly into CallRail's
+  // lead record.
   const formData: Record<string, string> = {};
+  if (lead.name) formData["name"] = lead.name;
+  if (phone) formData["phone_number"] = phone;
+  if (email) formData["email"] = email;
   if (lead.serviceRequested) formData["Service requested"] = lead.serviceRequested;
   if (lead.qualified) formData["Qualified"] = lead.qualified;
   if (lead.referral) formData["Referral"] = lead.referral;
@@ -64,43 +71,41 @@ export async function postToCallRail(
     for (const [key, value] of Object.entries(ctx.answers)) {
       if (value == null) continue;
       const str = typeof value === "string" ? value : JSON.stringify(value);
-      // Don't double-add fields already promoted to top-level form keys.
+      // Don't double-add fields already promoted to first-class form keys.
       if (["name", "phone", "email"].includes(key)) continue;
-      // Avoid clobbering the first-class fields above.
       const niceKey = key.replace(/_/g, " ").replace(/^./, (c) => c.toUpperCase());
       if (!(niceKey in formData)) formData[niceKey] = str.slice(0, 500);
     }
   }
 
-  const body: Record<string, unknown> = {
+  // Everything sits under `form_submission`. CallRail rejects requests
+  // that send name/phone_number/email/form_id/company_id at the top
+  // level with an opaque {"errors":{}} 400.
+  const submission: Record<string, unknown> = {
     form_url: formUrl,
     form_data: formData,
   };
-  // company_id is required by CallRail's Form Capture API.
-  if (companyId) body["company_id"] = companyId;
-  if (lead.name) body["name"] = lead.name;
-  if (phone) body["phone_number"] = phone;
-  if (email) body["email"] = email;
+  if (companyId) submission["company_id"] = companyId;
 
   // CallRail requires either session_id, or all three of referrer +
   // referring_url + landing_page_url. Send session_id when we have it
   // and ALWAYS send the trio as a fallback so the request never 400s
   // with "either session_id or all 3 of … are required". Use formUrl
   // as the safe default when a specific URL is missing.
-  if (ctx.trackerSession) body["session_id"] = ctx.trackerSession;
-  body["referrer"] = ctx.referrer || formUrl;
-  body["referring_url"] = formUrl;
-  body["landing_page_url"] = ctx.landingPage || formUrl;
+  if (ctx.trackerSession) submission["session_id"] = ctx.trackerSession;
+  submission["referrer"] = ctx.referrer || formUrl;
+  submission["referring_url"] = formUrl;
+  submission["landing_page_url"] = ctx.landingPage || formUrl;
 
-  if (ctx.gclid) body["gclid"] = ctx.gclid;
-  if (ctx.utmSource) body["utm_source"] = ctx.utmSource;
-  if (ctx.utmMedium) body["utm_medium"] = ctx.utmMedium;
-  if (ctx.utmCampaign) body["utm_campaign"] = ctx.utmCampaign;
-  if (ctx.utmTerm) body["utm_term"] = ctx.utmTerm;
-  if (ctx.utmContent) body["utm_content"] = ctx.utmContent;
-  // form_id is an arbitrary free-form identifier CallRail uses to group
-  // submissions; sent only when the admin set one.
-  if (settings.callRailFormId) body["form_id"] = settings.callRailFormId;
+  if (ctx.gclid) submission["gclid"] = ctx.gclid;
+  if (ctx.utmSource) submission["utm_source"] = ctx.utmSource;
+  if (ctx.utmMedium) submission["utm_medium"] = ctx.utmMedium;
+  if (ctx.utmCampaign) submission["utm_campaign"] = ctx.utmCampaign;
+  if (ctx.utmTerm) submission["utm_term"] = ctx.utmTerm;
+  if (ctx.utmContent) submission["utm_content"] = ctx.utmContent;
+  if (settings.callRailFormId) submission["form_id"] = settings.callRailFormId;
+
+  const body = { form_submission: submission };
 
   const url = `https://api.callrail.com/v3/a/${encodeURIComponent(accountId)}/form_submissions.json`;
 
@@ -137,15 +142,18 @@ export async function postToCallRail(
 }
 
 /**
- * Normalise the visitor's phone into CallRail-friendly format. CallRail
- * accepts E.164 (+15125550100) or 10-digit US numbers; anything else
- * tends to bounce silently. Strips non-digits, then:
- *   - if the number already has a + prefix, preserves it.
- *   - if 10 digits, prepends +1 (US default).
- *   - if 11 digits starting with 1, prepends +.
- *   - otherwise returns the digits as-is for CallRail to reject loudly.
+ * Normalise the visitor's phone into CallRail-friendly E.164. CallRail
+ * accepts E.164 (+15125550100) reliably; bare numbers tend to bounce
+ * silently. The country picks the implicit prefix for 10-digit input:
+ *   - US → +1
+ *   - MX → +52
+ * Existing + prefixes and 11-digit US (leading 1) / 12-digit MX
+ * (leading 52) inputs are preserved.
  */
-function normalizePhone(raw: string | null | undefined): string {
+function normalizePhone(
+  raw: string | null | undefined,
+  country: "US" | "MX" = "US"
+): string {
   if (!raw) return "";
   const trimmed = raw.trim();
   if (!trimmed) return "";
@@ -153,6 +161,12 @@ function normalizePhone(raw: string | null | undefined): string {
   const digits = trimmed.replace(/[^\d]/g, "");
   if (!digits) return "";
   if (hasPlus) return "+" + digits;
+  if (country === "MX") {
+    if (digits.length === 10) return "+52" + digits;
+    if (digits.length === 12 && digits.startsWith("52")) return "+" + digits;
+    if (digits.length === 11 && digits.startsWith("1")) return "+" + digits;
+    return digits;
+  }
   if (digits.length === 10) return "+1" + digits;
   if (digits.length === 11 && digits.startsWith("1")) return "+" + digits;
   return digits;

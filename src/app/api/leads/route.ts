@@ -36,7 +36,12 @@ export async function POST(req: NextRequest) {
 
   const client = await prisma.client.findUnique({
     where: { id: payload.clientId },
-    include: { featureToggles: true, notificationSettings: true, flowSteps: true },
+    include: {
+      featureToggles: true,
+      notificationSettings: true,
+      flowSteps: true,
+      widgetSettings: true,
+    },
   });
   if (!client || client.status !== "active") {
     return withCors(NextResponse.json({ error: "unknown_client" }, { status: 404 }));
@@ -142,6 +147,8 @@ export async function POST(req: NextRequest) {
         msclkid: payload.msclkid ?? null,
         trackerSession: payload.callrailSessionId ?? null,
         answers: payload.answers as Record<string, unknown>,
+        defaultPhoneCountry:
+          (client.widgetSettings?.defaultPhoneCountry as "US" | "MX" | undefined) ?? "US",
       });
       if (result.ok && result.formSubmissionId) {
         await prisma.lead

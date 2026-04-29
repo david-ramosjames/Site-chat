@@ -95,6 +95,7 @@ export default async function SettingsPage({ params }: { params: { clientId: str
           callRailUseDynamicNumber: ws?.callRailUseDynamicNumber ?? false,
           callRailSwapWaitMs: ws?.callRailSwapWaitMs ?? 800,
           callRailDynamicNumberSelector: ws?.callRailDynamicNumberSelector ?? "",
+          defaultPhoneCountry: (ws?.defaultPhoneCountry as "US" | "MX") ?? "US",
         }}
       />
     </div>

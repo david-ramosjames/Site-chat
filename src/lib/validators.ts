@@ -54,6 +54,7 @@ export const widgetSettingsSchema = z.object({
   callRailUseDynamicNumber: z.boolean().default(false),
   callRailSwapWaitMs: z.number().int().min(0).max(5000).default(800),
   callRailDynamicNumberSelector: z.string().max(200).optional().nullable(),
+  defaultPhoneCountry: z.enum(["US", "MX"]).default("US"),
 
   secondWelcomeMessage: z.string().max(280).optional().nullable(),
   secondWelcomeDelaySec: z.number().int().min(5).max(600).default(30),

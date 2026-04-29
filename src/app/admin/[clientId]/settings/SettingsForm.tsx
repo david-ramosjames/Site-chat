@@ -43,6 +43,7 @@ type Initial = {
   callRailUseDynamicNumber: boolean;
   callRailSwapWaitMs: number;
   callRailDynamicNumberSelector: string;
+  defaultPhoneCountry: "US" | "MX";
 };
 
 type SideButton = {
@@ -563,7 +564,20 @@ export default function SettingsForm({ clientId, initial }: { clientId: string; 
           title="CallRail dynamic phone number"
           subtitle="When CallRail's swap.js is on the host page, the chatbot can read the swapped tracking number and use it for Call/Text/SMS/WhatsApp destinations instead of the admin-configured number."
         >
-          <label className="flex items-center gap-2">
+          <Field
+            label="Default phone country"
+            help="Used to format visitor-entered phone numbers into E.164 (CallRail / Twilio require this). US: 10-digit numbers become +1XXXXXXXXXX. MX: 10-digit numbers become +52XXXXXXXXXX. Visitors who type with a + prefix override this."
+          >
+            <select
+              className="select"
+              value={form.defaultPhoneCountry}
+              onChange={(e) => set("defaultPhoneCountry", e.target.value as "US" | "MX")}
+            >
+              <option value="US">United States (+1)</option>
+              <option value="MX">Mexico (+52)</option>
+            </select>
+          </Field>
+          <label className="mt-4 flex items-center gap-2">
             <input
               type="checkbox"
               checked={form.callRailUseDynamicNumber}
