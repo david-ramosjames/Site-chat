@@ -170,8 +170,15 @@ model FlowStep {
 
   // Optional lead-column mapping. If set, the answer to this step
   // populates that field on the Lead row (name | phone | email |
-  // service | urgency). Falls back to stepKey-name conventions when null.
-  leadField String?
+  // service | qualified | referral). Falls back to stepKey-name
+  // conventions when null.
+  leadField       String?
+  // For yes_no steps mapped to qualified/referral: per-answer override
+  // of what gets written to the column. Null = use the raw answer.
+  // E.g. for "Do you have an attorney?" set leadFieldOnYes="no" and
+  // leadFieldOnNo="yes" — answering No means qualified=yes.
+  leadFieldOnYes  String?
+  leadFieldOnNo   String?
 
   // Optional translated copy. Shape: { es: { question, options: [{value,label}] } }
   translations Json?
@@ -189,7 +196,8 @@ model Lead {
   phone            String?
   email            String?
   serviceRequested String?
-  urgency          String?
+  qualified        String?
+  referral         String?
   status           String   @default("new") // new | contacted | booked | lost | spam
   sourceUrl        String?
   referrer         String?

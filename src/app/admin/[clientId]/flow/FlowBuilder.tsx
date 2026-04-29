@@ -25,7 +25,9 @@ type Step = {
   thumbnailUrl: string;
   altText: string;
   mediaDisplayStyle: "above" | "below" | "background";
-  leadField: "" | "name" | "phone" | "email" | "service" | "urgency";
+  leadField: "" | "name" | "phone" | "email" | "service" | "qualified" | "referral";
+  leadFieldOnYes: string;
+  leadFieldOnNo: string;
   translations: {
     es: { question: string; options: Option[] };
   };
@@ -186,6 +188,8 @@ function blankStep(existing: Step[]): Step {
     altText: "",
     mediaDisplayStyle: "above",
     leadField: "",
+    leadFieldOnYes: "",
+    leadFieldOnNo: "",
     translations: { es: { question: "", options: [] } },
   };
 }
@@ -270,6 +274,8 @@ export default function FlowBuilder({
             thumbnailUrl: s.thumbnailUrl || null,
             altText: s.altText || null,
             leadField: s.leadField || null,
+            leadFieldOnYes: s.leadFieldOnYes || null,
+            leadFieldOnNo: s.leadFieldOnNo || null,
             translations: {
               es: {
                 question: s.translations.es.question || undefined,
@@ -395,12 +401,52 @@ export default function FlowBuilder({
                   <option value="phone">Phone</option>
                   <option value="email">Email</option>
                   <option value="service">Service</option>
-                  <option value="urgency">Urgency</option>
+                  <option value="qualified">Qualified</option>
+                  <option value="referral">Referral</option>
                 </select>
                 <p className="help">
                   Pick which Lead-table column gets this answer. The full answer is also kept in
                   the lead&apos;s answers JSON regardless.
                 </p>
+                {s.inputType === "yes_no" &&
+                  (s.leadField === "qualified" || s.leadField === "referral") && (
+                    <div className="mt-3 rounded-lg border border-ink-300/60 bg-ink-100/40 p-3 text-sm">
+                      <p className="font-semibold">
+                        What gets written to the {s.leadField} column?
+                      </p>
+                      <p className="help mt-0 mb-3">
+                        Override what the lead row stores based on the visitor&apos;s yes/no
+                        answer. Useful when the question reads negatively, e.g. &quot;Do you have
+                        an attorney?&quot; — answering No should set qualified = Yes.
+                      </p>
+                      <div className="grid gap-3 sm:grid-cols-2">
+                        <div>
+                          <label className="label">When answer is Yes, write:</label>
+                          <select
+                            className="select"
+                            value={s.leadFieldOnYes}
+                            onChange={(e) => update(i, { leadFieldOnYes: e.target.value })}
+                          >
+                            <option value="">— Use the raw answer (yes)</option>
+                            <option value="yes">Yes</option>
+                            <option value="no">No</option>
+                          </select>
+                        </div>
+                        <div>
+                          <label className="label">When answer is No, write:</label>
+                          <select
+                            className="select"
+                            value={s.leadFieldOnNo}
+                            onChange={(e) => update(i, { leadFieldOnNo: e.target.value })}
+                          >
+                            <option value="">— Use the raw answer (no)</option>
+                            <option value="yes">Yes</option>
+                            <option value="no">No</option>
+                          </select>
+                        </div>
+                      </div>
+                    </div>
+                  )}
               </div>
 
               {s.inputType === "multiple_choice" && (

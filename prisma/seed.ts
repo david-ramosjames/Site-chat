@@ -320,7 +320,7 @@ async function main() {
           phone: l.phone,
           email: l.email,
           serviceRequested: l.serviceRequested,
-          urgency: l.urgency,
+          qualified: l.urgency, // legacy seed value mapped to renamed column
           status: l.status,
           sourceUrl: l.sourceUrl,
           utmSource: l.utmSource ?? null,

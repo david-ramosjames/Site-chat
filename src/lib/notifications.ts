@@ -41,14 +41,25 @@ async function postSlack(url: string, lead: Lead, _summary: string, businessName
   // protocol on a URL or unknown field).
   const adminLink = safeAdminLink(lead);
 
+  // Header signals priority at a glance: 🔥 for qualified, 🎁 for referral,
+  // both when applicable. Falls back to the standard 🟢 lead emoji.
+  const isQualified = lead.qualified === "yes";
+  const isReferral = lead.referral === "yes";
+  let header: string;
+  if (isQualified && isReferral) header = `🔥 *PRIORITY + Referral — ${businessName}*`;
+  else if (isQualified) header = `🔥 *PRIORITY lead (qualified) — ${businessName}*`;
+  else if (isReferral) header = `🎁 *Referral — ${businessName}*`;
+  else header = `🟢 *New lead — ${businessName}*`;
+
   const lines = [
-    `🟢 *New lead — ${businessName}*`,
+    header,
     "",
+    fieldLine("Qualified", formatYesNo(lead.qualified)),
+    fieldLine("Referral", formatYesNo(lead.referral)),
     fieldLine("Name", lead.name),
     fieldLine("Phone", lead.phone),
     fieldLine("Email", lead.email),
     fieldLine("Service", lead.serviceRequested),
-    fieldLine("Urgency", lead.urgency),
     lead.sourceUrl ? `*From:* <${lead.sourceUrl}>` : null,
     fieldLine("UTM", utmSummary(lead)),
     adminLink ? `\n<${adminLink}|Open in admin →>` : null,
@@ -109,6 +120,12 @@ async function postGenericWebhook(
 function fieldLine(label: string, value: string | null | undefined) {
   if (!value) return null;
   return `*${label}:* ${value}`;
+}
+
+function formatYesNo(v: string | null | undefined): string | null {
+  if (v === "yes") return "✅ Yes";
+  if (v === "no") return "No";
+  return v ?? null;
 }
 
 function utmSummary(lead: Lead) {

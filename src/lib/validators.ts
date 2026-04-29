@@ -198,9 +198,11 @@ export const flowStepInputSchema = z.object({
   altText: z.string().max(200).optional().nullable(),
   mediaDisplayStyle: z.enum(["above", "below", "background"]).default("above"),
   leadField: z
-    .enum(["name", "phone", "email", "service", "urgency"])
+    .enum(["name", "phone", "email", "service", "qualified", "referral"])
     .optional()
     .nullable(),
+  leadFieldOnYes: z.string().max(60).optional().nullable(),
+  leadFieldOnNo: z.string().max(60).optional().nullable(),
   translations: z
     .object({
       es: z

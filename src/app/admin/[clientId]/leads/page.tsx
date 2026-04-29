@@ -54,7 +54,8 @@ export default async function LeadsPage({ params }: { params: { clientId: string
                 <th className="px-4 py-3">Name</th>
                 <th className="px-4 py-3">Contact</th>
                 <th className="px-4 py-3">Service</th>
-                <th className="px-4 py-3">Urgency</th>
+                <th className="px-4 py-3">Qualified</th>
+                <th className="px-4 py-3">Referral</th>
                 <th className="px-4 py-3">Source</th>
                 <th className="px-4 py-3">UTM</th>
                 <th className="px-4 py-3">Status</th>
@@ -71,7 +72,28 @@ export default async function LeadsPage({ params }: { params: { clientId: string
                     <div className="text-ink-500">{l.email ?? ""}</div>
                   </td>
                   <td className="px-4 py-3">{l.serviceRequested ?? "—"}</td>
-                  <td className="px-4 py-3 capitalize">{l.urgency ?? "—"}</td>
+                  <td className="px-4 py-3 capitalize">
+                    {l.qualified === "yes" ? (
+                      <span className="pill border border-emerald-500/40 bg-emerald-50 text-emerald-700">
+                        Yes
+                      </span>
+                    ) : l.qualified === "no" ? (
+                      <span className="pill border border-ink-300 bg-ink-100 text-ink-700">
+                        No
+                      </span>
+                    ) : (
+                      <span className="text-ink-500">{l.qualified ?? "—"}</span>
+                    )}
+                  </td>
+                  <td className="px-4 py-3 capitalize">
+                    {l.referral === "yes" ? (
+                      <span className="pill border border-amber-500/40 bg-amber-50 text-amber-700">
+                        Referral
+                      </span>
+                    ) : (
+                      <span className="text-ink-500">{l.referral === "no" ? "No" : l.referral ?? "—"}</span>
+                    )}
+                  </td>
                   <td className="px-4 py-3 max-w-[220px] truncate text-xs text-ink-500">
                     {l.sourceUrl ?? "—"}
                   </td>

@@ -56,7 +56,8 @@ export async function postToCallRail(
   // structured fields up top so they're easy to map in CallRail's UI.
   const formData: Record<string, string> = {};
   if (lead.serviceRequested) formData["Service requested"] = lead.serviceRequested;
-  if (lead.urgency) formData["Urgency"] = lead.urgency;
+  if (lead.qualified) formData["Qualified"] = lead.qualified;
+  if (lead.referral) formData["Referral"] = lead.referral;
   if (ctx.msclkid) formData["msclkid"] = ctx.msclkid;
   if (ctx.answers) {
     for (const [key, value] of Object.entries(ctx.answers)) {

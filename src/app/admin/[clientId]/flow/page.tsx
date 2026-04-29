@@ -78,7 +78,11 @@ export default async function FlowPage({ params }: { params: { clientId: string 
             thumbnailUrl: s.thumbnailUrl ?? "",
             altText: s.altText ?? "",
             mediaDisplayStyle: s.mediaDisplayStyle as "above" | "below" | "background",
-            leadField: (s.leadField as "name" | "phone" | "email" | "service" | "urgency" | null) ?? "",
+            leadField:
+              (s.leadField as "name" | "phone" | "email" | "service" | "qualified" | "referral" | null) ??
+              "",
+            leadFieldOnYes: s.leadFieldOnYes ?? "",
+            leadFieldOnNo: s.leadFieldOnNo ?? "",
             translations: {
               es: {
                 question: t?.es?.question ?? "",

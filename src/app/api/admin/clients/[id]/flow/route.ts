@@ -45,6 +45,8 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
           altText: s.altText || null,
           mediaDisplayStyle: s.mediaDisplayStyle,
           leadField: s.leadField || null,
+          leadFieldOnYes: s.leadFieldOnYes || null,
+          leadFieldOnNo: s.leadFieldOnNo || null,
           translations: (s.translations ?? undefined) as object | undefined,
         })),
       }),

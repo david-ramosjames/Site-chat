@@ -46,20 +46,37 @@ export async function POST(req: NextRequest) {
   const pick = (k: string | undefined | null) =>
     k && typeof a[k] === "string" ? (a[k] as string) : undefined;
 
-  // Build the lead column → stepKey map from the flow's per-step
+  // Build the lead column → step lookup from the flow's per-step
   // leadField setting. Falls back to legacy stepKey-name conventions
-  // when no step has explicitly claimed a column.
-  const fieldMap: Record<string, string> = {};
+  // when no step has explicitly claimed a column. Invert flips
+  // yes/no answers before storing — useful for "Do you have an
+  // attorney?" where No means qualified=yes.
+  const stepByColumn: Record<string, (typeof client.flowSteps)[number]> = {};
   client.flowSteps.forEach((s) => {
-    if (s.leadField && !fieldMap[s.leadField]) fieldMap[s.leadField] = s.stepKey;
+    if (s.leadField && !stepByColumn[s.leadField]) stepByColumn[s.leadField] = s;
   });
-  const fromMap = (col: string, ...legacyKeys: string[]) =>
-    pick(fieldMap[col]) ?? legacyKeys.map((k) => pick(k)).find((v) => v !== undefined);
+  function fromColumn(col: string, ...legacyKeys: string[]) {
+    const mapped = stepByColumn[col];
+    if (mapped) {
+      const raw = pick(mapped.stepKey);
+      // Per-answer override (yes_no steps): if the admin set
+      // leadFieldOnYes / leadFieldOnNo, use that value instead of the raw
+      // answer. Empty string means "leave the column blank".
+      if (raw === "yes" && mapped.leadFieldOnYes != null) {
+        return mapped.leadFieldOnYes || undefined;
+      }
+      if (raw === "no" && mapped.leadFieldOnNo != null) {
+        return mapped.leadFieldOnNo || undefined;
+      }
+      if (raw !== undefined) return raw;
+    }
+    return legacyKeys.map((k) => pick(k)).find((v) => v !== undefined);
+  }
 
-  const name = fromMap("name", "name");
-  const phone = fromMap("phone", "phone");
-  const email = fromMap("email", "email");
-  const serviceRequested = fromMap(
+  const name = fromColumn("name", "name");
+  const phone = fromColumn("phone", "phone");
+  const email = fromColumn("email", "email");
+  const serviceRequested = fromColumn(
     "service",
     "service",
     "serviceRequested",
@@ -67,14 +84,8 @@ export async function POST(req: NextRequest) {
     "service_type",
     "request_type"
   );
-  const urgency = fromMap(
-    "urgency",
-    "urgency",
-    "incident_when",
-    "when",
-    "timing",
-    "pickup_date"
-  );
+  const qualified = fromColumn("qualified");
+  const referral = fromColumn("referral");
 
   const spam =
     client.featureToggles?.enableSpamProtection &&
@@ -87,7 +98,8 @@ export async function POST(req: NextRequest) {
       phone,
       email,
       serviceRequested,
-      urgency,
+      qualified,
+      referral,
       status: spam ? "spam" : "new",
       sourceUrl: client.featureToggles?.collectPageUrl ? payload.sourceUrl ?? null : null,
       referrer: client.featureToggles?.collectReferrer ? payload.referrer ?? null : null,
