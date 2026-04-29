@@ -226,6 +226,11 @@ model Lead {
   utmContent       String?
   gclid            String?
   msclkid          String?
+  fbclid           String?
+  ttclid           String?
+  wbraid           String?
+  gbraid           String?
+  ndclid           String?
   landingPageUrl   String?
   callrailSessionId         String?
   callrailFormSubmissionId  String?

@@ -17,6 +17,15 @@ export type CallRailContext = {
   utmContent?: string | null;
   gclid?: string | null;
   msclkid?: string | null;
+  /** Meta / Facebook click id. CallRail has no top-level slot so it goes in form_data. */
+  fbclid?: string | null;
+  /** TikTok click id. */
+  ttclid?: string | null;
+  /** Google Ads iOS web-to-app click ids. */
+  wbraid?: string | null;
+  gbraid?: string | null;
+  /** Nextdoor click id. */
+  ndclid?: string | null;
   /** CallRail session id (window.CallTrk session). Links chat conversion to the call session. */
   trackerSession?: string | null;
   /** Original answer payload for the lead (becomes form_data on CallRail). */
@@ -66,7 +75,15 @@ export async function postToCallRail(
   if (lead.serviceRequested) formData["Service requested"] = lead.serviceRequested;
   if (lead.qualified) formData["Qualified"] = lead.qualified;
   if (lead.referral) formData["Referral"] = lead.referral;
+  // Click IDs CallRail doesn't have top-level slots for. Drop them in
+  // form_data so they round-trip as searchable custom fields on the
+  // CallRail lead and stay attached to whatever call/text follows.
   if (ctx.msclkid) formData["msclkid"] = ctx.msclkid;
+  if (ctx.fbclid) formData["fbclid"] = ctx.fbclid;
+  if (ctx.ttclid) formData["ttclid"] = ctx.ttclid;
+  if (ctx.wbraid) formData["wbraid"] = ctx.wbraid;
+  if (ctx.gbraid) formData["gbraid"] = ctx.gbraid;
+  if (ctx.ndclid) formData["ndclid"] = ctx.ndclid;
   if (ctx.answers) {
     for (const [key, value] of Object.entries(ctx.answers)) {
       if (value == null) continue;
