@@ -322,6 +322,7 @@
       declineBody: "Unfortunately we're not able to take this case at this time. We wish you the best of luck.",
       placeholders: {
         phone: "(555) 555-0100",
+        phoneMX: "55 1234 5678",
         email: "you@example.com",
         zip: "78704",
         textarea: "Type your answer…",
@@ -345,6 +346,7 @@
       declineBody: "Lamentablemente no podemos ayudarte con este caso. Te deseamos lo mejor.",
       placeholders: {
         phone: "(555) 555-0100",
+        phoneMX: "55 1234 5678",
         email: "tu@ejemplo.com",
         zip: "78704",
         textarea: "Escribe tu respuesta…",
@@ -1409,10 +1411,15 @@
       });
     }
 
+    function phoneCountry() {
+      var c = config.widget && config.widget.defaultPhoneCountry;
+      return c === "MX" ? "MX" : "US";
+    }
+
     function placeholderFor(step) {
       var p = strings().placeholders;
       switch (step.inputType) {
-        case "phone": return p.phone;
+        case "phone": return phoneCountry() === "MX" ? p.phoneMX : p.phone;
         case "email": return p.email;
         case "zip": return p.zip;
         case "date": return "";
@@ -1439,9 +1446,25 @@
       return "on";
     }
 
+    // Phone validation is country-aware so a US site doesn't accept a
+    // 9-digit MX local number and vice versa. Both modes still allow
+    // an explicit +CC prefix (≥10 digits) so visitors can type the
+    // canonical international form regardless of the configured
+    // default country.
     function validate(type, value) {
       if (type === "email") return /^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(value);
-      if (type === "phone") return /^[+()\-.\s\d]{7,}$/.test(value);
+      if (type === "phone") {
+        var digits = (value || "").replace(/\D/g, "");
+        if (value && value.charAt(0) === "+") {
+          return digits.length >= 10 && digits.length <= 15;
+        }
+        if (phoneCountry() === "MX") {
+          // MX mobiles are 10 digits; 12 digits when prefixed with 52.
+          return digits.length === 10 || (digits.length === 12 && digits.indexOf("52") === 0);
+        }
+        // US: 10 digits, or 11 digits starting with 1.
+        return digits.length === 10 || (digits.length === 11 && digits.charAt(0) === "1");
+      }
       if (type === "zip") return /^\d{4,10}$/.test(value);
       return true;
     }

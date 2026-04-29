@@ -131,9 +131,14 @@ export async function POST(req: NextRequest) {
     // Forward to CallRail if configured. Runs alongside Slack/email/webhook
     // dispatch — never blocks lead creation, errors only logged.
     if (
-      client.notificationSettings?.callRailAccountId &&
-      client.notificationSettings?.callRailApiKey
+      !client.notificationSettings?.callRailAccountId ||
+      !client.notificationSettings?.callRailApiKey
     ) {
+      console.log(
+        `CallRail skipped for client ${client.id}: ` +
+          `missing ${!client.notificationSettings?.callRailAccountId ? "accountId" : "apiKey"}`
+      );
+    } else {
       const result = await postToCallRail(lead, client.notificationSettings, {
         formUrl: payload.sourceUrl ?? null,
         landingPage: payload.landingPageUrl ?? null,

@@ -134,6 +134,9 @@ export async function postToCallRail(
     } catch {
       // CallRail sometimes returns a non-JSON success body; non-fatal.
     }
+    console.log(
+      `CallRail form_submissions OK (${res.status}) submission_id=${parsed.id ?? "?"}`
+    );
     return { ok: true, formSubmissionId: parsed.id };
   } catch (err) {
     console.warn("CallRail form_submissions failed:", err);
