@@ -226,12 +226,13 @@
       // the bottom) with auto-scroll suppressed so the welcome message
       // appears just below the speaker's face on initial load.
       // Body fills the entire space below the header so the scrollbar sits
-      // along the entire right edge of the panel. Content stays anchored at
-      // the bottom (just above the footer) via the margin-top:auto trick on
-      // the first child, so the welcome message lands where the visitor
-      // would expect on initial load.
+      // along the entire right edge of the panel. A flex pseudo-spacer
+      // reserves the top ~55% of the body so the speaker's face stays
+      // uncovered: when content is short the spacer grows to push messages
+      // toward the footer; when content is long the spacer holds its 55%
+      // minimum and the body scrolls naturally.
       ".panel.video-bg .body{flex:1;height:auto;overflow-y:auto;position:relative;z-index:2;background:transparent;}" +
-      ".panel.video-bg .body > *:first-child{margin-top:auto;}" +
+      ".panel.video-bg .body::before{content:\"\";display:block;flex:1 0 55%;}" +
       ".panel.video-bg .header{position:relative;z-index:3;background:linear-gradient(180deg,rgba(0,0,0,.55),rgba(0,0,0,0));}" +
       ".panel.video-bg .header .lang{background:rgba(0,0,0,.4);border-color:rgba(255,255,255,.55);}" +
       ".panel.video-bg .progress{position:relative;z-index:3;background:rgba(0,0,0,.35);}" +
