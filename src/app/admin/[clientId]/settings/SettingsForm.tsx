@@ -19,6 +19,8 @@ type Initial = {
   introVideoStyle: "top" | "background";
   bubbleImageUrl: string;
   bubbleTooltip: string;
+  bubbleTooltipBgColor: string;
+  bubbleTooltipTextColor: string;
   chatAvatarUrl: string;
   enableTranslation: boolean;
   translations: {
@@ -35,6 +37,10 @@ type Initial = {
   declineMessage: string;
   secondWelcomeMessage: string;
   secondWelcomeDelaySec: number;
+  secondWelcomeBgColor: string;
+  secondWelcomeTextColor: string;
+  brandingFooterEnabled: boolean;
+  brandingFooterText: string;
   sideButtons: SideButton[];
   sideButtonsPosition: "bottom" | "center";
   openOnLoad: boolean;
@@ -86,6 +92,11 @@ export default function SettingsForm({ clientId, initial }: { clientId: string; 
     startTransition(async () => {
       const payload = {
         ...form,
+        bubbleTooltipBgColor: form.bubbleTooltipBgColor || null,
+        bubbleTooltipTextColor: form.bubbleTooltipTextColor || null,
+        secondWelcomeBgColor: form.secondWelcomeBgColor || null,
+        secondWelcomeTextColor: form.secondWelcomeTextColor || null,
+        brandingFooterText: form.brandingFooterText.trim() || null,
         translations: {
           es: {
             welcomeMessage: form.translations.es.welcomeMessage || undefined,
@@ -276,6 +287,24 @@ export default function SettingsForm({ clientId, initial }: { clientId: string; 
                 />
               </Field>
             )}
+            <Field
+              label="Tooltip background color"
+              help="Optional. Leave blank to use the default white speech bubble."
+            >
+              <OptionalColorInput
+                value={form.bubbleTooltipBgColor}
+                onChange={(v) => set("bubbleTooltipBgColor", v)}
+              />
+            </Field>
+            <Field
+              label="Tooltip text color"
+              help="Optional. Leave blank to use the default dark text."
+            >
+              <OptionalColorInput
+                value={form.bubbleTooltipTextColor}
+                onChange={(v) => set("bubbleTooltipTextColor", v)}
+              />
+            </Field>
             <Field label="Button label" help="Fallback pill button when no avatar image is set.">
               <input
                 className="input"
@@ -477,6 +506,26 @@ export default function SettingsForm({ clientId, initial }: { clientId: string; 
               />
             </Field>
           </div>
+          <div className="mt-4 grid gap-5 sm:grid-cols-2">
+            <Field
+              label="Background color"
+              help="Optional. Falls back to the tooltip default when blank."
+            >
+              <OptionalColorInput
+                value={form.secondWelcomeBgColor}
+                onChange={(v) => set("secondWelcomeBgColor", v)}
+              />
+            </Field>
+            <Field
+              label="Text color"
+              help="Optional. Falls back to the tooltip default when blank."
+            >
+              <OptionalColorInput
+                value={form.secondWelcomeTextColor}
+                onChange={(v) => set("secondWelcomeTextColor", v)}
+              />
+            </Field>
+          </div>
           {form.enableTranslation && (
             <div className="mt-4 rounded-lg border border-ink-300/60 bg-ink-100/40 p-4">
               <p className="text-xs font-semibold uppercase tracking-wide text-ink-500">
@@ -515,6 +564,34 @@ export default function SettingsForm({ clientId, initial }: { clientId: string; 
               onChange={(buttons) => set("sideButtons", buttons)}
             />
           </div>
+        </Section>
+
+        <Section
+          title="Chat panel footer branding"
+          subtitle="Controls the small line at the very bottom of the chat panel (default: 'Powered by RJL-Chat'). Hide it entirely or replace it with your own copy."
+        >
+          <label className="flex items-center gap-2">
+            <input
+              type="checkbox"
+              checked={form.brandingFooterEnabled}
+              onChange={(e) => set("brandingFooterEnabled", e.target.checked)}
+              className="h-4 w-4 rounded border-ink-300"
+            />
+            <span className="text-sm">Show a footer line at the bottom of the chat panel</span>
+          </label>
+          {form.brandingFooterEnabled && (
+            <Field
+              label="Footer text"
+              help="Leave blank to keep the default 'Powered by RJL-Chat'. Set your own text to replace it."
+            >
+              <input
+                className="input"
+                placeholder="Powered by RJL-Chat"
+                value={form.brandingFooterText}
+                onChange={(e) => set("brandingFooterText", e.target.value)}
+              />
+            </Field>
+          )}
         </Section>
 
         <Section
@@ -648,9 +725,13 @@ export default function SettingsForm({ clientId, initial }: { clientId: string; 
         <div className="relative h-[460px] bg-ink-100/70">
           {form.bubbleTooltip && (
             <div
-              className={`absolute bottom-24 max-w-[260px] rounded-2xl bg-white p-3 text-sm text-ink-900 shadow-card ${
+              className={`absolute bottom-24 max-w-[260px] rounded-2xl p-3 text-sm shadow-card ${
                 form.widgetPosition === "bottom-right" ? "right-4" : "left-4"
               }`}
+              style={{
+                background: form.bubbleTooltipBgColor || "#ffffff",
+                color: form.bubbleTooltipTextColor || "#0b1220",
+              }}
             >
               {form.bubbleTooltip}
             </div>
@@ -877,6 +958,35 @@ function Toggle({
       />
       {label}
     </label>
+  );
+}
+
+function OptionalColorInput({ value, onChange }: { value: string; onChange: (v: string) => void }) {
+  return (
+    <div className="mt-1 flex items-center gap-2">
+      <input
+        type="color"
+        value={value || "#ffffff"}
+        onChange={(e) => onChange(e.target.value)}
+        className="h-10 w-12 cursor-pointer rounded border border-ink-300"
+      />
+      <input
+        className="input mt-0 flex-1"
+        placeholder="#ffffff (leave blank for default)"
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+      />
+      {value && (
+        <button
+          type="button"
+          onClick={() => onChange("")}
+          className="rounded border border-ink-300 bg-white px-2 py-2 text-xs text-ink-500 hover:bg-ink-100"
+          title="Clear (use default)"
+        >
+          Clear
+        </button>
+      )}
+    </div>
   );
 }
 

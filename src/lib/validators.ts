@@ -1,6 +1,12 @@
 import { z } from "zod";
 
 const optionalUrl = z.string().url().or(z.literal("")).optional().nullable();
+const optionalHexColor = z
+  .string()
+  .regex(/^#([0-9a-fA-F]{3}){1,2}$/, "Use a hex color like #2563eb")
+  .or(z.literal(""))
+  .optional()
+  .nullable();
 
 export const widgetSettingsSchema = z.object({
   primaryColor: z.string().regex(/^#([0-9a-fA-F]{3}){1,2}$/, "Use a hex color like #2563eb"),
@@ -22,6 +28,8 @@ export const widgetSettingsSchema = z.object({
 
   bubbleImageUrl: optionalUrl,
   bubbleTooltip: z.string().max(200).optional().nullable(),
+  bubbleTooltipBgColor: optionalHexColor,
+  bubbleTooltipTextColor: optionalHexColor,
 
   chatAvatarUrl: optionalUrl,
 
@@ -58,6 +66,11 @@ export const widgetSettingsSchema = z.object({
 
   secondWelcomeMessage: z.string().max(280).optional().nullable(),
   secondWelcomeDelaySec: z.number().int().min(5).max(600).default(30),
+  secondWelcomeBgColor: optionalHexColor,
+  secondWelcomeTextColor: optionalHexColor,
+
+  brandingFooterEnabled: z.boolean().default(true),
+  brandingFooterText: z.string().max(120).optional().nullable(),
 
   sideButtons: z
     .array(

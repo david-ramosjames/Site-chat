@@ -63,6 +63,8 @@ export default async function SettingsPage({ params }: { params: { clientId: str
           introVideoStyle: (ws?.introVideoStyle as "top" | "background") ?? "top",
           bubbleImageUrl: ws?.bubbleImageUrl ?? "",
           bubbleTooltip: ws?.bubbleTooltip ?? "",
+          bubbleTooltipBgColor: ws?.bubbleTooltipBgColor ?? "",
+          bubbleTooltipTextColor: ws?.bubbleTooltipTextColor ?? "",
           chatAvatarUrl: ws?.chatAvatarUrl ?? "",
           enableTranslation: ws?.enableTranslation ?? false,
           translations: {
@@ -79,6 +81,10 @@ export default async function SettingsPage({ params }: { params: { clientId: str
           declineMessage: ws?.declineMessage ?? "",
           secondWelcomeMessage: ws?.secondWelcomeMessage ?? "",
           secondWelcomeDelaySec: ws?.secondWelcomeDelaySec ?? 30,
+          secondWelcomeBgColor: ws?.secondWelcomeBgColor ?? "",
+          secondWelcomeTextColor: ws?.secondWelcomeTextColor ?? "",
+          brandingFooterEnabled: ws?.brandingFooterEnabled ?? true,
+          brandingFooterText: ws?.brandingFooterText ?? "",
           sideButtons: sideButtons.map((b) => ({
             type: b.type,
             label: b.label ?? "",

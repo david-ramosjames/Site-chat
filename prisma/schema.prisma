@@ -50,6 +50,10 @@ model WidgetSettings {
   // Optional headshot/avatar on the floating bubble plus the speech-bubble tooltip.
   bubbleImageUrl String?
   bubbleTooltip  String?
+  // Optional bubble/text colors for the tooltip speech bubble. Hex strings
+  // (e.g. "#0b1220"). Null means use the built-in white-bg / dark-text default.
+  bubbleTooltipBgColor   String?
+  bubbleTooltipTextColor String?
 
   // Optional avatar shown next to each bot message inside the chat panel.
   // Usually a still photo of the same person; bubble avatar can be animated.
@@ -64,6 +68,10 @@ model WidgetSettings {
   // `secondWelcomeDelaySec` seconds of inactivity (re-engagement).
   secondWelcomeMessage  String?
   secondWelcomeDelaySec Int     @default(30)
+  // Optional bubble/text colors for the re-engagement message. Same shape
+  // as bubbleTooltipBgColor — null falls back to the tooltip default.
+  secondWelcomeBgColor   String?
+  secondWelcomeTextColor String?
 
   // Optional column of action buttons (Phone, SMS, Messenger, WhatsApp, custom)
   // shown opposite the chat bubble. Each entry has its own device + locale gates.
@@ -106,6 +114,11 @@ model WidgetSettings {
   callRailUseDynamicNumber     Boolean @default(false)
   callRailSwapWaitMs           Int     @default(800)
   callRailDynamicNumberSelector String?
+
+  // Branding footer ("Powered by RJL-Chat") shown at the bottom of the chat
+  // panel. Disable to remove it, or set a custom string to override the copy.
+  brandingFooterEnabled Boolean @default(true)
+  brandingFooterText    String?
 
   // Default country for normalising visitor-entered phone numbers to E.164
   // before forwarding to CallRail. "US" prepends +1 to 10-digit numbers,

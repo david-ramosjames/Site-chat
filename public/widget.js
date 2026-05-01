@@ -225,7 +225,13 @@
       // strip, but content inside the strip stacks top-to-bottom (newest at
       // the bottom) with auto-scroll suppressed so the welcome message
       // appears just below the speaker's face on initial load.
-      ".panel.video-bg .body{flex:0 0 auto;margin-top:auto;height:38%;overflow-y:auto;position:relative;z-index:2;background:transparent;}" +
+      // Body fills the entire space below the header so the scrollbar sits
+      // along the entire right edge of the panel. Content stays anchored at
+      // the bottom (just above the footer) via the margin-top:auto trick on
+      // the first child, so the welcome message lands where the visitor
+      // would expect on initial load.
+      ".panel.video-bg .body{flex:1;height:auto;overflow-y:auto;position:relative;z-index:2;background:transparent;}" +
+      ".panel.video-bg .body > *:first-child{margin-top:auto;}" +
       ".panel.video-bg .header{position:relative;z-index:3;background:linear-gradient(180deg,rgba(0,0,0,.55),rgba(0,0,0,0));}" +
       ".panel.video-bg .header .lang{background:rgba(0,0,0,.4);border-color:rgba(255,255,255,.55);}" +
       ".panel.video-bg .progress{position:relative;z-index:3;background:rgba(0,0,0,.35);}" +
@@ -715,9 +721,29 @@
             },
           }, ["×"]),
         ]);
+        applyTooltipColors(tooltipNode, true);
         if (wrap.firstChild) wrap.insertBefore(tooltipNode, wrap.firstChild);
         else wrap.appendChild(tooltipNode);
       }, delaySec * 1000);
+    }
+
+    // Override the tooltip's default white-bg / dark-text styling with the
+    // admin-configured colors. The second welcome message can pick its own
+    // bg/text — when blank, it falls back to the regular tooltip colors.
+    function applyTooltipColors(node, isSecondWelcome) {
+      if (!node) return;
+      var w = config.widget || {};
+      var bg = (isSecondWelcome ? w.secondWelcomeBgColor : null) || w.bubbleTooltipBgColor;
+      var fg = (isSecondWelcome ? w.secondWelcomeTextColor : null) || w.bubbleTooltipTextColor;
+      if (bg) {
+        node.style.background = bg;
+        node.style.borderColor = bg;
+      }
+      if (fg) {
+        node.style.color = fg;
+        var x = node.querySelector(".x");
+        if (x) x.style.color = fg;
+      }
     }
 
     function renderBubble() {
@@ -742,6 +768,7 @@
               },
             }, ["×"]),
           ]);
+          applyTooltipColors(tooltipNode, false);
           wrap.appendChild(tooltipNode);
         }
         // The image/video lives inside an inner wrapper that clips to the
@@ -872,7 +899,14 @@
       footer = el("div", { className: "footer" });
       panel.appendChild(footer);
 
-      panel.appendChild(el("div", { className: "brand-foot" }, ["Powered by RJL-Chat"]));
+      // Branding footer at the very bottom of the chat panel. Admins can
+      // disable it entirely or replace the copy with their own line.
+      var w = config.widget || {};
+      if (w.brandingFooterEnabled !== false) {
+        var brandText = (w.brandingFooterText && String(w.brandingFooterText).trim())
+          || "Powered by RJL-Chat";
+        panel.appendChild(el("div", { className: "brand-foot" }, [brandText]));
+      }
       root.appendChild(panel);
     }
 
@@ -1089,11 +1123,10 @@
 
     function autoScrollToLatest() {
       if (!body) return;
-      // While in full-bleed video mode (pre-transition) leave the scroll
-      // position at the TOP so the welcome message + first question render
-      // just below the speaker's face. Once the visitor answers we drop
-      // the .video-bg class and normal auto-scroll resumes.
-      if (panel && panel.classList.contains("video-bg")) return;
+      // Body anchors content to the bottom (margin-top:auto on the first
+      // child in video-bg mode, natural top-to-bottom flow otherwise) so
+      // forcing scrollTop to scrollHeight always keeps the newest message
+      // visible without ever clipping older content.
       body.scrollTop = body.scrollHeight;
     }
 
@@ -1407,14 +1440,8 @@
     // After the footer changes height (new options pile, multi-line input),
     // body shrinks and the previously-visible latest bubble can be hidden
     // under the footer. Re-scroll once the layout has settled.
-    //
-    // Exception: while we're in full-bleed video mode (before the visitor
-    // has answered anything) leave the scroll position at the TOP so the
-    // welcome message + first question sit just below the speaker's face
-    // rather than being auto-scrolled out of view above the strip.
     function scrollBodyToBottomSoon() {
       if (!body) return;
-      if (panel && panel.classList.contains("video-bg")) return;
       var raf = window.requestAnimationFrame || function (cb) { return setTimeout(cb, 16); };
       raf(function () {
         if (body) body.scrollTop = body.scrollHeight;
