@@ -1124,10 +1124,14 @@
 
     function autoScrollToLatest() {
       if (!body) return;
-      // Body anchors content to the bottom (margin-top:auto on the first
-      // child in video-bg mode, natural top-to-bottom flow otherwise) so
-      // forcing scrollTop to scrollHeight always keeps the newest message
-      // visible without ever clipping older content.
+      // In background-video mode the spacer at the top of the body keeps
+      // the speaker's face uncovered. Auto-scrolling to the newest message
+      // would yank that spacer out of view and slide the welcome message
+      // back up onto the face, so we leave the scroll pinned at the top.
+      // Visitors scroll manually to reach content that falls below the fold;
+      // once they answer the first question, video-mini takes over and
+      // normal auto-scroll behavior resumes.
+      if (panel && panel.classList.contains("video-bg")) return;
       body.scrollTop = body.scrollHeight;
     }
 
@@ -1441,8 +1445,13 @@
     // After the footer changes height (new options pile, multi-line input),
     // body shrinks and the previously-visible latest bubble can be hidden
     // under the footer. Re-scroll once the layout has settled.
+    //
+    // Skipped in background-video mode — same reason as autoScrollToLatest:
+    // we want the welcome message anchored below the face, not pulled up
+    // to the top of the body when new options arrive.
     function scrollBodyToBottomSoon() {
       if (!body) return;
+      if (panel && panel.classList.contains("video-bg")) return;
       var raf = window.requestAnimationFrame || function (cb) { return setTimeout(cb, 16); };
       raf(function () {
         if (body) body.scrollTop = body.scrollHeight;
