@@ -10,6 +10,18 @@ const RANGES = [
   { key: "all", label: "All time", days: null as number | null },
 ];
 
+function parseDateParam(value?: string) {
+  if (!value || !/^\d{4}-\d{2}-\d{2}$/.test(value)) return null;
+  const date = new Date(value + "T00:00:00.000Z");
+  return Number.isNaN(date.getTime()) ? null : date;
+}
+
+function endOfDay(date: Date) {
+  return new Date(
+    Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate(), 23, 59, 59, 999),
+  );
+}
+
 function pct(numerator: number, denominator: number) {
   if (!denominator) return "—";
   return ((numerator / denominator) * 100).toFixed(1) + "%";
@@ -20,20 +32,35 @@ export default async function AnalyticsPage({
   searchParams,
 }: {
   params: { clientId: string };
-  searchParams: { range?: string };
+  searchParams: { range?: string; start?: string; end?: string };
 }) {
   const client = await prisma.client.findUnique({ where: { id: params.clientId } });
   if (!client) notFound();
 
+  const customStart = parseDateParam(searchParams.start);
+  const customEnd = parseDateParam(searchParams.end);
+  const hasCustomRange = Boolean(customStart || customEnd);
   const rangeKey = searchParams.range && RANGES.some((r) => r.key === searchParams.range)
     ? searchParams.range
     : "30d";
   const range = RANGES.find((r) => r.key === rangeKey)!;
-  const since = range.days ? new Date(Date.now() - range.days * 24 * 60 * 60 * 1000) : null;
+  const since = hasCustomRange
+    ? customStart
+    : range.days
+      ? new Date(Date.now() - range.days * 24 * 60 * 60 * 1000)
+      : null;
+  const until = customEnd ? endOfDay(customEnd) : null;
 
   const where = {
     clientId: params.clientId,
-    ...(since ? { createdAt: { gte: since } } : {}),
+    ...(since || until
+      ? {
+          createdAt: {
+            ...(since ? { gte: since } : {}),
+            ...(until ? { lte: until } : {}),
+          },
+        }
+      : {}),
   };
 
   const grouped = await prisma.chatEvent.groupBy({
@@ -75,27 +102,61 @@ export default async function AnalyticsPage({
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col gap-4 xl:flex-row xl:items-start xl:justify-between">
         <div>
           <h2 className="text-base font-semibold">Analytics</h2>
           <p className="text-sm text-ink-500">
             Conversion funnel for the chat widget. Each stage counts unique sessions.
           </p>
         </div>
-        <div className="flex gap-1">
-          {RANGES.map((r) => (
-            <a
-              key={r.key}
-              href={`/admin/${params.clientId}/analytics?range=${r.key}`}
-              className={`pill border ${
-                r.key === rangeKey
-                  ? "border-brand-500/40 bg-brand-50 text-brand-700"
-                  : "border-ink-300 bg-white text-ink-700"
-              }`}
-            >
-              {r.label}
-            </a>
-          ))}
+        <div className="flex flex-col gap-2 sm:items-end">
+          <div className="flex flex-wrap gap-1">
+            {RANGES.map((r) => (
+              <a
+                key={r.key}
+                href={`/admin/${params.clientId}/analytics?range=${r.key}`}
+                className={`pill border ${
+                  !hasCustomRange && r.key === rangeKey
+                    ? "border-brand-500/40 bg-brand-50 text-brand-700"
+                    : "border-ink-300 bg-white text-ink-700"
+                }`}
+              >
+                {r.label}
+              </a>
+            ))}
+          </div>
+          <form
+            action={`/admin/${params.clientId}/analytics`}
+            className="flex flex-wrap items-end gap-2 rounded-lg border border-ink-300/70 bg-white p-2 shadow-sm"
+          >
+            <div>
+              <label htmlFor="analytics-start" className="block text-xs font-medium text-ink-500">
+                Start
+              </label>
+              <input
+                id="analytics-start"
+                name="start"
+                type="date"
+                defaultValue={searchParams.start ?? ""}
+                className="mt-1 h-9 rounded-lg border border-ink-300 bg-white px-2 text-sm text-ink-900 focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/30"
+              />
+            </div>
+            <div>
+              <label htmlFor="analytics-end" className="block text-xs font-medium text-ink-500">
+                End
+              </label>
+              <input
+                id="analytics-end"
+                name="end"
+                type="date"
+                defaultValue={searchParams.end ?? ""}
+                className="mt-1 h-9 rounded-lg border border-ink-300 bg-white px-2 text-sm text-ink-900 focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/30"
+              />
+            </div>
+            <button type="submit" className="btn-secondary h-9 px-3 py-0">
+              Apply
+            </button>
+          </form>
         </div>
       </div>
 
