@@ -10,10 +10,25 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
   if (!parsed.success) {
     return NextResponse.json({ error: "invalid_payload", issues: parsed.error.flatten() }, { status: 400 });
   }
+  const { llmApiKey, ...featureData } = parsed.data;
+  const apiKeyUpdate = llmApiKey?.trim() ? { llmApiKey: llmApiKey.trim() } : {};
   const features = await prisma.featureToggles.upsert({
     where: { clientId: params.id },
-    create: { clientId: params.id, ...parsed.data },
-    update: parsed.data,
+    create: {
+      clientId: params.id,
+      ...featureData,
+      llmApiKey: llmApiKey?.trim() || null,
+    },
+    update: {
+      ...featureData,
+      ...apiKeyUpdate,
+    },
   });
-  return NextResponse.json({ features });
+  return NextResponse.json({
+    features: {
+      ...features,
+      llmApiKey: undefined,
+      hasLlmApiKey: Boolean(features.llmApiKey),
+    },
+  });
 }

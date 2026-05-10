@@ -12,6 +12,8 @@ const DEFAULTS = {
   collectReferrer: true,
   enableAiSummary: false,
   enableLeadScoring: false,
+  llmProvider: "openai",
+  llmModel: "gpt-4o-mini",
   enableAfterHours: false,
   enableSmsAlerts: false,
   enableEmailAlerts: true,
@@ -22,6 +24,10 @@ const DEFAULTS = {
   enableFallbackForm: true,
   enableSpamProtection: true,
 };
+
+function llmProvider(value?: string | null): "openai" | "anthropic" | "custom" {
+  return value === "anthropic" || value === "custom" ? value : "openai";
+}
 
 export default async function FeaturesPage({ params }: { params: { clientId: string } }) {
   const client = await prisma.client.findUnique({ where: { id: params.clientId } });
@@ -47,6 +53,10 @@ export default async function FeaturesPage({ params }: { params: { clientId: str
           collectReferrer: features?.collectReferrer ?? DEFAULTS.collectReferrer,
           enableAiSummary: features?.enableAiSummary ?? DEFAULTS.enableAiSummary,
           enableLeadScoring: features?.enableLeadScoring ?? DEFAULTS.enableLeadScoring,
+          llmProvider: llmProvider(features?.llmProvider ?? DEFAULTS.llmProvider),
+          llmModel: features?.llmModel ?? DEFAULTS.llmModel,
+          llmApiKey: "",
+          hasLlmApiKey: Boolean(features?.llmApiKey),
           enableAfterHours: features?.enableAfterHours ?? DEFAULTS.enableAfterHours,
           enableSmsAlerts: features?.enableSmsAlerts ?? DEFAULTS.enableSmsAlerts,
           enableEmailAlerts: features?.enableEmailAlerts ?? DEFAULTS.enableEmailAlerts,

@@ -10,6 +10,10 @@ type Features = {
   collectReferrer: boolean;
   enableAiSummary: boolean;
   enableLeadScoring: boolean;
+  llmProvider: "openai" | "anthropic" | "custom";
+  llmModel: string;
+  llmApiKey: string;
+  hasLlmApiKey: boolean;
   enableAfterHours: boolean;
   enableSmsAlerts: boolean;
   enableEmailAlerts: boolean;
@@ -21,7 +25,11 @@ type Features = {
   enableSpamProtection: boolean;
 };
 
-const GROUPS: { title: string; items: { key: keyof Features; label: string; help?: string }[] }[] = [
+type ToggleKey = {
+  [K in keyof Features]: Features[K] extends boolean ? K : never;
+}[keyof Features];
+
+const GROUPS: { title: string; items: { key: ToggleKey; label: string; help?: string }[] }[] = [
   {
     title: "Widget experience",
     items: [
@@ -66,22 +74,31 @@ export default function FeaturesForm({ clientId, initial }: { clientId: string; 
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  const toggle = (key: keyof Features) =>
+  const toggle = (key: ToggleKey) =>
     setFeatures((f) => ({ ...f, [key]: !f[key] }));
+
+  const updateField = (key: "llmProvider" | "llmModel" | "llmApiKey", value: string) =>
+    setFeatures((f) => ({ ...f, [key]: value }));
 
   function save() {
     setMessage(null);
     setError(null);
     startTransition(async () => {
+      const { hasLlmApiKey, ...payload } = features;
       const res = await fetch(`/api/admin/clients/${clientId}/features`, {
         method: "PUT",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify(features),
+        body: JSON.stringify(payload),
       });
       if (!res.ok) {
         setError("Could not save feature toggles.");
         return;
       }
+      setFeatures((f) => ({
+        ...f,
+        hasLlmApiKey: f.hasLlmApiKey || Boolean(f.llmApiKey.trim()),
+        llmApiKey: "",
+      }));
       setMessage("Saved.");
     });
   }
@@ -121,6 +138,55 @@ export default function FeaturesForm({ clientId, initial }: { clientId: string; 
               </button>
             ))}
           </div>
+          {g.title === "Lead intelligence" && (
+            <div className="mt-4 grid gap-3 border-t border-ink-300/60 pt-4 lg:grid-cols-3">
+              <div>
+                <label htmlFor="llm-provider" className="label">
+                  LLM provider
+                </label>
+                <select
+                  id="llm-provider"
+                  value={features.llmProvider}
+                  onChange={(e) => updateField("llmProvider", e.target.value)}
+                  className="select"
+                >
+                  <option value="openai">OpenAI</option>
+                  <option value="anthropic">Anthropic</option>
+                  <option value="custom">Custom API</option>
+                </select>
+              </div>
+              <div>
+                <label htmlFor="llm-model" className="label">
+                  Model
+                </label>
+                <input
+                  id="llm-model"
+                  type="text"
+                  value={features.llmModel}
+                  onChange={(e) => updateField("llmModel", e.target.value)}
+                  className="input"
+                  placeholder="gpt-4o-mini"
+                />
+              </div>
+              <div>
+                <label htmlFor="llm-api-key" className="label">
+                  API token
+                </label>
+                <input
+                  id="llm-api-key"
+                  type="password"
+                  value={features.llmApiKey}
+                  onChange={(e) => updateField("llmApiKey", e.target.value)}
+                  className="input"
+                  placeholder={features.hasLlmApiKey ? "Token saved" : "Paste token"}
+                  autoComplete="off"
+                />
+                {features.hasLlmApiKey && (
+                  <p className="help">Leave blank to keep the saved token.</p>
+                )}
+              </div>
+            </div>
+          )}
         </div>
       ))}
 

@@ -162,6 +162,9 @@ model FeatureToggles {
   collectReferrer       Boolean @default(true)
   enableAiSummary       Boolean @default(false)
   enableLeadScoring     Boolean @default(false)
+  llmProvider           String  @default("openai")
+  llmModel              String  @default("gpt-4o-mini")
+  llmApiKey             String?
   enableAfterHours      Boolean @default(false)
   enableSmsAlerts       Boolean @default(false)
   enableEmailAlerts     Boolean @default(true)
