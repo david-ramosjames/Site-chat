@@ -27,6 +27,20 @@ function pct(numerator: number, denominator: number) {
   return ((numerator / denominator) * 100).toFixed(1) + "%";
 }
 
+function dayKey(date: Date) {
+  return date.toISOString().slice(0, 10);
+}
+
+function pageLabel(url?: string | null) {
+  if (!url) return "Unknown page";
+  try {
+    const u = new URL(url);
+    return `${u.hostname}${u.pathname}`;
+  } catch {
+    return url;
+  }
+}
+
 export default async function AnalyticsPage({
   params,
   searchParams,
@@ -80,9 +94,10 @@ export default async function AnalyticsPage({
 
   // Per-session funnel: dedupe events by sessionId so counts read as
   // "unique visitors who reached this stage" instead of raw event volume.
-  const sessions = await prisma.chatEvent.findMany({
+  const events = await prisma.chatEvent.findMany({
     where,
-    select: { sessionId: true, type: true },
+    select: { sessionId: true, type: true, createdAt: true, sourceUrl: true },
+    orderBy: { createdAt: "asc" },
   });
   const sessionStages: Record<string, Set<string>> = {
     opened: new Set(),
@@ -90,8 +105,25 @@ export default async function AnalyticsPage({
     completed_success: new Set(),
     completed_decline: new Set(),
   };
-  sessions.forEach((s) => {
+  const dailyStages = new Map<string, Record<string, Set<string>>>();
+  const pageStages = new Map<string, Set<string>>();
+  events.forEach((s) => {
     sessionStages[s.type]?.add(s.sessionId);
+    const day = dayKey(s.createdAt);
+    if (!dailyStages.has(day)) {
+      dailyStages.set(day, {
+        opened: new Set(),
+        started: new Set(),
+        completed_success: new Set(),
+        completed_decline: new Set(),
+      });
+    }
+    dailyStages.get(day)?.[s.type]?.add(s.sessionId);
+    if (s.type === "opened") {
+      const label = pageLabel(s.sourceUrl);
+      if (!pageStages.has(label)) pageStages.set(label, new Set());
+      pageStages.get(label)?.add(s.sessionId);
+    }
   });
 
   const opened = sessionStages.opened.size;
@@ -99,6 +131,19 @@ export default async function AnalyticsPage({
   const success = sessionStages.completed_success.size;
   const decline = sessionStages.completed_decline.size;
   const completed = success + decline;
+  const dailyRows = Array.from(dailyStages.entries())
+    .sort(([a], [b]) => b.localeCompare(a))
+    .slice(0, 14)
+    .map(([day, stages]) => ({
+      day,
+      opened: stages.opened.size,
+      started: stages.started.size,
+      completed: stages.completed_success.size + stages.completed_decline.size,
+    }));
+  const topPages = Array.from(pageStages.entries())
+    .map(([page, sessions]) => ({ page, sessions: sessions.size }))
+    .sort((a, b) => b.sessions - a.sessions)
+    .slice(0, 8);
 
   return (
     <div className="space-y-6">
@@ -214,6 +259,68 @@ export default async function AnalyticsPage({
             />
           </tbody>
         </table>
+      </div>
+
+      <div className="grid gap-4 lg:grid-cols-2">
+        <div className="card p-5">
+          <h3 className="text-sm font-semibold">Daily trend</h3>
+          <table className="mt-3 w-full text-sm">
+            <thead className="text-left text-xs uppercase tracking-wide text-ink-500">
+              <tr>
+                <th className="py-2">Day</th>
+                <th className="py-2">Opened</th>
+                <th className="py-2">Started</th>
+                <th className="py-2">Completed</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-ink-300/60">
+              {dailyRows.length ? (
+                dailyRows.map((row) => (
+                  <tr key={row.day}>
+                    <td className="py-2 font-medium">{row.day}</td>
+                    <td className="py-2 text-ink-500">{row.opened}</td>
+                    <td className="py-2 text-ink-500">{row.started}</td>
+                    <td className="py-2 text-ink-500">{row.completed}</td>
+                  </tr>
+                ))
+              ) : (
+                <tr>
+                  <td className="py-3 text-ink-500" colSpan={4}>
+                    No events in this period.
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
+
+        <div className="card p-5">
+          <h3 className="text-sm font-semibold">Top pages by chat opens</h3>
+          <table className="mt-3 w-full text-sm">
+            <thead className="text-left text-xs uppercase tracking-wide text-ink-500">
+              <tr>
+                <th className="py-2">Page</th>
+                <th className="py-2">Sessions</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-ink-300/60">
+              {topPages.length ? (
+                topPages.map((row) => (
+                  <tr key={row.page}>
+                    <td className="max-w-[420px] truncate py-2">{row.page}</td>
+                    <td className="py-2 text-ink-500">{row.sessions}</td>
+                  </tr>
+                ))
+              ) : (
+                <tr>
+                  <td className="py-3 text-ink-500" colSpan={2}>
+                    No page data in this period.
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
       </div>
 
       <div className="card p-5">

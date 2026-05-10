@@ -119,8 +119,9 @@ from Cloudflare R2, S3, Supabase Storage, YouTube/Vimeo, etc.
 - In-memory rate limiter (`src/lib/rate-limit.ts`) — swap for Redis when you scale beyond
   a single replica.
 - Simple spam heuristics (`src/lib/spam.ts`) — replace with Turnstile/hCaptcha later.
-- Notification dispatch (`src/lib/notifications.ts`) is stubbed with `console.log` for
-  email/SMS and a generic POST for Slack/CRM/Sheet webhooks.
+- Notification dispatch (`src/lib/notifications.ts`) supports SendGrid email, Twilio SMS,
+  Slack, CRM webhooks, Google Sheet webhooks, and CallRail form capture.
+- AI lead summary and lead scoring run after lead creation when enabled for a business.
 
 ---
 
@@ -129,6 +130,6 @@ from Cloudflare R2, S3, Supabase Storage, YouTube/Vimeo, etc.
 - Real admin auth (NextAuth, Clerk, or simple password gate using `ADMIN_PASSWORD`).
 - Per-user → per-client membership table (so different staff can be scoped to one or many
   businesses).
-- AI lead summary + lead scoring via Claude API (toggles already exist).
+- Background job/queue for slow integrations and AI enrichment.
 - File uploads to R2/S3.
 - Custom domains per client (via Cloudflare CNAME → Railway).

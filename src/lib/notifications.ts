@@ -14,11 +14,14 @@ export async function sendLeadNotifications(
     lead.phone ?? lead.email ?? "no contact"
   }`;
 
-  if (settings.email) console.log(`[email -> ${settings.email}] ${summary}`);
-  if (settings.phone) console.log(`[sms -> ${settings.phone}] ${summary}`);
-
   const tasks: Promise<void>[] = [];
 
+  if (settings.email) {
+    tasks.push(sendEmail(settings.email, lead, summary, businessName));
+  }
+  if (settings.phone) {
+    tasks.push(sendSms(settings.phone, summary));
+  }
   if (settings.slackWebhookUrl) {
     tasks.push(postSlack(settings.slackWebhookUrl, lead, summary, businessName, settings));
   }
@@ -32,6 +35,90 @@ export async function sendLeadNotifications(
   }
 
   await Promise.all(tasks);
+}
+
+async function sendEmail(to: string, lead: Lead, summary: string, businessName: string) {
+  const apiKey = process.env.SENDGRID_API_KEY;
+  const from = process.env.SENDGRID_FROM_EMAIL;
+  if (!apiKey || !from) {
+    console.warn("Email skipped: SENDGRID_API_KEY and SENDGRID_FROM_EMAIL are required");
+    return;
+  }
+
+  const adminLink = safeAdminLink(lead);
+  const text = [
+    summary,
+    "",
+    fieldLine("Qualified", formatYesNo(lead.qualified)),
+    fieldLine("Referral", formatYesNo(lead.referral)),
+    fieldLine("Name", lead.name),
+    fieldLine("Phone", lead.phone),
+    fieldLine("Email", lead.email),
+    fieldLine("Service", lead.serviceRequested),
+    lead.aiSummary ? `AI summary: ${lead.aiSummary}` : null,
+    lead.leadScore != null ? `Lead score: ${lead.leadScore}` : null,
+    adminLink ? `Open in admin: ${adminLink}` : null,
+  ]
+    .filter((line): line is string => Boolean(line))
+    .join("\n");
+
+  try {
+    const res = await fetch("https://api.sendgrid.com/v3/mail/send", {
+      method: "POST",
+      headers: {
+        authorization: `Bearer ${apiKey}`,
+        "content-type": "application/json",
+      },
+      body: JSON.stringify({
+        personalizations: [{ to: [{ email: to }] }],
+        from: { email: from, name: "RJL-Chat" },
+        subject: `New lead for ${businessName}`,
+        content: [{ type: "text/plain", value: text }],
+      }),
+    });
+    if (!res.ok) {
+      const body = await res.text().catch(() => "");
+      console.warn(`SendGrid returned ${res.status}: ${body}`);
+    }
+  } catch (err) {
+    console.warn("Email dispatch failed:", err);
+  }
+}
+
+async function sendSms(to: string, summary: string) {
+  const accountSid = process.env.TWILIO_ACCOUNT_SID;
+  const authToken = process.env.TWILIO_AUTH_TOKEN;
+  const from = process.env.TWILIO_FROM_PHONE;
+  if (!accountSid || !authToken || !from) {
+    console.warn("SMS skipped: TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN, and TWILIO_FROM_PHONE are required");
+    return;
+  }
+
+  const body = new URLSearchParams({
+    To: to,
+    From: from,
+    Body: summary.slice(0, 1500),
+  });
+
+  try {
+    const res = await fetch(
+      `https://api.twilio.com/2010-04-01/Accounts/${accountSid}/Messages.json`,
+      {
+        method: "POST",
+        headers: {
+          authorization: `Basic ${Buffer.from(`${accountSid}:${authToken}`).toString("base64")}`,
+          "content-type": "application/x-www-form-urlencoded",
+        },
+        body,
+      },
+    );
+    if (!res.ok) {
+      const responseBody = await res.text().catch(() => "");
+      console.warn(`Twilio returned ${res.status}: ${responseBody}`);
+    }
+  } catch (err) {
+    console.warn("SMS dispatch failed:", err);
+  }
 }
 
 async function postSlack(

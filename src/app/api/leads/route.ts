@@ -97,7 +97,7 @@ export async function POST(req: NextRequest) {
     client.featureToggles?.enableSpamProtection &&
     looksLikeSpam({ name, email, notes: pick("notes") });
 
-  let lead = await prisma.lead.create({
+  const lead = await prisma.lead.create({
     data: {
       clientId: client.id,
       name,
@@ -130,7 +130,7 @@ export async function POST(req: NextRequest) {
   });
 
   if (!spam) {
-    const intelligence = await generateLeadIntelligence({
+    void generateLeadIntelligence({
       businessName: client.name,
       serviceRequested,
       qualified,
@@ -138,14 +138,10 @@ export async function POST(req: NextRequest) {
       answers: payload.answers as Record<string, unknown>,
       transcript: payload.transcript,
       features: client.featureToggles,
-    }).catch((e) => {
-      console.warn("Lead intelligence failed:", e);
-      return null;
-    });
-
-    if (intelligence) {
-      lead = await prisma.lead
-        .update({
+    })
+      .then((intelligence) => {
+        if (!intelligence) return null;
+        return prisma.lead.update({
           where: { id: lead.id },
           data: {
             ...(intelligence.aiSummary !== undefined
@@ -155,12 +151,9 @@ export async function POST(req: NextRequest) {
               ? { leadScore: intelligence.leadScore }
               : {}),
           },
-        })
-        .catch((e) => {
-          console.warn("Saving lead intelligence failed:", e);
-          return lead;
         });
-    }
+      })
+      .catch((e) => console.warn("Lead intelligence failed:", e));
 
     await sendLeadNotifications(lead, client.notificationSettings, client.name).catch((e) =>
       console.warn("Notification dispatch failed:", e)

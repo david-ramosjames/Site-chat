@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { corsPreflight, withCors } from "@/lib/cors";
 import { rateLimit } from "@/lib/rate-limit";
+import { publicFeatureToggles } from "@/lib/widget-config";
 
 export const dynamic = "force-dynamic";
 
@@ -82,7 +83,7 @@ export async function GET(req: NextRequest) {
         callRailDynamicNumberSelector: client.widgetSettings.callRailDynamicNumberSelector,
         defaultPhoneCountry: client.widgetSettings.defaultPhoneCountry,
       },
-      features: client.featureToggles,
+      features: publicFeatureToggles(client.featureToggles),
       flow: client.flowSteps.map((s) => ({
         stepKey: s.stepKey,
         order: s.order,
