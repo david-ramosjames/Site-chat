@@ -6,6 +6,7 @@ import { rateLimit } from "@/lib/rate-limit";
 import { looksLikeSpam } from "@/lib/spam";
 import { sendLeadNotifications } from "@/lib/notifications";
 import { postToCallRail } from "@/lib/callrail";
+import { generateLeadIntelligence } from "@/lib/lead-intelligence";
 
 export const dynamic = "force-dynamic";
 
@@ -96,7 +97,7 @@ export async function POST(req: NextRequest) {
     client.featureToggles?.enableSpamProtection &&
     looksLikeSpam({ name, email, notes: pick("notes") });
 
-  const lead = await prisma.lead.create({
+  let lead = await prisma.lead.create({
     data: {
       clientId: client.id,
       name,
@@ -129,6 +130,38 @@ export async function POST(req: NextRequest) {
   });
 
   if (!spam) {
+    const intelligence = await generateLeadIntelligence({
+      businessName: client.name,
+      serviceRequested,
+      qualified,
+      referral,
+      answers: payload.answers as Record<string, unknown>,
+      transcript: payload.transcript,
+      features: client.featureToggles,
+    }).catch((e) => {
+      console.warn("Lead intelligence failed:", e);
+      return null;
+    });
+
+    if (intelligence) {
+      lead = await prisma.lead
+        .update({
+          where: { id: lead.id },
+          data: {
+            ...(intelligence.aiSummary !== undefined
+              ? { aiSummary: intelligence.aiSummary }
+              : {}),
+            ...(intelligence.leadScore !== undefined
+              ? { leadScore: intelligence.leadScore }
+              : {}),
+          },
+        })
+        .catch((e) => {
+          console.warn("Saving lead intelligence failed:", e);
+          return lead;
+        });
+    }
+
     await sendLeadNotifications(lead, client.notificationSettings, client.name).catch((e) =>
       console.warn("Notification dispatch failed:", e)
     );
