@@ -13,6 +13,7 @@ const CLIENT_NAV = [
   { suffix: "/features", label: "Feature toggles" },
   { suffix: "/notifications", label: "Notifications" },
   { suffix: "/leads", label: "Leads" },
+  { suffix: "/analytics", label: "Analytics" },
 ];
 
 export default function AdminSidebar({ clients }: { clients: ClientSummary[] }) {

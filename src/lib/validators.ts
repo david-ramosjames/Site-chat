@@ -278,6 +278,16 @@ export const leadSubmissionSchema = z.object({
   userAgent: z.string().optional().nullable(),
 });
 
+export const chatEventSchema = z.object({
+  clientId: z.string().min(1),
+  sessionId: z.string().min(1).max(80),
+  type: z.enum(["opened", "started", "completed_success", "completed_decline"]),
+  source: z.enum(["auto", "click"]).optional().nullable(),
+  sourceUrl: z.string().url().optional().nullable(),
+  referrer: z.string().optional().nullable(),
+  userAgent: z.string().max(500).optional().nullable(),
+});
+
 export const createClientSchema = z.object({
   name: z.string().min(1).max(120),
   industry: z.string().min(1).max(80),

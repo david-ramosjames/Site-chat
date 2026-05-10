@@ -12,6 +12,7 @@ const NAV_ITEMS = [
   { suffix: "/features", label: "Features" },
   { suffix: "/notifications", label: "Notifications" },
   { suffix: "/leads", label: "Leads" },
+  { suffix: "/analytics", label: "Analytics" },
 ];
 
 export default async function ClientAdminLayout({

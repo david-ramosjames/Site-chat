@@ -463,6 +463,43 @@
     var backdropEl = null;
     var endingMode = "success";  // "success" (default + CTAs) or "decline" (no CTAs)
     var inBodyOptionsEl = null;  // option pills appended into body for the current step
+    var hasStartedFlow = false;  // toggled true after the visitor's first answer
+    var sessionId = (function () {
+      try {
+        var key = "rjlChatSession:" + config.clientId;
+        var existing = sessionStorage.getItem(key);
+        if (existing) return existing;
+        var fresh = "s_" + Date.now().toString(36) + "_" +
+          Math.random().toString(36).slice(2, 10);
+        sessionStorage.setItem(key, fresh);
+        return fresh;
+      } catch (e) {
+        return "s_" + Date.now().toString(36) + "_" +
+          Math.random().toString(36).slice(2, 10);
+      }
+    })();
+
+    function trackEvent(type, source) {
+      try {
+        var attr = (function () { try { return captureAttribution(); } catch (e) { return {}; } })();
+        var collectPage = !config.features || config.features.collectPageUrl !== false;
+        var collectRef = !config.features || config.features.collectReferrer !== false;
+        fetch(apiUrl("/api/events"), {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          keepalive: true,
+          body: JSON.stringify({
+            clientId: config.clientId,
+            sessionId: sessionId,
+            type: type,
+            source: source || null,
+            sourceUrl: collectPage ? (attr.currentPage || null) : null,
+            referrer: collectRef ? (attr.referrer || null) : null,
+            userAgent: navigator.userAgent,
+          }),
+        }).catch(function () {});
+      } catch (e) {}
+    }
 
     var translationsAvailable =
       !!(config.widget && config.widget.enableTranslation &&
@@ -565,7 +602,7 @@
         // Skip the floating bubble entirely; go straight to the panel.
         // If the visitor closes the panel they'll get the avatar after.
         setTimeout(function () {
-          if (!isOpen) open();
+          if (!isOpen) open("auto");
         }, 100);
       }
     }
@@ -806,9 +843,10 @@
       root.appendChild(openBtn);
     }
 
-    function open() {
+    function open(openSource) {
       if (isOpen) return;
       isOpen = true;
+      trackEvent("opened", openSource === "auto" ? "auto" : "click");
       if (secondWelcomeTimer) {
         clearTimeout(secondWelcomeTimer);
         secondWelcomeTimer = null;
@@ -1229,6 +1267,10 @@
     }
 
     function accept(step, value, displayText) {
+      if (!hasStartedFlow) {
+        hasStartedFlow = true;
+        trackEvent("started");
+      }
       var prevAnswer = Object.prototype.hasOwnProperty.call(answers, step.stepKey)
         ? answers[step.stepKey]
         : undefined;
@@ -1593,6 +1635,7 @@
 
     function renderSuccess() {
       fireConversion();
+      trackEvent("completed_success");
       clearFooter();
       while (body.firstChild) body.removeChild(body.firstChild);
       var ctas = (config.widget.endCtas || []).filter(function (c) {
@@ -1646,6 +1689,7 @@
     }
 
     function renderDecline() {
+      trackEvent("completed_decline");
       clearFooter();
       while (body.firstChild) body.removeChild(body.firstChild);
       var wrap = el("div", { className: "success" }, [

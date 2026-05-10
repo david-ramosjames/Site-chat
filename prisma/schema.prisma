@@ -24,8 +24,31 @@ model Client {
   notificationSettings NotificationSettings?
   flowSteps            FlowStep[]
   leads                Lead[]
+  chatEvents           ChatEvent[]
 
   @@index([status])
+}
+
+// One row per visitor lifecycle milestone. Used to compute the chat
+// conversion funnel: opened -> started -> completed_success / completed_decline.
+// `sessionId` is a random per-page-load id from the widget so the same
+// visitor's events can be deduped/joined client-side.
+model ChatEvent {
+  id        String   @id @default(cuid())
+  clientId  String
+  sessionId String
+  type      String   // opened | started | completed_success | completed_decline
+  source    String?  // for type=opened: "auto" (openOnLoad) or "click"
+  sourceUrl String?
+  referrer  String?
+  userAgent String?
+  createdAt DateTime @default(now())
+
+  client Client @relation(fields: [clientId], references: [id], onDelete: Cascade)
+
+  @@index([clientId, createdAt])
+  @@index([clientId, type])
+  @@index([clientId, sessionId])
 }
 
 model WidgetSettings {
