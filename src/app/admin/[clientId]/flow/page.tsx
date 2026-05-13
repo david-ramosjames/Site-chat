@@ -54,7 +54,7 @@ export default async function FlowPage({ params }: { params: { clientId: string 
       </div>
       <FlowBuilder
         clientId={params.clientId}
-        translationsEnabled={client.widgetSettings?.enableTranslation ?? false}
+        translationsEnabled={client.widgetSettings?.enableTranslation ?? true}
         initialSteps={steps.map((s) => {
           const t = (s.translations as StepTranslations | null) ?? null;
           return {
@@ -96,7 +96,7 @@ export default async function FlowPage({ params }: { params: { clientId: string 
       <EndCtasEditor
         clientId={params.clientId}
         initial={endCtas}
-        translationsEnabled={ws?.enableTranslation ?? false}
+        translationsEnabled={ws?.enableTranslation ?? true}
         initialCopy={{
           successHeadline: ws?.successHeadline ?? "",
           successMessage: ws?.successMessage ?? "",
@@ -107,7 +107,7 @@ export default async function FlowPage({ params }: { params: { clientId: string 
 
       <DeclineEditor
         clientId={params.clientId}
-        translationsEnabled={ws?.enableTranslation ?? false}
+        translationsEnabled={ws?.enableTranslation ?? true}
         initial={{
           declineHeadline: ws?.declineHeadline ?? "",
           declineMessage: ws?.declineMessage ?? "",

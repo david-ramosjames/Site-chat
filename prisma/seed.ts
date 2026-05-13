@@ -267,7 +267,7 @@ async function main() {
         websiteUrl: c.websiteUrl,
         status: "active",
         widgetSettings: { upsert: { create: c.widget, update: {} } },
-        featureToggles: { upsert: { create: { enableMedia: false }, update: {} } },
+        featureToggles: { upsert: { create: {}, update: {} } },
         notificationSettings: {
           upsert: {
             create: { email: c.notificationEmail },
@@ -282,7 +282,7 @@ async function main() {
         websiteUrl: c.websiteUrl,
         status: "active",
         widgetSettings: { create: c.widget },
-        featureToggles: { create: { enableMedia: false } },
+        featureToggles: { create: {} },
         notificationSettings: { create: { email: c.notificationEmail } },
       },
     });

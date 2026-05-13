@@ -66,7 +66,7 @@ export default async function SettingsPage({ params }: { params: { clientId: str
           bubbleTooltipBgColor: ws?.bubbleTooltipBgColor ?? "",
           bubbleTooltipTextColor: ws?.bubbleTooltipTextColor ?? "",
           chatAvatarUrl: ws?.chatAvatarUrl ?? "",
-          enableTranslation: ws?.enableTranslation ?? false,
+          enableTranslation: ws?.enableTranslation ?? true,
           translations: {
             es: {
               welcomeMessage: translations?.es?.welcomeMessage ?? "",

@@ -84,7 +84,7 @@ model WidgetSettings {
 
   // Optional Spanish (or future multi-locale) copy. Shape:
   // { es: { welcomeMessage, bubbleText, bubbleTooltip, secondWelcomeMessage } }
-  enableTranslation Boolean @default(false)
+  enableTranslation Boolean @default(true)
   translations      Json?
 
   // Optional second welcome message that replaces the bubble tooltip after

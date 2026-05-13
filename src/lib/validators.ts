@@ -33,7 +33,7 @@ export const widgetSettingsSchema = z.object({
 
   chatAvatarUrl: optionalUrl,
 
-  enableTranslation: z.boolean().default(false),
+  enableTranslation: z.boolean().default(true),
   translations: z
     .object({
       es: z
