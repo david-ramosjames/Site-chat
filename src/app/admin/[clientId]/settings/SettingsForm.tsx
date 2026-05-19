@@ -16,6 +16,9 @@ type Initial = {
   introVideoUrl: string;
   introPosterUrl: string;
   introVideoEndImageUrl: string;
+  introVideoUrlEs: string;
+  introPosterUrlEs: string;
+  introVideoEndImageUrlEs: string;
   introVideoStyle: "top" | "background";
   bubbleImageUrl: string;
   bubbleTooltip: string;
@@ -385,6 +388,29 @@ export default function SettingsForm({ clientId, initial }: { clientId: string; 
                   onChange={(e) => set("introPosterUrl", e.target.value)}
                 />
               </Field>
+              {form.enableTranslation && (
+                <>
+                  <Field
+                    label="Video URL — Spanish"
+                    help="Used when the host page is Spanish (/es, ?lang=es, or html lang=es). Falls back to the English video when blank."
+                  >
+                    <input
+                      className="input"
+                      placeholder="https://www.youtube.com/embed/..."
+                      value={form.introVideoUrlEs}
+                      onChange={(e) => set("introVideoUrlEs", e.target.value)}
+                    />
+                  </Field>
+                  <Field label="Poster URL — Spanish">
+                    <input
+                      className="input"
+                      placeholder="https://cdn.example.com/intro-poster-es.jpg"
+                      value={form.introPosterUrlEs}
+                      onChange={(e) => set("introPosterUrlEs", e.target.value)}
+                    />
+                  </Field>
+                </>
+              )}
               <Field
                 label="Image after video ends"
                 help="Optional. When the video finishes playing, this image takes its place. Useful for a smiling close-up or a 'Tap to chat' card."
@@ -397,6 +423,16 @@ export default function SettingsForm({ clientId, initial }: { clientId: string; 
                   onChange={(e) => set("introVideoEndImageUrl", e.target.value)}
                 />
               </Field>
+              {form.enableTranslation && (
+                <Field label="Image after video ends — Spanish">
+                  <input
+                    className="input"
+                    placeholder="https://cdn.example.com/intro-end-es.jpg"
+                    value={form.introVideoEndImageUrlEs}
+                    onChange={(e) => set("introVideoEndImageUrlEs", e.target.value)}
+                  />
+                </Field>
+              )}
             </div>
           )}
         </Section>

@@ -69,6 +69,9 @@ model WidgetSettings {
   introVideoStyle   String  @default("top") // top | background
   // Optional image that replaces the video after playback ends.
   introVideoEndImageUrl String?
+  introVideoUrlEs        String?
+  introPosterUrlEs       String?
+  introVideoEndImageUrlEs String?
 
   // Optional headshot/avatar on the floating bubble plus the speech-bubble tooltip.
   bubbleImageUrl String?

@@ -507,6 +507,22 @@
 
     function strings() { return STRINGS[currentLocale] || STRINGS.en; }
 
+    function introVideoUrl() {
+      return (currentLocale === "es" && config.widget.introVideoUrlEs) ||
+        config.widget.introVideoUrl ||
+        "";
+    }
+    function introPosterUrl() {
+      return (currentLocale === "es" && config.widget.introPosterUrlEs) ||
+        config.widget.introPosterUrl ||
+        "";
+    }
+    function introEndImageUrl() {
+      return (currentLocale === "es" && config.widget.introVideoEndImageUrlEs) ||
+        config.widget.introVideoEndImageUrl ||
+        "";
+    }
+
     function tWelcome() {
       if (currentLocale === "es" && config.widget.translations && config.widget.translations.es && config.widget.translations.es.welcomeMessage) {
         return config.widget.translations.es.welcomeMessage;
@@ -828,7 +844,7 @@
         if (
           !isVideoUrl(imgUrl) &&
           config.widget.introVideoEnabled &&
-          config.widget.introVideoUrl
+          introVideoUrl()
         ) {
           avatar.appendChild(el("span", { className: "play" }, ["▶"]));
         }
@@ -952,7 +968,7 @@
     function buildIntroVideoNode(opts) {
       // opts: { background: bool }. Returns { node, video } where `video` is
       // the underlying <video> element (or null if it's an iframe embed).
-      var url = config.widget.introVideoUrl;
+      var url = introVideoUrl();
       var isYouTube = /youtube\.com\/embed/.test(url);
       var isVimeo = /player\.vimeo\.com/.test(url);
       var isEmbed = isYouTube || isVimeo;
@@ -978,7 +994,7 @@
         autoplay: "true",
         playsinline: "true",
         "webkit-playsinline": "true",
-        poster: config.widget.introPosterUrl || undefined,
+        poster: introPosterUrl() || undefined,
       });
       // Plays once. controls only in "top" mode where the user expects them.
       if (!opts.background) v.setAttribute("controls", "true");
@@ -988,7 +1004,7 @@
     }
 
     function maybeRenderIntroVideo() {
-      if (!config.widget.introVideoEnabled || !config.widget.introVideoUrl) return;
+      if (!config.widget.introVideoEnabled || !introVideoUrl()) return;
       var style = config.widget.introVideoStyle || "top";
 
       if (style === "background") {
@@ -1039,7 +1055,7 @@
     }
 
     function swapVideoForEndImage(container) {
-      var endUrl = config.widget.introVideoEndImageUrl;
+      var endUrl = introEndImageUrl();
       if (!container) return;
       // Always remove the (now-finished) video from the DOM so it doesn't
       // sit on a black last-frame. Drop the mute + paused-overlay too.

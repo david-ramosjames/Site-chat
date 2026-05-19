@@ -24,6 +24,9 @@ export const widgetSettingsSchema = z.object({
   introVideoUrl: optionalUrl,
   introPosterUrl: optionalUrl,
   introVideoEndImageUrl: optionalUrl,
+  introVideoUrlEs: optionalUrl,
+  introPosterUrlEs: optionalUrl,
+  introVideoEndImageUrlEs: optionalUrl,
   introVideoStyle: z.enum(["top", "background"]).default("top"),
 
   bubbleImageUrl: optionalUrl,
