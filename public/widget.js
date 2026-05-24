@@ -233,7 +233,7 @@
       // toward the footer; when content is long the spacer holds its 55%
       // minimum and the body scrolls naturally.
       ".panel.video-bg .body{flex:1;height:auto;overflow-y:auto;position:relative;z-index:2;background:transparent;}" +
-      ".panel.video-bg .body::before{content:\"\";display:block;flex:1 0 40%;}" +
+      ".panel.video-bg .body::before{content:\"\";display:block;flex:1 0 45%;}" +
       ".panel.video-bg .header{position:relative;z-index:3;background:linear-gradient(180deg,rgba(0,0,0,.55),rgba(0,0,0,0));}" +
       ".panel.video-bg .header .lang{background:rgba(0,0,0,.4);border-color:rgba(255,255,255,.55);}" +
       ".panel.video-bg .progress{position:relative;z-index:3;background:rgba(0,0,0,.35);}" +
@@ -253,7 +253,7 @@
       ".mute-btn .icon svg{width:24px;height:24px;}" +
       "@keyframes tc-mute-pulse{0%,100%{box-shadow:0 0 0 0 rgba(255,255,255,.65);}50%{box-shadow:0 0 0 10px rgba(255,255,255,0);}}" +
       // Video control buttons (play/pause + restart).
-      ".video-controls{position:absolute;bottom:12px;left:50%;transform:translateX(-50%);z-index:4;display:flex;gap:8px;}" +
+      ".video-controls{position:absolute;top:60px;left:12px;z-index:4;display:flex;gap:8px;}" +
       ".video-ctrl{background:rgba(0,0,0,.35);color:#fff;border:none;border-radius:999px;width:40px;height:40px;cursor:pointer;display:flex;align-items:center;justify-content:center;backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px);transition:background .15s ease;}" +
       ".video-ctrl:hover{background:rgba(0,0,0,.55);}" +
       ".video-ctrl svg{width:18px;height:18px;}" +
@@ -267,7 +267,7 @@
       ".panel.video-mini .intro-bg .play-overlay{font-size:28px;}" +
       ".panel.video-mini .intro-bg .mute-btn{top:auto;left:auto;bottom:6px;right:6px;transform:none;width:32px;height:32px;}" +
       ".panel.video-mini .intro-bg .mute-btn .icon svg{width:16px;height:16px;}" +
-      ".panel.video-mini .intro-bg .video-controls{bottom:6px;left:6px;transform:none;}" +
+      ".panel.video-mini .intro-bg .video-controls{top:6px;left:6px;}" +
       ".panel.video-mini .intro-bg .video-ctrl{width:28px;height:28px;}" +
       ".panel.video-mini .intro-bg .video-ctrl svg{width:14px;height:14px;}" +
       ".body{flex:1;overflow-y:auto;padding:16px;background:#f8fafc;display:flex;flex-direction:column;gap:10px;}" +
@@ -1081,27 +1081,23 @@
     function swapVideoForEndImage(container) {
       var endUrl = introEndImageUrl();
       if (!container) return;
-      // Always remove the (now-finished) video from the DOM so it doesn't
-      // sit on a black last-frame. Drop the mute + paused-overlay too.
-      var video = container.querySelector ? container.querySelector("video") : null;
-      if (video && video.parentNode) video.parentNode.removeChild(video);
       if (introBgEl && introBgEl.classList) introBgEl.classList.remove("is-paused");
+      // Hide the mute button — no audio once video is gone.
       if (muteBtn && muteBtn.parentNode) {
         muteBtn.parentNode.removeChild(muteBtn);
         muteBtn = null;
       }
-      if (videoControlsEl && videoControlsEl.parentNode) {
-        videoControlsEl.parentNode.removeChild(videoControlsEl);
-        videoControlsEl = null;
-      }
-      introVideoEl = null;
+      // Keep videoControlsEl visible so the user can hit restart.
+      // introVideoEl stays set so restart can seek + play again.
       if (endUrl) {
         var img = el("img", {
           className: "end-image",
           src: endUrl,
           alt: "",
         });
-        // Insert as the first child so it lives where the video did.
+        // Hide the video instead of removing it so restart can bring it back.
+        var video = container.querySelector ? container.querySelector("video") : null;
+        if (video) video.style.display = "none";
         if (container.firstChild) container.insertBefore(img, container.firstChild);
         else container.appendChild(img);
       }
@@ -1248,8 +1244,15 @@
         onClick: function (e) {
           e.stopPropagation();
           if (!introVideoEl) return;
+          // If end-image is showing, remove it and unhide the video.
+          var container = introBgEl || panel;
+          var endImg = container.querySelector ? container.querySelector("img.end-image") : null;
+          if (endImg && endImg.parentNode) endImg.parentNode.removeChild(endImg);
+          introVideoEl.style.display = "";
           introVideoEl.currentTime = 0;
           introVideoEl.play();
+          // Re-render mute button if it was removed.
+          if (!muteBtn) renderMuteButton();
         },
       }, [makeSvg("M12 5V1L7 6l5 5V7c3.31 0 6 2.69 6 6s-2.69 6-6 6-6-2.69-6-6H4c0 4.42 3.58 8 8 8s8-3.58 8-8-3.58-8-8-8z")]);
 
@@ -1277,6 +1280,38 @@
       if (videoControlsEl) {
         if (videoControlsEl.parentNode) videoControlsEl.parentNode.removeChild(videoControlsEl);
         introBgEl.appendChild(videoControlsEl);
+      }
+      // Click the mini thumbnail to expand back to full-bleed.
+      introBgEl.style.cursor = "pointer";
+      introBgEl.addEventListener("click", expandFromMini);
+    }
+
+    function expandFromMini() {
+      if (!miniMode || !introBgEl || !panel) return;
+      miniMode = false;
+      panel.classList.remove("video-mini");
+      panel.classList.add("video-bg");
+      // Move the video wrapper back to the panel root (behind everything).
+      if (introBgEl.parentNode) introBgEl.parentNode.removeChild(introBgEl);
+      panel.insertBefore(introBgEl, panel.firstChild);
+      introBgEl.style.cursor = "";
+      // Move mute + controls back to the panel level.
+      if (muteBtn) {
+        if (muteBtn.parentNode) muteBtn.parentNode.removeChild(muteBtn);
+        panel.appendChild(muteBtn);
+      }
+      if (videoControlsEl) {
+        if (videoControlsEl.parentNode) videoControlsEl.parentNode.removeChild(videoControlsEl);
+        panel.appendChild(videoControlsEl);
+      }
+      // Restart playback if the video has ended.
+      if (introVideoEl && introVideoEl.ended) {
+        var endImg = introBgEl.querySelector ? introBgEl.querySelector("img.end-image") : null;
+        if (endImg && endImg.parentNode) endImg.parentNode.removeChild(endImg);
+        introVideoEl.style.display = "";
+        introVideoEl.currentTime = 0;
+        introVideoEl.play();
+        if (!muteBtn) renderMuteButton();
       }
     }
 
