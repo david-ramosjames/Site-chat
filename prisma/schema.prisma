@@ -146,6 +146,18 @@ model WidgetSettings {
   brandingFooterEnabled Boolean @default(true)
   brandingFooterText    String?
 
+  // Custom subtitle text shown in the header below the business name.
+  // Defaults to "Usually replies in a few minutes" when blank.
+  headerSubtitle   String?
+  headerSubtitleEs String?
+
+  // Show transparent play/pause and restart buttons on the intro video.
+  showVideoControls Boolean @default(false)
+
+  // Custom hex color for the expand and close buttons in the header.
+  // Null falls back to the default semi-transparent white.
+  headerButtonColor String?
+
   // Default country for normalising visitor-entered phone numbers to E.164
   // before forwarding to CallRail. "US" prepends +1 to 10-digit numbers,
   // "MX" prepends +52. Visitor input that already starts with + is

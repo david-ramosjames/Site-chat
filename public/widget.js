@@ -197,10 +197,11 @@
       ".header .actions{margin-left:auto;display:flex;align-items:center;gap:6px;}" +
       ".header .lang{background:rgba(255,255,255,.18);border:1px solid rgba(255,255,255,.4);color:#fff;border-radius:999px;padding:5px 11px;font-size:13px;font-weight:600;cursor:pointer;}" +
       ".header .lang:hover{background:rgba(255,255,255,.28);}" +
-      ".header .expand{background:rgba(255,255,255,.18);border:1px solid rgba(255,255,255,.4);color:#fff;border-radius:999px;width:34px;height:34px;cursor:pointer;display:flex;align-items:center;justify-content:center;}" +
-      ".header .expand:hover{background:rgba(255,255,255,.28);}" +
+      ".header .expand{background:rgba(255,255,255,.35);border:1px solid rgba(255,255,255,.6);color:#fff;border-radius:999px;width:34px;height:34px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:background .15s ease;}" +
+      ".header .expand:hover{background:rgba(255,255,255,.5);}" +
       ".header .expand svg{width:16px;height:16px;}" +
-      ".header .close{background:transparent;border:none;color:#fff;font-size:24px;cursor:pointer;padding:4px 8px;line-height:1;}" +
+      ".header .close{background:rgba(255,255,255,.35);border:1px solid rgba(255,255,255,.6);color:#fff;border-radius:999px;width:34px;height:34px;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:20px;line-height:1;transition:background .15s ease;}" +
+      ".header .close:hover{background:rgba(255,255,255,.5);}" +
       // Centered modal mode for the panel.
       ".tc-backdrop{position:fixed;inset:0;background:rgba(15,23,42,.55);z-index:2147482998;animation:tc-fade-in .25s ease both;}" +
       "@keyframes tc-fade-in{from{opacity:0;}to{opacity:1;}}" +
@@ -232,7 +233,7 @@
       // toward the footer; when content is long the spacer holds its 55%
       // minimum and the body scrolls naturally.
       ".panel.video-bg .body{flex:1;height:auto;overflow-y:auto;position:relative;z-index:2;background:transparent;}" +
-      ".panel.video-bg .body::before{content:\"\";display:block;flex:1 0 55%;}" +
+      ".panel.video-bg .body::before{content:\"\";display:block;flex:1 0 40%;}" +
       ".panel.video-bg .header{position:relative;z-index:3;background:linear-gradient(180deg,rgba(0,0,0,.55),rgba(0,0,0,0));}" +
       ".panel.video-bg .header .lang{background:rgba(0,0,0,.4);border-color:rgba(255,255,255,.55);}" +
       ".panel.video-bg .progress{position:relative;z-index:3;background:rgba(0,0,0,.35);}" +
@@ -245,17 +246,30 @@
       ".panel.video-bg .typing{background:rgba(0,0,0,.55);border-color:rgba(255,255,255,.18);}" +
       ".panel.video-bg .typing i{background:#cbd5e1;}" +
       ".panel.video-bg .brand-foot{position:relative;z-index:3;background:transparent;color:rgba(255,255,255,.85);border-top:none;}" +
-      ".mute-btn{position:absolute;top:60px;right:12px;z-index:4;background:rgba(0,0,0,.7);color:#fff;border:1px solid rgba(255,255,255,.6);border-radius:999px;padding:8px 14px;font-size:13px;font-weight:600;cursor:pointer;display:inline-flex;align-items:center;gap:6px;backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px);}" +
-      ".mute-btn:hover{background:rgba(0,0,0,.9);}" +
+      ".mute-btn{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);z-index:4;background:rgba(0,0,0,.35);color:#fff;border:none;border-radius:999px;width:52px;height:52px;cursor:pointer;display:flex;align-items:center;justify-content:center;backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px);transition:background .15s ease;}" +
+      ".mute-btn:hover{background:rgba(0,0,0,.55);}" +
       ".mute-btn.muted{animation:tc-mute-pulse 1.8s ease-in-out infinite;}" +
-      ".mute-btn .icon{font-size:14px;line-height:1;}" +
+      ".mute-btn .icon{display:flex;align-items:center;justify-content:center;}" +
+      ".mute-btn .icon svg{width:24px;height:24px;}" +
       "@keyframes tc-mute-pulse{0%,100%{box-shadow:0 0 0 0 rgba(255,255,255,.65);}50%{box-shadow:0 0 0 10px rgba(255,255,255,0);}}" +
+      // Video control buttons (play/pause + restart).
+      ".video-controls{position:absolute;bottom:12px;left:50%;transform:translateX(-50%);z-index:4;display:flex;gap:8px;}" +
+      ".video-ctrl{background:rgba(0,0,0,.35);color:#fff;border:none;border-radius:999px;width:40px;height:40px;cursor:pointer;display:flex;align-items:center;justify-content:center;backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px);transition:background .15s ease;}" +
+      ".video-ctrl:hover{background:rgba(0,0,0,.55);}" +
+      ".video-ctrl svg{width:18px;height:18px;}" +
+      // Scroll indicator pill.
+      ".scroll-pill{position:absolute;bottom:8px;left:50%;transform:translateX(-50%);z-index:5;background:rgba(255,255,255,.92);color:#0b1220;border:1px solid #e2e8f0;border-radius:999px;padding:5px 14px;font-size:12px;font-weight:600;display:flex;align-items:center;gap:5px;box-shadow:0 4px 12px rgba(15,23,42,.12);pointer-events:none;animation:tc-scroll-bounce 2s ease-in-out infinite;}" +
+      ".scroll-pill svg{width:14px;height:14px;}" +
+      "@keyframes tc-scroll-bounce{0%,100%{transform:translateX(-50%) translateY(0);}50%{transform:translateX(-50%) translateY(-4px);}}" +
       // After the first answer the video shrinks to a small inline thumbnail
       // that sits at the top of the conversation (not overlaying it).
       ".panel.video-mini .intro-bg{position:relative;inset:auto;width:96px;height:140px;border-radius:14px;overflow:hidden;background:#000;align-self:flex-start;flex-shrink:0;box-shadow:0 6px 18px rgba(0,0,0,.18);}" +
       ".panel.video-mini .intro-bg .play-overlay{font-size:28px;}" +
-      ".panel.video-mini .intro-bg .mute-btn{top:auto;bottom:6px;right:6px;left:auto;padding:4px 8px;font-size:11px;}" +
-      ".panel.video-mini .intro-bg .mute-btn .label{display:none;}" +
+      ".panel.video-mini .intro-bg .mute-btn{top:auto;left:auto;bottom:6px;right:6px;transform:none;width:32px;height:32px;}" +
+      ".panel.video-mini .intro-bg .mute-btn .icon svg{width:16px;height:16px;}" +
+      ".panel.video-mini .intro-bg .video-controls{bottom:6px;left:6px;transform:none;}" +
+      ".panel.video-mini .intro-bg .video-ctrl{width:28px;height:28px;}" +
+      ".panel.video-mini .intro-bg .video-ctrl svg{width:14px;height:14px;}" +
       ".body{flex:1;overflow-y:auto;padding:16px;background:#f8fafc;display:flex;flex-direction:column;gap:10px;}" +
       ".msg{max-width:85%;padding:11px 15px;border-radius:16px;font-size:15px;line-height:1.4;white-space:pre-wrap;}" +
       ".msg.bot{background:#fff;color:#0b1220;border:1px solid #e2e8f0;border-top-left-radius:4px;align-self:flex-start;}" +
@@ -560,6 +574,10 @@
       var es = config.widget.translations && config.widget.translations.es;
       if (currentLocale === "es" && es && es.successMessage) return es.successMessage;
       return config.widget.successMessage || strings().successBody(config.business.name);
+    }
+    function tHeaderSubtitle() {
+      if (currentLocale === "es" && config.widget.headerSubtitleEs) return config.widget.headerSubtitleEs;
+      return config.widget.headerSubtitle || strings().sub;
     }
     function tStepQuestion(step) {
       if (currentLocale === "es" && step.translations && step.translations.es && step.translations.es.question) {
@@ -896,6 +914,7 @@
         }, [strings().langSwitch]);
         actions.appendChild(langBtn);
       }
+      var hbc = config.widget.headerButtonColor;
       var expandBtn = el("button", {
         className: "expand",
         type: "button",
@@ -903,13 +922,16 @@
         title: centeredMode ? "Back to corner" : "Expand to center",
         onClick: toggleCentered,
       }, [expandIcon(centeredMode)]);
+      if (hbc) { expandBtn.style.background = hbc; expandBtn.style.borderColor = hbc; }
       actions.appendChild(expandBtn);
-      actions.appendChild(el("button", {
+      var closeBtn = el("button", {
         className: "close",
         type: "button",
         "aria-label": "Close",
         onClick: close,
-      }, ["×"]));
+      }, ["×"]);
+      if (hbc) { closeBtn.style.background = hbc; closeBtn.style.borderColor = hbc; }
+      actions.appendChild(closeBtn);
 
       // Header is the company brand. Logo first, then a colored initial.
       var brandNode = config.widget.logoUrl
@@ -930,7 +952,7 @@
         brandNode,
         el("div", {}, [
           el("div", { className: "bname" }, [config.business.name]),
-          el("div", { className: "sub" }, [strings().sub]),
+          el("div", { className: "sub" }, [tHeaderSubtitle()]),
         ]),
         actions,
       ]);
@@ -949,6 +971,7 @@
       }
 
       body = el("div", { className: "body" });
+      body.addEventListener("scroll", checkScrollPill);
       panel.appendChild(body);
 
       footer = el("div", { className: "footer" });
@@ -1029,6 +1052,7 @@
         }
         panel.insertBefore(introBgEl, panel.firstChild);
         renderMuteButton();
+        renderVideoControls();
         return;
       }
 
@@ -1065,6 +1089,10 @@
       if (muteBtn && muteBtn.parentNode) {
         muteBtn.parentNode.removeChild(muteBtn);
         muteBtn = null;
+      }
+      if (videoControlsEl && videoControlsEl.parentNode) {
+        videoControlsEl.parentNode.removeChild(videoControlsEl);
+        videoControlsEl = null;
       }
       introVideoEl = null;
       if (endUrl) {
@@ -1140,22 +1168,94 @@
       updateMuteIcon();
     }
 
-    function muteIcon(muted) {
-      // Simple unicode glyphs to keep widget.js dependency-free.
-      return muted ? "🔇" : "🔊";
+    function muteIconSvg(muted) {
+      var SVG_NS = "http://www.w3.org/2000/svg";
+      var svg = document.createElementNS(SVG_NS, "svg");
+      svg.setAttribute("viewBox", "0 0 24 24");
+      svg.setAttribute("fill", "currentColor");
+      svg.setAttribute("aria-hidden", "true");
+      var path = document.createElementNS(SVG_NS, "path");
+      if (muted) {
+        path.setAttribute("d", "M16.5 12c0-1.77-1.02-3.29-2.5-4.03v2.21l2.45 2.45c.03-.2.05-.41.05-.63zm2.5 0c0 .94-.2 1.82-.54 2.64l1.51 1.51C20.63 14.91 21 13.5 21 12c0-4.28-2.99-7.86-7-8.77v2.06c2.89.86 5 3.54 5 6.71zM4.27 3L3 4.27 7.73 9H3v6h4l5 5v-6.73l4.25 4.25c-.67.52-1.42.93-2.25 1.18v2.06c1.38-.31 2.63-.95 3.69-1.81L19.73 21 21 19.73l-9-9L4.27 3zM12 4L9.91 6.09 12 8.18V4z");
+      } else {
+        path.setAttribute("d", "M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z");
+      }
+      svg.appendChild(path);
+      return svg;
     }
 
     function updateMuteIcon() {
       if (!muteBtn || !introVideoEl) return;
       while (muteBtn.firstChild) muteBtn.removeChild(muteBtn.firstChild);
       var muted = introVideoEl.muted;
-      muteBtn.appendChild(el("span", { className: "icon" }, [muteIcon(muted)]));
+      var iconWrap = el("span", { className: "icon" });
+      iconWrap.appendChild(muteIconSvg(muted));
+      muteBtn.appendChild(iconWrap);
       if (muted) {
         muteBtn.classList.add("muted");
-        muteBtn.appendChild(el("span", { className: "label" }, [strings().unmute]));
       } else {
         muteBtn.classList.remove("muted");
       }
+    }
+
+    var videoControlsEl = null;
+
+    function renderVideoControls() {
+      if (!introVideoEl || !config.widget.showVideoControls) return;
+      var SVG_NS = "http://www.w3.org/2000/svg";
+
+      function makeSvg(d) {
+        var svg = document.createElementNS(SVG_NS, "svg");
+        svg.setAttribute("viewBox", "0 0 24 24");
+        svg.setAttribute("fill", "currentColor");
+        svg.setAttribute("aria-hidden", "true");
+        var path = document.createElementNS(SVG_NS, "path");
+        path.setAttribute("d", d);
+        svg.appendChild(path);
+        return svg;
+      }
+
+      var playPauseBtn = el("button", {
+        className: "video-ctrl",
+        type: "button",
+        "aria-label": "Play / Pause",
+        onClick: function (e) {
+          e.stopPropagation();
+          if (!introVideoEl) return;
+          if (introVideoEl.paused) introVideoEl.play(); else introVideoEl.pause();
+        },
+      });
+
+      function updatePlayPauseIcon() {
+        while (playPauseBtn.firstChild) playPauseBtn.removeChild(playPauseBtn.firstChild);
+        if (introVideoEl && introVideoEl.paused) {
+          playPauseBtn.appendChild(makeSvg("M8 5v14l11-7z"));
+        } else {
+          playPauseBtn.appendChild(makeSvg("M6 19h4V5H6v14zm8-14v14h4V5h-4z"));
+        }
+      }
+      updatePlayPauseIcon();
+
+      if (introVideoEl) {
+        introVideoEl.addEventListener("play", updatePlayPauseIcon);
+        introVideoEl.addEventListener("pause", updatePlayPauseIcon);
+      }
+
+      var restartBtn = el("button", {
+        className: "video-ctrl",
+        type: "button",
+        "aria-label": "Restart video",
+        onClick: function (e) {
+          e.stopPropagation();
+          if (!introVideoEl) return;
+          introVideoEl.currentTime = 0;
+          introVideoEl.play();
+        },
+      }, [makeSvg("M12 5V1L7 6l5 5V7c3.31 0 6 2.69 6 6s-2.69 6-6 6-6-2.69-6-6H4c0 4.42 3.58 8 8 8s8-3.58 8-8-3.58-8-8-8z")]);
+
+      videoControlsEl = el("div", { className: "video-controls" }, [playPauseBtn, restartBtn]);
+      if (introBgEl) introBgEl.appendChild(videoControlsEl);
+      else panel.appendChild(videoControlsEl);
     }
 
     function transitionToMiniVideo() {
@@ -1173,6 +1273,41 @@
       if (muteBtn) {
         if (muteBtn.parentNode) muteBtn.parentNode.removeChild(muteBtn);
         introBgEl.appendChild(muteBtn);
+      }
+      if (videoControlsEl) {
+        if (videoControlsEl.parentNode) videoControlsEl.parentNode.removeChild(videoControlsEl);
+        introBgEl.appendChild(videoControlsEl);
+      }
+    }
+
+    var scrollPill = null;
+
+    function checkScrollPill() {
+      if (!body) return;
+      var hasOverflow = body.scrollHeight > body.clientHeight + 20;
+      var nearBottom = body.scrollTop + body.clientHeight >= body.scrollHeight - 30;
+      if (hasOverflow && !nearBottom) {
+        if (!scrollPill) {
+          var SVG_NS = "http://www.w3.org/2000/svg";
+          var svg = document.createElementNS(SVG_NS, "svg");
+          svg.setAttribute("viewBox", "0 0 24 24");
+          svg.setAttribute("fill", "currentColor");
+          svg.setAttribute("aria-hidden", "true");
+          var path = document.createElementNS(SVG_NS, "path");
+          path.setAttribute("d", "M7.41 8.59L12 13.17l4.59-4.58L18 10l-6 6-6-6 1.41-1.41z");
+          svg.appendChild(path);
+          scrollPill = el("div", { className: "scroll-pill" }, [
+            svg,
+            currentLocale === "es" ? "Desplazar" : "Scroll",
+          ]);
+          body.style.position = "relative";
+          body.appendChild(scrollPill);
+        }
+      } else {
+        if (scrollPill && scrollPill.parentNode) {
+          scrollPill.parentNode.removeChild(scrollPill);
+          scrollPill = null;
+        }
       }
     }
 
@@ -1204,6 +1339,7 @@
       }
       body.appendChild(container);
       autoScrollToLatest();
+      setTimeout(checkScrollPill, 100);
       return { msg: msg, container: container };
     }
 
@@ -1447,6 +1583,7 @@
         body.appendChild(wrap);
         inBodyOptionsEl = wrap;
         scrollBodyToBottomSoon();
+        setTimeout(checkScrollPill, 100);
         return;
       }
 

@@ -62,6 +62,11 @@ export const widgetSettingsSchema = z.object({
   googleAdsConversionId: z.string().max(60).optional().nullable(),
   googleAdsConversionLabel: z.string().max(60).optional().nullable(),
 
+  headerSubtitle: z.string().max(200).optional().nullable(),
+  headerSubtitleEs: z.string().max(200).optional().nullable(),
+  showVideoControls: z.boolean().default(false),
+  headerButtonColor: optionalHexColor,
+
   callRailUseDynamicNumber: z.boolean().default(false),
   callRailSwapWaitMs: z.number().int().min(0).max(5000).default(800),
   callRailDynamicNumberSelector: z.string().max(200).optional().nullable(),

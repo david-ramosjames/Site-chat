@@ -105,6 +105,10 @@ export default async function SettingsPage({ params }: { params: { clientId: str
           callRailSwapWaitMs: ws?.callRailSwapWaitMs ?? 800,
           callRailDynamicNumberSelector: ws?.callRailDynamicNumberSelector ?? "",
           defaultPhoneCountry: (ws?.defaultPhoneCountry as "US" | "MX") ?? "US",
+          headerSubtitle: ws?.headerSubtitle ?? "",
+          headerSubtitleEs: ws?.headerSubtitleEs ?? "",
+          showVideoControls: ws?.showVideoControls ?? false,
+          headerButtonColor: ws?.headerButtonColor ?? "",
         }}
       />
     </div>

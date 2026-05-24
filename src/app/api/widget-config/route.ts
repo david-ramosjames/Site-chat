@@ -85,6 +85,10 @@ export async function GET(req: NextRequest) {
         callRailSwapWaitMs: client.widgetSettings.callRailSwapWaitMs,
         callRailDynamicNumberSelector: client.widgetSettings.callRailDynamicNumberSelector,
         defaultPhoneCountry: client.widgetSettings.defaultPhoneCountry,
+        headerSubtitle: client.widgetSettings.headerSubtitle,
+        headerSubtitleEs: client.widgetSettings.headerSubtitleEs,
+        showVideoControls: client.widgetSettings.showVideoControls,
+        headerButtonColor: client.widgetSettings.headerButtonColor,
       },
       features: publicFeatureToggles(client.featureToggles),
       flow: client.flowSteps.map((s) => ({

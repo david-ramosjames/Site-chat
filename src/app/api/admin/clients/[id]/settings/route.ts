@@ -64,6 +64,10 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
     callRailSwapWaitMs: rest.callRailSwapWaitMs,
     callRailDynamicNumberSelector: nullable(rest.callRailDynamicNumberSelector),
     defaultPhoneCountry: rest.defaultPhoneCountry,
+    headerSubtitle: nullable(rest.headerSubtitle),
+    headerSubtitleEs: nullable(rest.headerSubtitleEs),
+    showVideoControls: rest.showVideoControls,
+    headerButtonColor: nullable(rest.headerButtonColor),
   };
 
   const client = await prisma.client.update({

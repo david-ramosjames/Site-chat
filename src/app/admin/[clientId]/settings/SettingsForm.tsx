@@ -53,6 +53,10 @@ type Initial = {
   callRailSwapWaitMs: number;
   callRailDynamicNumberSelector: string;
   defaultPhoneCountry: "US" | "MX";
+  headerSubtitle: string;
+  headerSubtitleEs: string;
+  showVideoControls: boolean;
+  headerButtonColor: string;
 };
 
 type SideButton = {
@@ -100,6 +104,10 @@ export default function SettingsForm({ clientId, initial }: { clientId: string; 
         secondWelcomeBgColor: form.secondWelcomeBgColor || null,
         secondWelcomeTextColor: form.secondWelcomeTextColor || null,
         brandingFooterText: form.brandingFooterText.trim() || null,
+        headerSubtitle: form.headerSubtitle.trim() || null,
+        headerSubtitleEs: form.headerSubtitleEs.trim() || null,
+        showVideoControls: form.showVideoControls,
+        headerButtonColor: form.headerButtonColor || null,
         translations: {
           es: {
             welcomeMessage: form.translations.es.welcomeMessage || undefined,
@@ -219,6 +227,37 @@ export default function SettingsForm({ clientId, initial }: { clientId: string; 
                 <option value="bottom-right">Bottom right</option>
                 <option value="bottom-left">Bottom left</option>
               </select>
+            </Field>
+            <Field
+              label="Header subtitle"
+              help="Text shown below the business name in the chat header. Leave blank to use the default 'Usually replies in a few minutes'."
+              full
+            >
+              <input
+                className="input"
+                placeholder="Usually replies in a few minutes"
+                value={form.headerSubtitle}
+                onChange={(e) => set("headerSubtitle", e.target.value)}
+              />
+            </Field>
+            {form.enableTranslation && (
+              <Field label="Header subtitle — Spanish" full>
+                <input
+                  className="input"
+                  placeholder="Normalmente respondemos en unos minutos"
+                  value={form.headerSubtitleEs}
+                  onChange={(e) => set("headerSubtitleEs", e.target.value)}
+                />
+              </Field>
+            )}
+            <Field
+              label="Header button color"
+              help="Custom color for the expand and close buttons in the chat header. Leave blank for the default translucent white."
+            >
+              <OptionalColorInput
+                value={form.headerButtonColor}
+                onChange={(v) => set("headerButtonColor", v)}
+              />
             </Field>
             <Field label="Welcome message" full>
               <textarea
@@ -361,7 +400,19 @@ export default function SettingsForm({ clientId, initial }: { clientId: string; 
             <span className="text-sm">Show an intro video when the chat opens</span>
           </label>
           {form.introVideoEnabled && (
-            <div className="mt-4 grid gap-5 sm:grid-cols-2">
+            <div className="mt-4 space-y-4">
+              <label className="flex items-center gap-2">
+                <input
+                  type="checkbox"
+                  checked={form.showVideoControls}
+                  onChange={(e) => set("showVideoControls", e.target.checked)}
+                  className="h-4 w-4 rounded border-ink-300"
+                />
+                <span className="text-sm">
+                  Show play/pause and restart buttons on the video (transparent overlay style)
+                </span>
+              </label>
+              <div className="grid gap-5 sm:grid-cols-2">
               <Field label="Layout" help="Top: a 200px-tall video block above the conversation. Background: full-bleed behind the messages and options (best with a portrait/vertical video).">
                 <select
                   className="select"
@@ -433,6 +484,7 @@ export default function SettingsForm({ clientId, initial }: { clientId: string; 
                   />
                 </Field>
               )}
+              </div>
             </div>
           )}
         </Section>
