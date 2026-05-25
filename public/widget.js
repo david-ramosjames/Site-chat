@@ -197,10 +197,10 @@
       ".header .actions{margin-left:auto;display:flex;align-items:center;gap:6px;}" +
       ".header .lang{background:rgba(255,255,255,.18);border:1px solid rgba(255,255,255,.4);color:#fff;border-radius:999px;padding:5px 11px;font-size:13px;font-weight:600;cursor:pointer;}" +
       ".header .lang:hover{background:rgba(255,255,255,.28);}" +
-      ".header .expand{background:rgba(255,255,255,.35);border:1px solid rgba(255,255,255,.6);color:#fff;border-radius:999px;width:34px;height:34px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:background .15s ease;}" +
-      ".header .expand:hover{background:rgba(255,255,255,.5);}" +
+      ".header .expand{background:transparent;border:none;color:#fff;border-radius:999px;width:34px;height:34px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:background .15s ease;}" +
+      ".header .expand:hover{background:rgba(255,255,255,.18);}" +
       ".header .expand svg{width:16px;height:16px;}" +
-      ".header .close{background:rgba(255,255,255,.35);border:1px solid rgba(255,255,255,.6);color:#fff;border-radius:999px;width:34px;height:34px;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:20px;line-height:1;transition:background .15s ease;}" +
+      ".header .close{background:rgba(255,255,255,.35);border:1px solid rgba(255,255,255,.6);color:#fff;border-radius:999px;width:38px;height:38px;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:22px;line-height:1;transition:background .15s ease;}" +
       ".header .close:hover{background:rgba(255,255,255,.5);}" +
       // Centered modal mode for the panel.
       ".tc-backdrop{position:fixed;inset:0;background:rgba(15,23,42,.55);z-index:2147482998;animation:tc-fade-in .25s ease both;}" +
@@ -922,7 +922,6 @@
         title: centeredMode ? "Back to corner" : "Expand to center",
         onClick: toggleCentered,
       }, [expandIcon(centeredMode)]);
-      if (hbc) { expandBtn.style.background = hbc; expandBtn.style.borderColor = hbc; }
       actions.appendChild(expandBtn);
       var closeBtn = el("button", {
         className: "close",
