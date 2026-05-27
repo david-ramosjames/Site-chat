@@ -87,6 +87,7 @@ export default async function AnalyticsPage({
     started: 0,
     completed_success: 0,
     completed_decline: 0,
+    cta_click: 0,
   };
   grouped.forEach((g) => {
     counts[g.type] = g._count._all;
@@ -96,7 +97,7 @@ export default async function AnalyticsPage({
   // "unique visitors who reached this stage" instead of raw event volume.
   const events = await prisma.chatEvent.findMany({
     where,
-    select: { sessionId: true, type: true, createdAt: true, sourceUrl: true },
+    select: { sessionId: true, type: true, source: true, createdAt: true, sourceUrl: true },
     orderBy: { createdAt: "asc" },
   });
   const sessionStages: Record<string, Set<string>> = {
@@ -104,9 +105,11 @@ export default async function AnalyticsPage({
     started: new Set(),
     completed_success: new Set(),
     completed_decline: new Set(),
+    cta_click: new Set(),
   };
   const dailyStages = new Map<string, Record<string, Set<string>>>();
   const pageStages = new Map<string, Set<string>>();
+  const ctaSources = new Map<string, Set<string>>();
   events.forEach((s) => {
     sessionStages[s.type]?.add(s.sessionId);
     const day = dayKey(s.createdAt);
@@ -116,6 +119,7 @@ export default async function AnalyticsPage({
         started: new Set(),
         completed_success: new Set(),
         completed_decline: new Set(),
+        cta_click: new Set(),
       });
     }
     dailyStages.get(day)?.[s.type]?.add(s.sessionId);
@@ -124,6 +128,10 @@ export default async function AnalyticsPage({
       if (!pageStages.has(label)) pageStages.set(label, new Set());
       pageStages.get(label)?.add(s.sessionId);
     }
+    if (s.type === "cta_click" && s.source) {
+      if (!ctaSources.has(s.source)) ctaSources.set(s.source, new Set());
+      ctaSources.get(s.source)?.add(s.sessionId);
+    }
   });
 
   const opened = sessionStages.opened.size;
@@ -131,6 +139,10 @@ export default async function AnalyticsPage({
   const success = sessionStages.completed_success.size;
   const decline = sessionStages.completed_decline.size;
   const completed = success + decline;
+  const ctaClicks = sessionStages.cta_click.size;
+  const ctaByType = Array.from(ctaSources.entries())
+    .map(([type, sessions]) => ({ type, sessions: sessions.size }))
+    .sort((a, b) => b.sessions - a.sessions);
   const dailyRows = Array.from(dailyStages.entries())
     .sort(([a], [b]) => b.localeCompare(a))
     .slice(0, 14)
@@ -139,6 +151,7 @@ export default async function AnalyticsPage({
       opened: stages.opened.size,
       started: stages.started.size,
       completed: stages.completed_success.size + stages.completed_decline.size,
+      ctaClicks: stages.cta_click.size,
     }));
   const topPages = Array.from(pageStages.entries())
     .map(([page, sessions]) => ({ page, sessions: sessions.size }))
@@ -205,7 +218,7 @@ export default async function AnalyticsPage({
         </div>
       </div>
 
-      <div className="grid grid-cols-1 gap-3 md:grid-cols-4">
+      <div className="grid grid-cols-1 gap-3 md:grid-cols-5">
         <Stat label="Chats opened" value={opened} sub="auto-open + bubble click" />
         <Stat label="Started" value={started} sub={`${pct(started, opened)} of opens`} />
         <Stat
@@ -217,6 +230,11 @@ export default async function AnalyticsPage({
           label="Completed (decline)"
           value={decline}
           sub={`${pct(decline, started)} of starts`}
+        />
+        <Stat
+          label="CTA clicks"
+          value={ctaClicks}
+          sub={`${pct(ctaClicks, success)} of success`}
         />
       </div>
 
@@ -257,6 +275,12 @@ export default async function AnalyticsPage({
               ofOpens={opened}
               step={pct(decline, completed)}
             />
+            <FunnelRow
+              label="Clicked a CTA"
+              value={ctaClicks}
+              ofOpens={opened}
+              step={pct(ctaClicks, success)}
+            />
           </tbody>
         </table>
       </div>
@@ -271,6 +295,7 @@ export default async function AnalyticsPage({
                 <th className="py-2">Opened</th>
                 <th className="py-2">Started</th>
                 <th className="py-2">Completed</th>
+                <th className="py-2">CTA clicks</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-ink-300/60">
@@ -281,11 +306,12 @@ export default async function AnalyticsPage({
                     <td className="py-2 text-ink-500">{row.opened}</td>
                     <td className="py-2 text-ink-500">{row.started}</td>
                     <td className="py-2 text-ink-500">{row.completed}</td>
+                    <td className="py-2 text-ink-500">{row.ctaClicks}</td>
                   </tr>
                 ))
               ) : (
                 <tr>
-                  <td className="py-3 text-ink-500" colSpan={4}>
+                  <td className="py-3 text-ink-500" colSpan={5}>
                     No events in this period.
                   </td>
                 </tr>
@@ -323,6 +349,33 @@ export default async function AnalyticsPage({
         </div>
       </div>
 
+      {ctaByType.length > 0 && (
+        <div className="card p-5">
+          <h3 className="text-sm font-semibold">CTA clicks by type</h3>
+          <p className="mt-1 text-xs text-ink-500">
+            Unique sessions that clicked each end-of-chat button.
+          </p>
+          <table className="mt-3 w-full text-sm">
+            <thead className="text-left text-xs uppercase tracking-wide text-ink-500">
+              <tr>
+                <th className="py-2">CTA type</th>
+                <th className="py-2">Sessions</th>
+                <th className="py-2">% of success</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-ink-300/60">
+              {ctaByType.map((row) => (
+                <tr key={row.type}>
+                  <td className="py-2 font-medium capitalize">{row.type}</td>
+                  <td className="py-2 text-ink-500">{row.sessions}</td>
+                  <td className="py-2 text-ink-500">{pct(row.sessions, success)}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+
       <div className="card p-5">
         <h3 className="text-sm font-semibold">Raw event volume</h3>
         <p className="mt-1 text-xs text-ink-500">
@@ -334,6 +387,7 @@ export default async function AnalyticsPage({
           <li>started: {counts.started}</li>
           <li>completed_success: {counts.completed_success}</li>
           <li>completed_decline: {counts.completed_decline}</li>
+          <li>cta_click: {counts.cta_click}</li>
         </ul>
       </div>
     </div>
