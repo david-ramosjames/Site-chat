@@ -20,6 +20,18 @@ export default async function LeadDetail({
   const transcript = (lead.transcript as TranscriptEntry[] | null) ?? [];
   const answers = (lead.answers as Record<string, unknown> | null) ?? {};
 
+  const ctaEvents = lead.chatSessionId
+    ? await prisma.chatEvent.findMany({
+        where: {
+          clientId: params.clientId,
+          sessionId: lead.chatSessionId,
+          type: "cta_click",
+        },
+        orderBy: { createdAt: "asc" },
+        select: { source: true, createdAt: true },
+      })
+    : [];
+
   return (
     <div className="space-y-6">
       <div>
@@ -89,6 +101,22 @@ export default async function LeadDetail({
 
         <aside className="space-y-6">
           <LeadControls leadId={lead.id} status={lead.status} notes={lead.notes ?? ""} />
+
+          {ctaEvents.length > 0 && (
+            <div className="card p-5 text-sm">
+              <h2 className="text-sm font-semibold">CTA clicks</h2>
+              <ul className="mt-3 space-y-2">
+                {ctaEvents.map((ev, i) => (
+                  <li key={i} className="flex items-center justify-between rounded-lg border border-ink-300/60 bg-ink-100/40 px-3 py-2">
+                    <span className="font-medium capitalize">{ev.source ?? "unknown"}</span>
+                    <span className="text-xs text-ink-500">
+                      {new Intl.DateTimeFormat("en-US", { dateStyle: "short", timeStyle: "short" }).format(ev.createdAt)}
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
 
           <div className="card p-5 text-sm">
             <h2 className="text-sm font-semibold">Source</h2>

@@ -1807,6 +1807,7 @@
             gbraid: attr.gbraid,
             ndclid: attr.ndclid,
             landingPageUrl: collectPage ? attr.landingPage : null,
+            chatSessionId: sessionId,
             callrailSessionId: getCallRailSessionId(),
             userAgent: navigator.userAgent,
           }),

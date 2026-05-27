@@ -288,6 +288,7 @@ model Lead {
   landingPageUrl   String?
   callrailSessionId         String?
   callrailFormSubmissionId  String?
+  chatSessionId    String?
   userAgent        String?
   transcript       Json?    // [{ role, text, stepKey }]
   answers          Json?    // { stepKey: value }

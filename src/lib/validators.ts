@@ -286,6 +286,7 @@ export const leadSubmissionSchema = z.object({
   ndclid: z.string().max(500).optional().nullable(),
   landingPageUrl: z.string().url().optional().nullable(),
   callrailSessionId: z.string().max(200).optional().nullable(),
+  chatSessionId: z.string().max(80).optional().nullable(),
   userAgent: z.string().optional().nullable(),
 });
 

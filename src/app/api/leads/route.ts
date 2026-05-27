@@ -123,6 +123,7 @@ export async function POST(req: NextRequest) {
       ndclid: payload.ndclid ?? null,
       landingPageUrl: payload.landingPageUrl ?? null,
       callrailSessionId: payload.callrailSessionId ?? null,
+      chatSessionId: payload.chatSessionId ?? null,
       userAgent: payload.userAgent ?? null,
       answers: payload.answers as object,
       transcript: payload.transcript as object,
