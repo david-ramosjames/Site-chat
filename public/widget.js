@@ -1843,6 +1843,9 @@
             target: c.type === "schedule" || c.type === "link" ? "_blank" : undefined,
             rel: "noopener",
           };
+          attrs.onClick = (function (ctaType) {
+            return function () { trackEvent("cta_click", ctaType); };
+          })(c.type);
           if (c.type === "call" || c.type === "text") {
             // Two-line engaging layout with pulsing icon and formatted number.
             var displayedNumber = resolvePhone(c.destination);
