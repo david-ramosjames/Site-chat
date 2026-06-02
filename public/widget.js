@@ -935,29 +935,27 @@
       if (hbc) { closeBtn.style.background = hbc; closeBtn.style.borderColor = hbc; }
       actions.appendChild(closeBtn);
 
-      // Header is the company brand. Logo first, then a colored initial.
+      // Header is the company brand. Logo if provided; otherwise omit
+      // entirely (no placeholder initial circle).
       var brandNode = config.widget.logoUrl
         ? el("img", {
             className: "logo",
             src: config.widget.logoUrl,
             alt: config.business.name,
           })
-        : el("div", {
-            style: {
-              width: "28px", height: "28px", borderRadius: "999px",
-              background: "rgba(255,255,255,.2)", display: "flex",
-              alignItems: "center", justifyContent: "center", fontWeight: "600",
-            },
-          }, [config.business.name.slice(0, 1)]);
+        : null;
 
-      return el("div", { className: "header" }, [
-        brandNode,
+      var headerChildren = [];
+      if (brandNode) headerChildren.push(brandNode);
+      headerChildren.push(
         el("div", {}, [
           el("div", { className: "bname" }, [config.business.name]),
           el("div", { className: "sub" }, [tHeaderSubtitle()]),
-        ]),
-        actions,
-      ]);
+        ])
+      );
+      headerChildren.push(actions);
+
+      return el("div", { className: "header" }, headerChildren);
     }
 
     function renderPanel() {
