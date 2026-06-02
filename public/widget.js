@@ -246,9 +246,12 @@
       ".panel.video-bg .typing{background:rgba(0,0,0,.55);border-color:rgba(255,255,255,.18);}" +
       ".panel.video-bg .typing i{background:#cbd5e1;}" +
       ".panel.video-bg .brand-foot{position:relative;z-index:3;background:transparent;color:rgba(255,255,255,.85);border-top:none;}" +
-      ".mute-btn{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);z-index:4;background:rgba(0,0,0,.35);color:#fff;border:none;border-radius:999px;width:52px;height:52px;cursor:pointer;display:flex;align-items:center;justify-content:center;backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px);transition:background .15s ease;}" +
+      ".mute-btn{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);z-index:4;background:rgba(0,0,0,.35);color:#fff;border:none;border-radius:999px;width:52px;height:52px;cursor:pointer;display:flex;align-items:center;justify-content:center;backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px);transition:background .15s ease, top .25s ease, left .25s ease, width .25s ease, height .25s ease, transform .25s ease;}" +
       ".mute-btn:hover{background:rgba(0,0,0,.55);}" +
       ".mute-btn.muted{animation:tc-mute-pulse 1.8s ease-in-out infinite;}" +
+      ".mute-btn.unmuted{top:60px;left:12px;transform:none;width:40px;height:40px;}" +
+      ".panel.has-video-controls .mute-btn.unmuted{left:108px;}" +
+      ".mute-btn.unmuted .icon svg{width:18px;height:18px;}" +
       ".mute-btn .icon{display:flex;align-items:center;justify-content:center;}" +
       ".mute-btn .icon svg{width:24px;height:24px;}" +
       "@keyframes tc-mute-pulse{0%,100%{box-shadow:0 0 0 0 rgba(255,255,255,.65);}50%{box-shadow:0 0 0 10px rgba(255,255,255,0);}}" +
@@ -265,8 +268,8 @@
       // that sits at the top of the conversation (not overlaying it).
       ".panel.video-mini .intro-bg{position:relative;inset:auto;width:96px;height:140px;border-radius:14px;overflow:hidden;background:#000;align-self:flex-start;flex-shrink:0;box-shadow:0 6px 18px rgba(0,0,0,.18);}" +
       ".panel.video-mini .intro-bg .play-overlay{font-size:28px;}" +
-      ".panel.video-mini .intro-bg .mute-btn{top:auto;left:auto;bottom:6px;right:6px;transform:none;width:32px;height:32px;}" +
-      ".panel.video-mini .intro-bg .mute-btn .icon svg{width:16px;height:16px;}" +
+      ".panel.video-mini .intro-bg .mute-btn,.panel.video-mini .intro-bg .mute-btn.unmuted{top:auto;left:auto;bottom:6px;right:6px;transform:none;width:32px;height:32px;}" +
+      ".panel.video-mini .intro-bg .mute-btn .icon svg,.panel.video-mini .intro-bg .mute-btn.unmuted .icon svg{width:16px;height:16px;}" +
       ".panel.video-mini .intro-bg .video-controls{top:6px;left:6px;}" +
       ".panel.video-mini .intro-bg .video-ctrl{width:28px;height:28px;}" +
       ".panel.video-mini .intro-bg .video-ctrl svg{width:14px;height:14px;}" +
@@ -1077,6 +1080,58 @@
       panel.insertBefore(wrap, body);
     }
 
+    function maybeSwapIntroVideoForLocale() {
+      if (!config.widget.introVideoEnabled || !introBgEl) return;
+      var newUrl = introVideoUrl();
+      if (!newUrl) return;
+      // Find the current video / iframe source URL.
+      var current = introBgEl.querySelector ? introBgEl.querySelector("video, iframe") : null;
+      var currentUrl = "";
+      if (current) {
+        if (current.tagName === "VIDEO") {
+          var src = current.querySelector ? current.querySelector("source") : null;
+          currentUrl = (src && src.getAttribute("src")) || current.getAttribute("src") || "";
+        } else {
+          currentUrl = current.getAttribute("src") || "";
+        }
+      }
+      // If the locale doesn't change the URL, nothing to do.
+      if (currentUrl && currentUrl.split("?")[0] === newUrl.split("?")[0]) return;
+      // Remove any end-image overlay since we're starting over.
+      var endImg = introBgEl.querySelector ? introBgEl.querySelector("img.end-image") : null;
+      if (endImg && endImg.parentNode) endImg.parentNode.removeChild(endImg);
+      // Remove the existing video/iframe node.
+      if (current && current.parentNode) current.parentNode.removeChild(current);
+      introVideoEl = null;
+      // Build the replacement node using the same background/top setting.
+      var background = config.widget.introVideoStyle === "background";
+      var built = buildIntroVideoNode({ background: background });
+      introVideoEl = built.video;
+      // Insert it as the first child so it sits behind overlays/controls.
+      if (introBgEl.firstChild) introBgEl.insertBefore(built.node, introBgEl.firstChild);
+      else introBgEl.appendChild(built.node);
+      // Re-wire video events (pause/play overlay, ended -> end image).
+      if (introVideoEl) {
+        introVideoEl.addEventListener("pause", function () {
+          if (introBgEl) introBgEl.classList.add("is-paused");
+        });
+        introVideoEl.addEventListener("play", function () {
+          if (introBgEl) introBgEl.classList.remove("is-paused");
+        });
+        introVideoEl.addEventListener("ended", function () {
+          swapVideoForEndImage(introBgEl);
+        });
+      }
+      // Refresh mute / video-controls so they target the new video element.
+      if (muteBtn && muteBtn.parentNode) muteBtn.parentNode.removeChild(muteBtn);
+      muteBtn = null;
+      if (videoControlsEl && videoControlsEl.parentNode) videoControlsEl.parentNode.removeChild(videoControlsEl);
+      videoControlsEl = null;
+      if (panel) panel.classList.remove("has-video-controls");
+      renderMuteButton();
+      renderVideoControls();
+    }
+
     function swapVideoForEndImage(container) {
       var endUrl = introEndImageUrl();
       if (!container) return;
@@ -1188,8 +1243,10 @@
       muteBtn.appendChild(iconWrap);
       if (muted) {
         muteBtn.classList.add("muted");
+        muteBtn.classList.remove("unmuted");
       } else {
         muteBtn.classList.remove("muted");
+        muteBtn.classList.add("unmuted");
       }
     }
 
@@ -1256,6 +1313,7 @@
       }, [makeSvg("M12 5V1L7 6l5 5V7c3.31 0 6 2.69 6 6s-2.69 6-6 6-6-2.69-6-6H4c0 4.42 3.58 8 8 8s8-3.58 8-8-3.58-8-8-8z")]);
 
       videoControlsEl = el("div", { className: "video-controls" }, [playPauseBtn, restartBtn]);
+      panel.classList.add("has-video-controls");
       panel.appendChild(videoControlsEl);
     }
 
@@ -1752,6 +1810,9 @@
         header.parentNode.replaceChild(newHeader, header);
         header = newHeader;
       }
+      // Swap the intro video for the locale-specific URL when one exists
+      // and the URL actually differs from what's playing.
+      maybeSwapIntroVideoForLocale();
       // Side buttons may have locale-specific visibility; rebuild them.
       if (sideStackHost && sideStackHost.parentNode) {
         sideStackHost.parentNode.removeChild(sideStackHost);
