@@ -56,6 +56,7 @@ type Initial = {
   headerSubtitle: string;
   headerSubtitleEs: string;
   showVideoControls: boolean;
+  introVideoStartMuted: boolean;
   headerButtonColor: string;
 };
 
@@ -107,6 +108,7 @@ export default function SettingsForm({ clientId, initial }: { clientId: string; 
         headerSubtitle: form.headerSubtitle.trim() || null,
         headerSubtitleEs: form.headerSubtitleEs.trim() || null,
         showVideoControls: form.showVideoControls,
+        introVideoStartMuted: form.introVideoStartMuted,
         headerButtonColor: form.headerButtonColor || null,
         translations: {
           es: {
@@ -410,6 +412,22 @@ export default function SettingsForm({ clientId, initial }: { clientId: string; 
                 />
                 <span className="text-sm">
                   Show play/pause and restart buttons on the video (transparent overlay style)
+                </span>
+              </label>
+              <label className="flex items-start gap-2">
+                <input
+                  type="checkbox"
+                  checked={form.introVideoStartMuted}
+                  onChange={(e) => set("introVideoStartMuted", e.target.checked)}
+                  className="mt-0.5 h-4 w-4 rounded border-ink-300"
+                />
+                <span className="text-sm">
+                  Start video muted
+                  <span className="block text-xs text-ink-500">
+                    Recommended — most browsers block autoplay with sound. When unchecked
+                    the widget tries to play with audio and silently falls back to muted
+                    if the browser blocks it.
+                  </span>
                 </span>
               </label>
               <div className="grid gap-5 sm:grid-cols-2">

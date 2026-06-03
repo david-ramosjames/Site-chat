@@ -88,6 +88,7 @@ export async function GET(req: NextRequest) {
         headerSubtitle: client.widgetSettings.headerSubtitle,
         headerSubtitleEs: client.widgetSettings.headerSubtitleEs,
         showVideoControls: client.widgetSettings.showVideoControls,
+        introVideoStartMuted: client.widgetSettings.introVideoStartMuted,
         headerButtonColor: client.widgetSettings.headerButtonColor,
       },
       features: publicFeatureToggles(client.featureToggles),
