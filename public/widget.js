@@ -233,7 +233,7 @@
       // toward the footer; when content is long the spacer holds its 55%
       // minimum and the body scrolls naturally.
       ".panel.video-bg .body{flex:1;height:auto;overflow-y:auto;position:relative;z-index:2;background:transparent;}" +
-      ".panel.video-bg .body::before{content:\"\";display:block;flex:1 0 45%;}" +
+      ".panel.video-bg .body::before{content:\"\";display:block;flex:1 0 60%;}" +
       ".panel.video-bg .header{position:relative;z-index:3;background:linear-gradient(180deg,rgba(0,0,0,.55),rgba(0,0,0,0));}" +
       ".panel.video-bg .header .lang{background:rgba(0,0,0,.4);border-color:rgba(255,255,255,.55);}" +
       ".panel.video-bg .progress{position:relative;z-index:3;background:rgba(0,0,0,.35);}" +
