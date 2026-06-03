@@ -481,6 +481,37 @@
     var endingMode = "success";  // "success" (default + CTAs) or "decline" (no CTAs)
     var inBodyOptionsEl = null;  // option pills appended into body for the current step
     var hasStartedFlow = false;  // toggled true after the visitor's first answer
+    var finalState = null;       // "success" | "decline" once we've shown an end view
+    var pendingResume = null;    // saved state loaded at mount, applied on next open
+    var stateKey = "rjlChatState:" + config.clientId;
+
+    function saveProgress() {
+      try {
+        sessionStorage.setItem(stateKey, JSON.stringify({
+          answers: answers,
+          transcript: transcript,
+          stepIndex: stepIndex,
+          endingMode: endingMode,
+          hasStartedFlow: hasStartedFlow,
+          finalState: finalState,
+          locale: currentLocale,
+          v: 1,
+        }));
+      } catch (e) {}
+    }
+    function loadProgress() {
+      try {
+        var raw = sessionStorage.getItem(stateKey);
+        if (!raw) return null;
+        var parsed = JSON.parse(raw);
+        if (!parsed || parsed.v !== 1) return null;
+        return parsed;
+      } catch (e) { return null; }
+    }
+    function clearProgress() {
+      try { sessionStorage.removeItem(stateKey); } catch (e) {}
+    }
+
     var sessionId = (function () {
       try {
         var key = "rjlChatSession:" + config.clientId;
@@ -619,6 +650,8 @@
       });
       shadow.appendChild(root);
       document.body.appendChild(host);
+
+      pendingResume = loadProgress();
 
       // Auto-open is desktop-only — on mobile we keep the floating bubble
       // so visitors aren't smacked with a full-screen panel uninvited.
@@ -891,11 +924,54 @@
       if (openBtn) openBtn.style.display = "none";
       renderPanel();
       maybeRenderIntroVideo();
-      greet();
+      if (pendingResume) resumeFromState();
+      else greet();
+    }
+
+    function resumeFromState() {
+      var s = pendingResume;
+      pendingResume = null;
+      if (!s) return greet();
+
+      // Restore non-DOM state first.
+      answers = s.answers || {};
+      stepIndex = typeof s.stepIndex === "number" ? s.stepIndex : 0;
+      endingMode = s.endingMode || "success";
+      hasStartedFlow = !!s.hasStartedFlow;
+      finalState = s.finalState || null;
+      if (s.locale) currentLocale = s.locale;
+
+      // Replay each prior message into the panel. addMsg re-pushes into
+      // `transcript`, so clear it first to avoid duplicates.
+      var saved = (s.transcript || []).slice();
+      transcript = [];
+      saved.forEach(function (m) {
+        var res = addMsg(m.role || "bot", m.text || "");
+        if ((m.role || "bot") === "bot") {
+          lastBotMsgEl = res.msg;
+          lastBotContainer = res.container;
+        }
+      });
+
+      if (finalState === "success") return renderSuccess();
+      if (finalState === "decline") return renderDecline();
+
+      // Mid-flow resume: if the last replayed message is the bot's question
+      // for the current step, just re-show the input instead of re-asking.
+      var last = saved.length ? saved[saved.length - 1] : null;
+      if (last && last.role === "bot" && stepIndex < steps.length) {
+        updateProgress();
+        renderInputFor(steps[stepIndex]);
+      } else {
+        askNext();
+      }
     }
 
     function close() {
       isOpen = false;
+      // Snapshot conversation so it can resume when the visitor reopens
+      // the chat (or refreshes the page in the same tab).
+      if (hasStartedFlow || finalState) saveProgress();
       if (backdropEl && backdropEl.parentNode) backdropEl.parentNode.removeChild(backdropEl);
       backdropEl = null;
       centeredMode = false;
@@ -1585,6 +1661,7 @@
       clearFooter();
       // First answer in background mode collapses the video into a thumbnail.
       transitionToMiniVideo();
+      saveProgress();
       askNext();
     }
 
@@ -1671,6 +1748,7 @@
           }
         }
       }
+      saveProgress();
     }
 
     function renderInputFor(step) {
@@ -1902,8 +1980,13 @@
     }
 
     function renderSuccess() {
-      fireConversion();
-      trackEvent("completed_success");
+      var alreadyDone = finalState === "success";
+      if (!alreadyDone) {
+        fireConversion();
+        trackEvent("completed_success");
+      }
+      finalState = "success";
+      saveProgress();
       clearFooter();
       while (body.firstChild) body.removeChild(body.firstChild);
       var ctas = (config.widget.endCtas || []).filter(function (c) {
@@ -1960,7 +2043,9 @@
     }
 
     function renderDecline() {
-      trackEvent("completed_decline");
+      if (finalState !== "decline") trackEvent("completed_decline");
+      finalState = "decline";
+      saveProgress();
       clearFooter();
       while (body.firstChild) body.removeChild(body.firstChild);
       var wrap = el("div", { className: "success" }, [
