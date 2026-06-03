@@ -995,15 +995,20 @@
       var isYouTube = /youtube\.com\/embed/.test(url);
       var isVimeo = /player\.vimeo\.com/.test(url);
       var isEmbed = isYouTube || isVimeo;
+      // Default to muted-start so browsers will autoplay. Admins can flip
+      // this off; we still fall back to muted on autoplay rejection below.
+      var startMuted = config.widget.introVideoStartMuted !== false;
       if (isEmbed) {
         var src = url;
         var join = src.indexOf("?") === -1 ? "?" : "&";
         // Plays once. No loop params on either YouTube or Vimeo.
+        // Background mode is always muted (no audio UI in that layout).
+        var muteFlag = opts.background || startMuted ? 1 : 0;
         if (opts.background) {
           src += join + "autoplay=1&mute=1&controls=0&playsinline=1&modestbranding=1&showinfo=0&rel=0";
           if (isVimeo) src += "&background=1";
         } else {
-          src += join + "autoplay=1&playsinline=1&rel=0";
+          src += join + "autoplay=1&mute=" + muteFlag + "&playsinline=1&rel=0";
         }
         var iframe = el("iframe", {
           src: src,
@@ -1021,7 +1026,24 @@
       });
       // Plays once. controls only in "top" mode where the user expects them.
       if (!opts.background) v.setAttribute("controls", "true");
-      v.muted = true; // browsers require muted for autoplay
+      // Background mode is always muted (looping behind the chat).
+      v.muted = opts.background ? true : startMuted;
+      // If admin chose unmuted start, attempt to play with sound and
+      // silently fall back to muted if the browser blocks autoplay.
+      if (!opts.background && !startMuted) {
+        setTimeout(function () {
+          try {
+            var p = v.play();
+            if (p && typeof p.then === "function") {
+              p.catch(function () {
+                v.muted = true;
+                v.play().catch(function () {});
+                if (typeof updateMuteIcon === "function") updateMuteIcon();
+              });
+            }
+          } catch (e) {}
+        }, 0);
+      }
       v.appendChild(el("source", { src: url }));
       return { node: v, video: v };
     }

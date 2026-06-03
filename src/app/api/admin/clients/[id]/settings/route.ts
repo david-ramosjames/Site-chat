@@ -67,6 +67,7 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
     headerSubtitle: nullable(rest.headerSubtitle),
     headerSubtitleEs: nullable(rest.headerSubtitleEs),
     showVideoControls: rest.showVideoControls,
+    introVideoStartMuted: rest.introVideoStartMuted,
     headerButtonColor: nullable(rest.headerButtonColor),
   };
 

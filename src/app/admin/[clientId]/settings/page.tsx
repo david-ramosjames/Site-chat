@@ -108,6 +108,7 @@ export default async function SettingsPage({ params }: { params: { clientId: str
           headerSubtitle: ws?.headerSubtitle ?? "",
           headerSubtitleEs: ws?.headerSubtitleEs ?? "",
           showVideoControls: ws?.showVideoControls ?? false,
+          introVideoStartMuted: ws?.introVideoStartMuted ?? true,
           headerButtonColor: ws?.headerButtonColor ?? "",
         }}
       />

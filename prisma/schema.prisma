@@ -153,6 +153,10 @@ model WidgetSettings {
 
   // Show transparent play/pause and restart buttons on the intro video.
   showVideoControls Boolean @default(false)
+  // When true (default), the intro video starts muted so browsers will
+  // autoplay it. When false, the widget attempts to start with sound;
+  // if the browser blocks autoplay we silently fall back to muted.
+  introVideoStartMuted Boolean @default(true)
 
   // Custom hex color for the expand and close buttons in the header.
   // Null falls back to the default semi-transparent white.

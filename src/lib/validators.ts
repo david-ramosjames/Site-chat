@@ -65,6 +65,7 @@ export const widgetSettingsSchema = z.object({
   headerSubtitle: z.string().max(200).optional().nullable(),
   headerSubtitleEs: z.string().max(200).optional().nullable(),
   showVideoControls: z.boolean().default(false),
+  introVideoStartMuted: z.boolean().default(true),
   headerButtonColor: optionalHexColor,
 
   callRailUseDynamicNumber: z.boolean().default(false),
