@@ -1071,20 +1071,25 @@
       var isYouTube = /youtube\.com\/embed/.test(url);
       var isVimeo = /player\.vimeo\.com/.test(url);
       var isEmbed = isYouTube || isVimeo;
-      // Default to muted-start so browsers will autoplay. Admins can flip
-      // this off; we still fall back to muted on autoplay rejection below.
+      // When the admin opts out of muted-start, we don't autoplay at all —
+      // browsers (Chrome/Safari/Firefox) refuse unmuted autoplay without
+      // a prior user gesture, so the visitor has to click play. Background
+      // mode is always muted because that layout has no audio UI.
       var startMuted = config.widget.introVideoStartMuted !== false;
+      var shouldAutoplay = opts.background || startMuted;
       if (isEmbed) {
         var src = url;
         var join = src.indexOf("?") === -1 ? "?" : "&";
         // Plays once. No loop params on either YouTube or Vimeo.
-        // Background mode is always muted (no audio UI in that layout).
-        var muteFlag = opts.background || startMuted ? 1 : 0;
         if (opts.background) {
           src += join + "autoplay=1&mute=1&controls=0&playsinline=1&modestbranding=1&showinfo=0&rel=0";
           if (isVimeo) src += "&background=1";
+        } else if (startMuted) {
+          src += join + "autoplay=1&mute=1&playsinline=1&rel=0";
         } else {
-          src += join + "autoplay=1&mute=" + muteFlag + "&playsinline=1&rel=0";
+          // Unmuted: don't request autoplay; let the embed's own controls
+          // start playback when the visitor clicks.
+          src += join + "playsinline=1&rel=0";
         }
         var iframe = el("iframe", {
           src: src,
@@ -1094,32 +1099,17 @@
         });
         return { node: iframe, video: null };
       }
-      var v = el("video", {
-        autoplay: "true",
+      var videoAttrs = {
         playsinline: "true",
         "webkit-playsinline": "true",
         poster: introPosterUrl() || undefined,
-      });
+      };
+      if (shouldAutoplay) videoAttrs.autoplay = "true";
+      var v = el("video", videoAttrs);
       // Plays once. controls only in "top" mode where the user expects them.
       if (!opts.background) v.setAttribute("controls", "true");
       // Background mode is always muted (looping behind the chat).
       v.muted = opts.background ? true : startMuted;
-      // If admin chose unmuted start, attempt to play with sound and
-      // silently fall back to muted if the browser blocks autoplay.
-      if (!opts.background && !startMuted) {
-        setTimeout(function () {
-          try {
-            var p = v.play();
-            if (p && typeof p.then === "function") {
-              p.catch(function () {
-                v.muted = true;
-                v.play().catch(function () {});
-                if (typeof updateMuteIcon === "function") updateMuteIcon();
-              });
-            }
-          } catch (e) {}
-        }, 0);
-      }
       v.appendChild(el("source", { src: url }));
       return { node: v, video: v };
     }
