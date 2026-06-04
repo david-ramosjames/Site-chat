@@ -1071,20 +1071,19 @@
       var isYouTube = /youtube\.com\/embed/.test(url);
       var isVimeo = /player\.vimeo\.com/.test(url);
       var isEmbed = isYouTube || isVimeo;
-      // Background mode has no audio UI, so it's always muted. Top mode
-      // honors the admin's introVideoStartMuted setting. Unmuted autoplay
-      // succeeds when the chat was opened by a click (the user-gesture
-      // carries synchronously into the video element) or when the host
-      // site has enough Chrome Media Engagement. If neither holds the
-      // browser silently drops the play attempt; the native controls /
-      // poster remain so the visitor can press play.
+      // Top mode and background mode both honor introVideoStartMuted.
+      // Unmuted autoplay works when the chat is opened by a click (gesture
+      // carries into the synchronously-created video) or when the host
+      // site has enough Chrome Media Engagement. Background mode also
+      // ships with a center mute toggle so visitors can flip sound either
+      // way after the fact.
       var startMuted = config.widget.introVideoStartMuted !== false;
-      var muted = opts.background ? true : startMuted;
+      var muted = startMuted;
       if (isEmbed) {
         var src = url;
         var join = src.indexOf("?") === -1 ? "?" : "&";
         if (opts.background) {
-          src += join + "autoplay=1&mute=1&controls=0&playsinline=1&modestbranding=1&showinfo=0&rel=0";
+          src += join + "autoplay=1&mute=" + (muted ? 1 : 0) + "&controls=0&playsinline=1&modestbranding=1&showinfo=0&rel=0";
           if (isVimeo) src += "&background=1";
         } else {
           src += join + "autoplay=1&mute=" + (muted ? 1 : 0) + "&playsinline=1&rel=0";
