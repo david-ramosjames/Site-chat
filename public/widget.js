@@ -1071,45 +1071,41 @@
       var isYouTube = /youtube\.com\/embed/.test(url);
       var isVimeo = /player\.vimeo\.com/.test(url);
       var isEmbed = isYouTube || isVimeo;
-      // When the admin opts out of muted-start, we don't autoplay at all —
-      // browsers (Chrome/Safari/Firefox) refuse unmuted autoplay without
-      // a prior user gesture, so the visitor has to click play. Background
-      // mode is always muted because that layout has no audio UI.
+      // Background mode has no audio UI, so it's always muted. Top mode
+      // honors the admin's introVideoStartMuted setting. Unmuted autoplay
+      // succeeds when the chat was opened by a click (the user-gesture
+      // carries synchronously into the video element) or when the host
+      // site has enough Chrome Media Engagement. If neither holds the
+      // browser silently drops the play attempt; the native controls /
+      // poster remain so the visitor can press play.
       var startMuted = config.widget.introVideoStartMuted !== false;
-      var shouldAutoplay = opts.background || startMuted;
+      var muted = opts.background ? true : startMuted;
       if (isEmbed) {
         var src = url;
         var join = src.indexOf("?") === -1 ? "?" : "&";
-        // Plays once. No loop params on either YouTube or Vimeo.
         if (opts.background) {
           src += join + "autoplay=1&mute=1&controls=0&playsinline=1&modestbranding=1&showinfo=0&rel=0";
           if (isVimeo) src += "&background=1";
-        } else if (startMuted) {
-          src += join + "autoplay=1&mute=1&playsinline=1&rel=0";
         } else {
-          // Unmuted: don't request autoplay; let the embed's own controls
-          // start playback when the visitor clicks.
-          src += join + "playsinline=1&rel=0";
+          src += join + "autoplay=1&mute=" + (muted ? 1 : 0) + "&playsinline=1&rel=0";
         }
         var iframe = el("iframe", {
           src: src,
-          allow: "accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture",
+          allow: "autoplay; accelerometer; encrypted-media; gyroscope; picture-in-picture",
           allowfullscreen: "true",
           frameborder: "0",
         });
         return { node: iframe, video: null };
       }
-      var videoAttrs = {
+      var v = el("video", {
+        autoplay: "true",
         playsinline: "true",
         "webkit-playsinline": "true",
         poster: introPosterUrl() || undefined,
-      };
-      if (shouldAutoplay) videoAttrs.autoplay = "true";
-      var v = el("video", videoAttrs);
+      });
       // Plays once. controls only in "top" mode where the user expects them.
       if (!opts.background) v.setAttribute("controls", "true");
-      // Background mode is always muted (looping behind the chat).
-      v.muted = opts.background ? true : startMuted;
+      v.muted = muted;
       v.appendChild(el("source", { src: url }));
       return { node: v, video: v };
     }
