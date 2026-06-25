@@ -304,6 +304,10 @@
       "button.send:disabled{opacity:.5;cursor:not-allowed;}" +
       ".success{display:flex;flex-direction:column;gap:10px;align-items:center;text-align:center;padding:24px;}" +
       ".success .check{width:52px;height:52px;border-radius:999px;background:" + primary + ";color:#fff;font-size:26px;display:flex;align-items:center;justify-content:center;}" +
+      ".success .or-divider{display:flex;align-items:center;gap:10px;width:100%;font-size:13px;font-weight:600;text-transform:uppercase;letter-spacing:.08em;color:#94a3b8;margin:6px 0 2px;}" +
+      ".success .or-divider::before,.success .or-divider::after{content:\"\";flex:1;height:1px;background:#e2e8f0;}" +
+      ".panel.video-bg .success .or-divider{color:rgba(255,255,255,.85);}" +
+      ".panel.video-bg .success .or-divider::before,.panel.video-bg .success .or-divider::after{background:rgba(255,255,255,.35);}" +
       ".brand-foot{text-align:center;font-size:12px;color:#64748b;padding:9px;background:#fff;border-top:1px solid #e2e8f0;}" +
       // Side action buttons stack (Phone / SMS / Messenger / WhatsApp).
       ".side-stack{position:fixed;left:16px;z-index:2147482999;display:flex;flex-direction:column-reverse;gap:10px;}" +
@@ -2002,6 +2006,9 @@
       ];
 
       if (ctas.length) {
+        children.push(
+          el("div", { className: "or-divider" }, [currentLocale === "es" ? "O" : "Or"])
+        );
         var ctaWrap = el("div", { className: "end-ctas" });
         ctas.forEach(function (c, idx) {
           var label = (currentLocale === "es" && c.labelEs) ? c.labelEs : c.label;
