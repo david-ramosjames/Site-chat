@@ -122,14 +122,18 @@ export default async function LeadDetail({
             <h2 className="text-sm font-semibold">Source</h2>
             <dl className="mt-3 space-y-2">
               <div>
-                <dt className="text-xs text-ink-500">Page</dt>
+                <dt className="text-xs text-ink-500">Page submitted</dt>
                 <dd className="break-all">{lead.sourceUrl ?? "—"}</dd>
+              </div>
+              <div>
+                <dt className="text-xs text-ink-500">Landing page</dt>
+                <dd className="break-all">{lead.landingPageUrl ?? "—"}</dd>
               </div>
               <div>
                 <dt className="text-xs text-ink-500">Referrer</dt>
                 <dd className="break-all">{lead.referrer ?? "—"}</dd>
               </div>
-              <div className="grid grid-cols-3 gap-2">
+              <div className="grid grid-cols-2 gap-2">
                 <div>
                   <dt className="text-xs text-ink-500">utm_source</dt>
                   <dd>{lead.utmSource ?? "—"}</dd>
@@ -142,7 +146,58 @@ export default async function LeadDetail({
                   <dt className="text-xs text-ink-500">utm_campaign</dt>
                   <dd>{lead.utmCampaign ?? "—"}</dd>
                 </div>
+                <div>
+                  <dt className="text-xs text-ink-500">utm_term</dt>
+                  <dd>{lead.utmTerm ?? "—"}</dd>
+                </div>
+                <div className="col-span-2">
+                  <dt className="text-xs text-ink-500">utm_content</dt>
+                  <dd className="break-all">{lead.utmContent ?? "—"}</dd>
+                </div>
               </div>
+              {(lead.gclid || lead.msclkid || lead.fbclid || lead.ttclid || lead.wbraid || lead.gbraid || lead.ndclid) && (
+                <div className="space-y-1 rounded-md border border-ink-300/60 bg-ink-100/40 p-2">
+                  <p className="text-xs font-semibold uppercase tracking-wide text-ink-500">
+                    Ad click IDs
+                  </p>
+                  {lead.gclid && (
+                    <div>
+                      <dt className="text-xs text-ink-500">gclid (Google Ads)</dt>
+                      <dd className="break-all text-xs">{lead.gclid}</dd>
+                    </div>
+                  )}
+                  {lead.msclkid && (
+                    <div>
+                      <dt className="text-xs text-ink-500">msclkid (Microsoft)</dt>
+                      <dd className="break-all text-xs">{lead.msclkid}</dd>
+                    </div>
+                  )}
+                  {lead.fbclid && (
+                    <div>
+                      <dt className="text-xs text-ink-500">fbclid (Meta)</dt>
+                      <dd className="break-all text-xs">{lead.fbclid}</dd>
+                    </div>
+                  )}
+                  {lead.ttclid && (
+                    <div>
+                      <dt className="text-xs text-ink-500">ttclid (TikTok)</dt>
+                      <dd className="break-all text-xs">{lead.ttclid}</dd>
+                    </div>
+                  )}
+                  {(lead.wbraid || lead.gbraid) && (
+                    <div>
+                      <dt className="text-xs text-ink-500">wbraid / gbraid (Google iOS)</dt>
+                      <dd className="break-all text-xs">{lead.wbraid || lead.gbraid}</dd>
+                    </div>
+                  )}
+                  {lead.ndclid && (
+                    <div>
+                      <dt className="text-xs text-ink-500">ndclid</dt>
+                      <dd className="break-all text-xs">{lead.ndclid}</dd>
+                    </div>
+                  )}
+                </div>
+              )}
               <div>
                 <dt className="text-xs text-ink-500">Browser</dt>
                 <dd className="break-all text-xs">{lead.userAgent ?? "—"}</dd>
