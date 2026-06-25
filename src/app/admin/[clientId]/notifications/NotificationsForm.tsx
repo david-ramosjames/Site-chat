@@ -16,6 +16,10 @@ type Notifications = {
   slackHeaderPriority: string;
   slackHeaderReferral: string;
   slackHeaderDefault: string;
+  slackPostPriorityReferral: boolean;
+  slackPostPriority: boolean;
+  slackPostReferral: boolean;
+  slackPostDefault: boolean;
 };
 
 export default function NotificationsForm({
@@ -30,7 +34,8 @@ export default function NotificationsForm({
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  const set = (k: keyof Notifications, v: string) => setForm((f) => ({ ...f, [k]: v }));
+  const set = <K extends keyof Notifications>(k: K, v: Notifications[K]) =>
+    setForm((f) => ({ ...f, [k]: v }));
 
   function save(e: React.FormEvent) {
     e.preventDefault();
@@ -101,6 +106,44 @@ export default function NotificationsForm({
           onChange={(e) => set("slackWebhookUrl", e.target.value)}
         />
       </Field>
+
+      {form.slackWebhookUrl && (
+        <fieldset className="rounded-lg border border-ink-300/60 bg-ink-100/40 p-4">
+          <legend className="px-1 text-xs font-semibold uppercase tracking-wide text-ink-500">
+            Which leads get posted to Slack
+          </legend>
+          <p className="mt-1 mb-3 text-xs text-ink-500">
+            Uncheck a category to stop posting that type of lead to Slack — useful for muting
+            cold default leads while keeping priority/referral alerts.
+          </p>
+          <div className="space-y-2">
+            <SlackPostToggle
+              label="🔥 Priority + Referral"
+              hint="qualified = yes AND referral = yes"
+              checked={form.slackPostPriorityReferral}
+              onChange={(v) => set("slackPostPriorityReferral", v)}
+            />
+            <SlackPostToggle
+              label="🔥 Priority (qualified)"
+              hint="qualified = yes, referral = no"
+              checked={form.slackPostPriority}
+              onChange={(v) => set("slackPostPriority", v)}
+            />
+            <SlackPostToggle
+              label="🎁 Referral"
+              hint="qualified = no, referral = yes"
+              checked={form.slackPostReferral}
+              onChange={(v) => set("slackPostReferral", v)}
+            />
+            <SlackPostToggle
+              label="🟢 Default"
+              hint="qualified = no, referral = no"
+              checked={form.slackPostDefault}
+              onChange={(v) => set("slackPostDefault", v)}
+            />
+          </div>
+        </fieldset>
+      )}
 
       {form.slackWebhookUrl && (
         <fieldset className="rounded-lg border border-ink-300/60 bg-ink-100/40 p-4">
@@ -284,5 +327,32 @@ function Field({
       {children}
       {help && <p className="help">{help}</p>}
     </div>
+  );
+}
+
+function SlackPostToggle({
+  label,
+  hint,
+  checked,
+  onChange,
+}: {
+  label: string;
+  hint: string;
+  checked: boolean;
+  onChange: (v: boolean) => void;
+}) {
+  return (
+    <label className="flex items-center justify-between gap-3 rounded-md border border-ink-300/60 bg-white px-3 py-2 text-sm cursor-pointer hover:bg-ink-50">
+      <span className="flex flex-col">
+        <span className="font-medium">{label}</span>
+        <span className="text-xs text-ink-500">{hint}</span>
+      </span>
+      <input
+        type="checkbox"
+        className="h-4 w-4 rounded border-ink-300"
+        checked={checked}
+        onChange={(e) => onChange(e.target.checked)}
+      />
+    </label>
   );
 }

@@ -225,6 +225,14 @@ model NotificationSettings {
   slackHeaderReferral         String?
   slackHeaderDefault          String?
 
+  // Per-state filters: when false, skip posting that category of lead to
+  // Slack. Useful for muting cold "default" (non-qualified, non-referral)
+  // leads while still hearing about priority/referral cases in real time.
+  slackPostPriorityReferral Boolean @default(true)
+  slackPostPriority         Boolean @default(true)
+  slackPostReferral         Boolean @default(true)
+  slackPostDefault          Boolean @default(true)
+
   client Client @relation(fields: [clientId], references: [id], onDelete: Cascade)
 }
 

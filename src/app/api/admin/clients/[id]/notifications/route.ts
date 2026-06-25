@@ -35,6 +35,10 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
     slackHeaderPriority: parsed.data.slackHeaderPriority?.trim() || null,
     slackHeaderReferral: parsed.data.slackHeaderReferral?.trim() || null,
     slackHeaderDefault: parsed.data.slackHeaderDefault?.trim() || null,
+    slackPostPriorityReferral: parsed.data.slackPostPriorityReferral,
+    slackPostPriority: parsed.data.slackPostPriority,
+    slackPostReferral: parsed.data.slackPostReferral,
+    slackPostDefault: parsed.data.slackPostDefault,
   };
   const notifications = await prisma.notificationSettings.upsert({
     where: { clientId: params.id },

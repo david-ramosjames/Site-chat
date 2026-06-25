@@ -47,6 +47,10 @@ export default async function NotificationsPage({ params }: { params: { clientId
           slackHeaderPriority: n?.slackHeaderPriority ?? "",
           slackHeaderReferral: n?.slackHeaderReferral ?? "",
           slackHeaderDefault: n?.slackHeaderDefault ?? "",
+          slackPostPriorityReferral: n?.slackPostPriorityReferral ?? true,
+          slackPostPriority: n?.slackPostPriority ?? true,
+          slackPostReferral: n?.slackPostReferral ?? true,
+          slackPostDefault: n?.slackPostDefault ?? true,
         }}
       />
     </div>

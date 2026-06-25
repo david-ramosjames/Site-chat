@@ -192,6 +192,10 @@ export const notificationSettingsSchema = z.object({
   slackHeaderPriority: z.string().max(200).optional().nullable(),
   slackHeaderReferral: z.string().max(200).optional().nullable(),
   slackHeaderDefault: z.string().max(200).optional().nullable(),
+  slackPostPriorityReferral: z.boolean().default(true),
+  slackPostPriority: z.boolean().default(true),
+  slackPostReferral: z.boolean().default(true),
+  slackPostDefault: z.boolean().default(true),
 });
 
 export const flowStepInputSchema = z.object({

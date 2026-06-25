@@ -136,24 +136,31 @@ async function postSlack(
 
   // Header signals priority at a glance. Each state can be customised on
   // the Notifications page; {{businessName}} expands to the client's name.
+  // The per-state slackPost* toggles also gate WHETHER the post fires at
+  // all — so admins can mute cold default leads without losing high-value
+  // priority/referral alerts.
   const isQualified = lead.qualified === "yes";
   const isReferral = lead.referral === "yes";
   const expand = (tpl: string) =>
     tpl.replace(/\{\{\s*businessName\s*\}\}/g, businessName);
   let header: string;
   if (isQualified && isReferral) {
+    if (settings.slackPostPriorityReferral === false) return;
     header = settings.slackHeaderPriorityReferral
       ? expand(settings.slackHeaderPriorityReferral)
       : `🔥 *PRIORITY + Referral — ${businessName}*`;
   } else if (isQualified) {
+    if (settings.slackPostPriority === false) return;
     header = settings.slackHeaderPriority
       ? expand(settings.slackHeaderPriority)
       : `🔥 *PRIORITY lead (qualified) — ${businessName}*`;
   } else if (isReferral) {
+    if (settings.slackPostReferral === false) return;
     header = settings.slackHeaderReferral
       ? expand(settings.slackHeaderReferral)
       : `🎁 *Referral — ${businessName}*`;
   } else {
+    if (settings.slackPostDefault === false) return;
     header = settings.slackHeaderDefault
       ? expand(settings.slackHeaderDefault)
       : `🟢 *New lead — ${businessName}*`;
