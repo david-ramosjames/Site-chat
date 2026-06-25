@@ -1,5 +1,6 @@
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
+import RemovePageButton from "./RemovePageButton";
 
 export const dynamic = "force-dynamic";
 
@@ -327,19 +328,23 @@ export default async function AnalyticsPage({
               <tr>
                 <th className="py-2">Page</th>
                 <th className="py-2">Sessions</th>
+                <th className="py-2 text-right" />
               </tr>
             </thead>
             <tbody className="divide-y divide-ink-300/60">
               {topPages.length ? (
                 topPages.map((row) => (
                   <tr key={row.page}>
-                    <td className="max-w-[420px] truncate py-2">{row.page}</td>
+                    <td className="max-w-[380px] truncate py-2">{row.page}</td>
                     <td className="py-2 text-ink-500">{row.sessions}</td>
+                    <td className="py-2 text-right">
+                      <RemovePageButton clientId={params.clientId} page={row.page} />
+                    </td>
                   </tr>
                 ))
               ) : (
                 <tr>
-                  <td className="py-3 text-ink-500" colSpan={2}>
+                  <td className="py-3 text-ink-500" colSpan={3}>
                     No page data in this period.
                   </td>
                 </tr>
