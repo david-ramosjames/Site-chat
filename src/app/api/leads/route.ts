@@ -7,6 +7,7 @@ import { looksLikeSpam } from "@/lib/spam";
 import { sendLeadNotifications } from "@/lib/notifications";
 import { postToCallRail } from "@/lib/callrail";
 import { generateLeadIntelligence } from "@/lib/lead-intelligence";
+import { deriveAttribution } from "@/lib/attribution";
 
 export const dynamic = "force-dynamic";
 
@@ -97,6 +98,26 @@ export async function POST(req: NextRequest) {
     client.featureToggles?.enableSpamProtection &&
     looksLikeSpam({ name, email, notes: pick("notes") });
 
+  // Fill blank utm_* fields from ad-platform signals (click IDs, Google
+  // Ads ValueTrack params on the landing page). Explicit utm_* always
+  // wins; this only kicks in for visitors who arrived via a campaign URL
+  // without UTM tagging.
+  const derived = deriveAttribution({
+    utmSource: payload.utm?.source ?? null,
+    utmMedium: payload.utm?.medium ?? null,
+    utmCampaign: payload.utm?.campaign ?? null,
+    utmTerm: payload.utm?.term ?? null,
+    utmContent: payload.utm?.content ?? null,
+    gclid: payload.gclid ?? null,
+    msclkid: payload.msclkid ?? null,
+    fbclid: payload.fbclid ?? null,
+    ttclid: payload.ttclid ?? null,
+    wbraid: payload.wbraid ?? null,
+    gbraid: payload.gbraid ?? null,
+    ndclid: payload.ndclid ?? null,
+    landingPageUrl: payload.landingPageUrl ?? null,
+  });
+
   const lead = await prisma.lead.create({
     data: {
       clientId: client.id,
@@ -109,11 +130,11 @@ export async function POST(req: NextRequest) {
       status: spam ? "spam" : "new",
       sourceUrl: client.featureToggles?.collectPageUrl ? payload.sourceUrl ?? null : null,
       referrer: client.featureToggles?.collectReferrer ? payload.referrer ?? null : null,
-      utmSource: client.featureToggles?.collectUtm ? payload.utm?.source ?? null : null,
-      utmMedium: client.featureToggles?.collectUtm ? payload.utm?.medium ?? null : null,
-      utmCampaign: client.featureToggles?.collectUtm ? payload.utm?.campaign ?? null : null,
-      utmTerm: client.featureToggles?.collectUtm ? payload.utm?.term ?? null : null,
-      utmContent: client.featureToggles?.collectUtm ? payload.utm?.content ?? null : null,
+      utmSource: client.featureToggles?.collectUtm ? derived.utmSource : null,
+      utmMedium: client.featureToggles?.collectUtm ? derived.utmMedium : null,
+      utmCampaign: client.featureToggles?.collectUtm ? derived.utmCampaign : null,
+      utmTerm: client.featureToggles?.collectUtm ? derived.utmTerm : null,
+      utmContent: client.featureToggles?.collectUtm ? derived.utmContent : null,
       gclid: payload.gclid ?? null,
       msclkid: payload.msclkid ?? null,
       fbclid: payload.fbclid ?? null,

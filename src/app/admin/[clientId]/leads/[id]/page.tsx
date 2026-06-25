@@ -2,6 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import LeadControls from "./LeadControls";
+import { deriveAttribution } from "@/lib/attribution";
 
 export const dynamic = "force-dynamic";
 
@@ -19,6 +20,25 @@ export default async function LeadDetail({
 
   const transcript = (lead.transcript as TranscriptEntry[] | null) ?? [];
   const answers = (lead.answers as Record<string, unknown> | null) ?? {};
+
+  // Re-derive UTM at display time so leads stored before server-side
+  // derivation was added still benefit. Stored utm_* always wins when
+  // present; click IDs + landing-page ValueTrack params fill the gaps.
+  const derived = deriveAttribution({
+    utmSource: lead.utmSource,
+    utmMedium: lead.utmMedium,
+    utmCampaign: lead.utmCampaign,
+    utmTerm: lead.utmTerm,
+    utmContent: lead.utmContent,
+    gclid: lead.gclid,
+    msclkid: lead.msclkid,
+    fbclid: lead.fbclid,
+    ttclid: lead.ttclid,
+    wbraid: lead.wbraid,
+    gbraid: lead.gbraid,
+    ndclid: lead.ndclid,
+    landingPageUrl: lead.landingPageUrl,
+  });
 
   const ctaEvents = lead.chatSessionId
     ? await prisma.chatEvent.findMany({
@@ -136,23 +156,23 @@ export default async function LeadDetail({
               <div className="grid grid-cols-2 gap-2">
                 <div>
                   <dt className="text-xs text-ink-500">utm_source</dt>
-                  <dd>{lead.utmSource ?? "—"}</dd>
+                  <dd>{derived.utmSource ?? "—"}</dd>
                 </div>
                 <div>
                   <dt className="text-xs text-ink-500">utm_medium</dt>
-                  <dd>{lead.utmMedium ?? "—"}</dd>
+                  <dd>{derived.utmMedium ?? "—"}</dd>
                 </div>
                 <div>
                   <dt className="text-xs text-ink-500">utm_campaign</dt>
-                  <dd>{lead.utmCampaign ?? "—"}</dd>
+                  <dd className="break-all">{derived.utmCampaign ?? "—"}</dd>
                 </div>
                 <div>
                   <dt className="text-xs text-ink-500">utm_term</dt>
-                  <dd>{lead.utmTerm ?? "—"}</dd>
+                  <dd className="break-all">{derived.utmTerm ?? "—"}</dd>
                 </div>
                 <div className="col-span-2">
                   <dt className="text-xs text-ink-500">utm_content</dt>
-                  <dd className="break-all">{lead.utmContent ?? "—"}</dd>
+                  <dd className="break-all">{derived.utmContent ?? "—"}</dd>
                 </div>
               </div>
               {(lead.gclid || lead.msclkid || lead.fbclid || lead.ttclid || lead.wbraid || lead.gbraid || lead.ndclid) && (
