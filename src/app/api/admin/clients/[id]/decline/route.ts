@@ -40,17 +40,21 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
     },
   };
 
+  const declineCtas = (parsed.data.declineCtas ?? null) as object | null;
+
   const updated = await prisma.widgetSettings.upsert({
     where: { clientId: params.id },
     create: {
       clientId: params.id,
       declineHeadline: nullable(parsed.data.declineHeadline),
       declineMessage: nullable(parsed.data.declineMessage),
+      declineCtas: declineCtas ?? undefined,
       translations: mergedTranslations as object,
     },
     update: {
       declineHeadline: nullable(parsed.data.declineHeadline),
       declineMessage: nullable(parsed.data.declineMessage),
+      declineCtas: declineCtas ?? undefined,
       translations: mergedTranslations as object,
     },
   });
@@ -58,6 +62,7 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
   return NextResponse.json({
     declineHeadline: updated.declineHeadline ?? "",
     declineMessage: updated.declineMessage ?? "",
+    declineCtas: updated.declineCtas ?? [],
     translations: updated.translations,
   });
 }

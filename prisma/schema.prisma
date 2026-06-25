@@ -110,6 +110,11 @@ model WidgetSettings {
   // [{ type: 'call'|'text'|'schedule'|'link', label, destination }]
   endCtas Json?
 
+  // Optional CTAs shown on the decline ("we can't help") end state.
+  // Same shape as endCtas. Useful for pointing visitors at a general
+  // referral, a self-help resource, or a courtesy line.
+  declineCtas Json?
+
   // If true the chat panel auto-opens on page load (instead of starting as
   // the floating avatar/bubble). Useful when the intro video should be
   // visible immediately.

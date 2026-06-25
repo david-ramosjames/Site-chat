@@ -36,6 +36,7 @@ export default async function FlowPage({ params }: { params: { clientId: string 
 
   const ws = client.widgetSettings;
   const endCtas = (ws?.endCtas as EndCta[] | null) ?? [];
+  const declineCtas = (ws?.declineCtas as EndCta[] | null) ?? [];
   const widgetTranslations = (ws?.translations as WidgetTranslations) ?? null;
 
   const steps = await prisma.flowStep.findMany({
@@ -111,6 +112,7 @@ export default async function FlowPage({ params }: { params: { clientId: string 
         initial={{
           declineHeadline: ws?.declineHeadline ?? "",
           declineMessage: ws?.declineMessage ?? "",
+          declineCtas,
           translations: {
             es: {
               declineHeadline: widgetTranslations?.es?.declineHeadline ?? "",

@@ -74,6 +74,7 @@ export async function GET(req: NextRequest) {
         sideButtons: client.widgetSettings.sideButtons ?? [],
         sideButtonsPosition: client.widgetSettings.sideButtonsPosition,
         endCtas: client.widgetSettings.endCtas ?? [],
+        declineCtas: client.widgetSettings.declineCtas ?? [],
         openOnLoad: client.widgetSettings.openOnLoad,
         declineHeadline: client.widgetSettings.declineHeadline,
         declineMessage: client.widgetSettings.declineMessage,

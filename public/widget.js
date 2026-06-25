@@ -2009,34 +2009,7 @@
         children.push(
           el("div", { className: "or-divider" }, [currentLocale === "es" ? "O" : "Or"])
         );
-        var ctaWrap = el("div", { className: "end-ctas" });
-        ctas.forEach(function (c, idx) {
-          var label = (currentLocale === "es" && c.labelEs) ? c.labelEs : c.label;
-          var outline = idx === 0 ? "" : " outline";
-          var attrs = {
-            href: endCtaHref(c),
-            target: c.type === "schedule" || c.type === "link" ? "_blank" : undefined,
-            rel: "noopener",
-          };
-          attrs.onClick = (function (ctaType) {
-            return function () { trackEvent("cta_click", ctaType); };
-          })(c.type);
-          if (c.type === "call" || c.type === "text") {
-            // Two-line engaging layout with pulsing icon and formatted number.
-            var displayedNumber = resolvePhone(c.destination);
-            var iconWrap = el("span", { className: "cta-icon" }, [endCtaIcon(c.type)]);
-            var textWrap = el("span", { className: "cta-text" }, [
-              el("span", { className: "cta-label" }, [label]),
-              el("span", { className: "cta-sub" }, [formatPhoneDisplay(displayedNumber)]),
-            ]);
-            attrs.className = "end-cta phone" + outline;
-            ctaWrap.appendChild(el("a", attrs, [iconWrap, textWrap]));
-          } else {
-            attrs.className = "end-cta" + outline;
-            ctaWrap.appendChild(el("a", attrs, [endCtaIcon(c.type) + "  " + label]));
-          }
-        });
-        children.push(ctaWrap);
+        children.push(buildCtaWrap(ctas));
       }
 
       // Supporting message reads as "or call us… we'll reach out shortly"
@@ -2052,18 +2025,58 @@
       if (progressBar) progressBar.style.width = "100%";
     }
 
+    function buildCtaWrap(ctas) {
+      var ctaWrap = el("div", { className: "end-ctas" });
+      ctas.forEach(function (c, idx) {
+        var label = (currentLocale === "es" && c.labelEs) ? c.labelEs : c.label;
+        var outline = idx === 0 ? "" : " outline";
+        var attrs = {
+          href: endCtaHref(c),
+          target: c.type === "schedule" || c.type === "link" ? "_blank" : undefined,
+          rel: "noopener",
+        };
+        attrs.onClick = (function (ctaType) {
+          return function () { trackEvent("cta_click", ctaType); };
+        })(c.type);
+        if (c.type === "call" || c.type === "text") {
+          var displayedNumber = resolvePhone(c.destination);
+          var iconWrap = el("span", { className: "cta-icon" }, [endCtaIcon(c.type)]);
+          var textWrap = el("span", { className: "cta-text" }, [
+            el("span", { className: "cta-label" }, [label]),
+            el("span", { className: "cta-sub" }, [formatPhoneDisplay(displayedNumber)]),
+          ]);
+          attrs.className = "end-cta phone" + outline;
+          ctaWrap.appendChild(el("a", attrs, [iconWrap, textWrap]));
+        } else {
+          attrs.className = "end-cta" + outline;
+          ctaWrap.appendChild(el("a", attrs, [endCtaIcon(c.type) + "  " + label]));
+        }
+      });
+      return ctaWrap;
+    }
+
     function renderDecline() {
       if (finalState !== "decline") trackEvent("completed_decline");
       finalState = "decline";
       clearProgress();
       clearFooter();
       while (body.firstChild) body.removeChild(body.firstChild);
-      var wrap = el("div", { className: "success" }, [
+      var declineCtas = (config.widget.declineCtas || []).filter(function (c) {
+        return c && c.label && c.destination;
+      });
+      var children = [
         el("div", { style: { fontWeight: "600", fontSize: "18px" } }, [tDeclineHeadline()]),
         el("div", { style: { fontSize: "15px", color: "#475569", lineHeight: "1.45" } }, [
           tDeclineMessage(),
         ]),
-      ]);
+      ];
+      if (declineCtas.length) {
+        children.push(
+          el("div", { className: "or-divider" }, [currentLocale === "es" ? "O" : "Or"])
+        );
+        children.push(buildCtaWrap(declineCtas));
+      }
+      var wrap = el("div", { className: "success" }, children);
       body.appendChild(wrap);
       if (progressBar) progressBar.style.width = "100%";
     }

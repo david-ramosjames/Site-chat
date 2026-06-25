@@ -111,6 +111,19 @@ export const widgetSettingsSchema = z.object({
     .optional()
     .nullable(),
 
+  declineCtas: z
+    .array(
+      z.object({
+        type: z.enum(["call", "text", "schedule", "link"]),
+        label: z.string().min(1).max(60),
+        labelEs: z.string().max(60).optional().nullable(),
+        destination: z.string().min(1).max(500),
+      })
+    )
+    .max(5)
+    .optional()
+    .nullable(),
+
   openOnLoad: z.boolean().default(false),
 });
 
@@ -143,6 +156,18 @@ export const endCtasUpdateSchema = z.object({
 export const declineUpdateSchema = z.object({
   declineHeadline: z.string().max(120).optional().nullable(),
   declineMessage: z.string().max(500).optional().nullable(),
+  declineCtas: z
+    .array(
+      z.object({
+        type: z.enum(["call", "text", "schedule", "link"]),
+        label: z.string().min(1).max(60),
+        labelEs: z.string().max(60).optional().nullable(),
+        destination: z.string().min(1).max(500),
+      })
+    )
+    .max(5)
+    .optional()
+    .nullable(),
   translations: z
     .object({
       es: z
