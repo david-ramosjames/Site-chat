@@ -970,8 +970,23 @@
     function close() {
       isOpen = false;
       // Snapshot conversation so it can resume when the visitor reopens
-      // the chat (or refreshes the page in the same tab).
-      if (hasStartedFlow || finalState) saveProgress();
+      // the chat (or refreshes the page in the same tab). Skip when the
+      // visitor has already submitted — they shouldn't be locked into the
+      // success/decline view on reload.
+      if (hasStartedFlow && !finalState) saveProgress();
+      // After a completed flow, reset the in-memory state so reopening on
+      // the same page starts fresh too.
+      if (finalState) {
+        finalState = null;
+        hasStartedFlow = false;
+        answers = {};
+        transcript = [];
+        stepIndex = 0;
+        endingMode = "success";
+        historyStack = [];
+        miniMode = false;
+        introCleared = false;
+      }
       if (backdropEl && backdropEl.parentNode) backdropEl.parentNode.removeChild(backdropEl);
       backdropEl = null;
       centeredMode = false;
@@ -1971,7 +1986,10 @@
         trackEvent("completed_success");
       }
       finalState = "success";
-      saveProgress();
+      // Drop the saved progress so reloading the page starts a fresh
+      // conversation instead of dropping the visitor back onto this success
+      // view (they've already converted — no need to lock them in).
+      clearProgress();
       clearFooter();
       while (body.firstChild) body.removeChild(body.firstChild);
       var ctas = (config.widget.endCtas || []).filter(function (c) {
@@ -2030,7 +2048,7 @@
     function renderDecline() {
       if (finalState !== "decline") trackEvent("completed_decline");
       finalState = "decline";
-      saveProgress();
+      clearProgress();
       clearFooter();
       while (body.firstChild) body.removeChild(body.firstChild);
       var wrap = el("div", { className: "success" }, [
