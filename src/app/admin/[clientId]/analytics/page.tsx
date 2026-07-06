@@ -135,11 +135,40 @@ export default async function AnalyticsPage({
     }
   });
 
+  // Load leads submitted in the same window to split "completed_success"
+  // into referral vs non-referral. The Lead row carries the referral flag
+  // (set by the flow step's leadFieldOnYes/No mapping); events don't.
+  const leadsInRange = await prisma.lead.findMany({
+    where: {
+      clientId: params.clientId,
+      ...(since || until
+        ? {
+            createdAt: {
+              ...(since ? { gte: since } : {}),
+              ...(until ? { lte: until } : {}),
+            },
+          }
+        : {}),
+      chatSessionId: { not: null },
+    },
+    select: { chatSessionId: true, referral: true },
+  });
+  const referralSessionIds = new Set<string>();
+  leadsInRange.forEach((l) => {
+    if (l.chatSessionId && l.referral === "yes") {
+      referralSessionIds.add(l.chatSessionId);
+    }
+  });
+
   const opened = sessionStages.opened.size;
   const started = sessionStages.started.size;
-  const success = sessionStages.completed_success.size;
+  const successAll = sessionStages.completed_success.size;
+  const referral = Array.from(sessionStages.completed_success).filter((sid) =>
+    referralSessionIds.has(sid)
+  ).length;
+  const success = successAll - referral;
   const decline = sessionStages.completed_decline.size;
-  const completed = success + decline;
+  const completed = successAll + decline;
   const ctaClicks = sessionStages.cta_click.size;
   const ctaByType = Array.from(ctaSources.entries())
     .map(([type, sessions]) => ({ type, sessions: sessions.size }))
@@ -219,13 +248,18 @@ export default async function AnalyticsPage({
         </div>
       </div>
 
-      <div className="grid grid-cols-1 gap-3 md:grid-cols-5">
+      <div className="grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-6">
         <Stat label="Chats opened" value={opened} sub="auto-open + bubble click" />
         <Stat label="Started" value={started} sub={`${pct(started, opened)} of opens`} />
         <Stat
           label="Completed (success)"
           value={success}
           sub={`${pct(success, started)} of starts`}
+        />
+        <Stat
+          label="Completed (referral)"
+          value={referral}
+          sub={`${pct(referral, started)} of starts`}
         />
         <Stat
           label="Completed (decline)"
@@ -235,7 +269,7 @@ export default async function AnalyticsPage({
         <Stat
           label="CTA clicks"
           value={ctaClicks}
-          sub={`${pct(ctaClicks, success)} of success`}
+          sub={`${pct(ctaClicks, successAll)} of success`}
         />
       </div>
 
@@ -271,6 +305,12 @@ export default async function AnalyticsPage({
               step={pct(success, completed)}
             />
             <FunnelRow
+              label="…referral"
+              value={referral}
+              ofOpens={opened}
+              step={pct(referral, completed)}
+            />
+            <FunnelRow
               label="…decline message"
               value={decline}
               ofOpens={opened}
@@ -280,7 +320,7 @@ export default async function AnalyticsPage({
               label="Clicked a CTA"
               value={ctaClicks}
               ofOpens={opened}
-              step={pct(ctaClicks, success)}
+              step={pct(ctaClicks, successAll)}
             />
           </tbody>
         </table>
@@ -373,7 +413,7 @@ export default async function AnalyticsPage({
                 <tr key={row.type}>
                   <td className="py-2 font-medium capitalize">{row.type}</td>
                   <td className="py-2 text-ink-500">{row.sessions}</td>
-                  <td className="py-2 text-ink-500">{pct(row.sessions, success)}</td>
+                  <td className="py-2 text-ink-500">{pct(row.sessions, successAll)}</td>
                 </tr>
               ))}
             </tbody>
