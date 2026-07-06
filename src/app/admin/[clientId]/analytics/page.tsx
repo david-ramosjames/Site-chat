@@ -299,7 +299,7 @@ export default async function AnalyticsPage({
               step={pct(completed, started)}
             />
             <FunnelRow
-              label="…success message"
+              label="…lead"
               value={success}
               ofOpens={opened}
               step={pct(success, completed)}
