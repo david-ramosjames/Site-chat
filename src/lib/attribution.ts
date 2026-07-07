@@ -3,7 +3,8 @@
 // auto-tagging fires `gclid` (no UTM); Google Ads "manual tagging" puts
 // ValueTrack params on the URL — campaignid, adgroupid, creative, keyword,
 // network, device. Microsoft Ads → msclkid, Meta → fbclid, TikTok → ttclid.
-// Explicit utm_* values always take precedence over derived ones.
+// Google AI Overview citation clicks add `ai=AI@…&ct=…` — surfaced as
+// source=google, medium=ai_overview. Explicit utm_* always wins.
 
 export type AttributionInput = {
   utmSource: string | null;
@@ -61,19 +62,29 @@ function googleMediumFromNetwork(network: string | undefined): string {
   }
 }
 
+// Google AI Overview citation clicks arrive with an opaque `ai=AI@...`
+// token plus a `ct=<millis>` timestamp. There's no gclid (organic citation,
+// not paid) and no referrer we can rely on, so we sniff the token to
+// categorize the visit as google / ai_overview.
+function isGoogleAiOverviewLanding(lp: Record<string, string>): boolean {
+  return typeof lp.ai === "string" && lp.ai.startsWith("AI@");
+}
+
 export function deriveAttribution(input: AttributionInput): DerivedAttribution {
   const lp = parseLandingParams(input.landingPageUrl);
+  const isAiOverview = isGoogleAiOverviewLanding(lp);
 
-  // utm_source: explicit > click-id-derived
+  // utm_source: explicit > click-id-derived > AI-surface-derived
   let utmSource = input.utmSource;
   if (!utmSource) {
     if (input.gclid || input.gbraid || input.wbraid) utmSource = "google";
     else if (input.msclkid) utmSource = "bing";
     else if (input.fbclid) utmSource = "facebook";
     else if (input.ttclid) utmSource = "tiktok";
+    else if (isAiOverview) utmSource = "google";
   }
 
-  // utm_medium: explicit > click-id-derived (with Google network hint)
+  // utm_medium: explicit > click-id-derived (with Google network hint) > AI
   let utmMedium = input.utmMedium;
   if (!utmMedium) {
     if (input.gclid || input.gbraid || input.wbraid) {
@@ -82,6 +93,8 @@ export function deriveAttribution(input: AttributionInput): DerivedAttribution {
       utmMedium = "cpc";
     } else if (input.fbclid || input.ttclid) {
       utmMedium = "social";
+    } else if (isAiOverview) {
+      utmMedium = "ai_overview";
     }
   }
 
