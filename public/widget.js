@@ -330,6 +330,7 @@
       // below. Whole button gets a soft halo pulse to draw the eye.
       ".end-cta.phone{display:flex;align-items:center;justify-content:center;gap:14px;padding:16px 18px;text-align:center;animation:tc-cta-glow 2.2s ease-in-out infinite;}" +
       ".end-cta.phone .cta-icon{flex-shrink:0;width:42px;height:42px;border-radius:999px;background:rgba(255,255,255,.22);display:flex;align-items:center;justify-content:center;font-size:20px;animation:tc-call-pulse 2s ease-in-out infinite;}" +
+      ".end-cta.phone .cta-icon svg{width:22px;height:22px;display:block;}" +
       ".end-cta.phone.outline .cta-icon{background:" + primary + "1f;color:" + primary + ";}" +
       "@keyframes tc-call-pulse{0%,100%{box-shadow:0 0 0 0 rgba(255,255,255,.55);}50%{box-shadow:0 0 0 9px rgba(255,255,255,0);}}" +
       "@keyframes tc-cta-glow{0%,100%{box-shadow:0 0 0 0 " + primary + "55, 0 6px 14px rgba(15,23,42,.18);}50%{box-shadow:0 0 0 12px " + primary + "00, 0 6px 14px rgba(15,23,42,.18);}}" +
@@ -2040,7 +2041,7 @@
         })(c.type);
         if (c.type === "call" || c.type === "text") {
           var displayedNumber = resolvePhone(c.destination);
-          var iconWrap = el("span", { className: "cta-icon" }, [endCtaIcon(c.type)]);
+          var iconWrap = el("span", { className: "cta-icon" }, [endCtaIconSvg(c.type)]);
           var textWrap = el("span", { className: "cta-text" }, [
             el("span", { className: "cta-label" }, [label]),
             el("span", { className: "cta-sub" }, [formatPhoneDisplay(displayedNumber)]),
@@ -2104,6 +2105,29 @@
         case "schedule": return "📅";
         default: return "↗";
       }
+    }
+    // SVG variant used inside the pulsing white circle on Call/Text CTAs.
+    // Fills with currentColor so it inherits the button text color
+    // (white on a solid button, primary color on the outline variant) —
+    // avoids the muddy multicolor emoji clashing with the button background.
+    function endCtaIconSvg(type) {
+      var SVG_NS = "http://www.w3.org/2000/svg";
+      var svg = document.createElementNS(SVG_NS, "svg");
+      svg.setAttribute("viewBox", "0 0 24 24");
+      svg.setAttribute("fill", "currentColor");
+      svg.setAttribute("aria-hidden", "true");
+      var path = document.createElementNS(SVG_NS, "path");
+      var d;
+      if (type === "text") {
+        // Chat/SMS bubble.
+        d = "M20 2H4c-1.1 0-1.99.9-1.99 2L2 22l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm-2 12H6v-2h12v2zm0-3H6V9h12v2zm0-3H6V6h12v2z";
+      } else {
+        // Solid phone handset (Material Design "call").
+        d = "M20 15.5c-1.25 0-2.45-.2-3.57-.57-.35-.11-.74-.03-1.02.24l-2.2 2.2c-2.83-1.44-5.15-3.75-6.59-6.59l2.2-2.21c.28-.26.36-.65.25-1C8.7 6.45 8.5 5.25 8.5 4c0-.55-.45-1-1-1H4c-.55 0-1 .45-1 1 0 9.39 7.61 17 17 17 .55 0 1-.45 1-1v-3.5c0-.55-.45-1-1-1z";
+      }
+      path.setAttribute("d", d);
+      svg.appendChild(path);
+      return svg;
     }
 
     // Fire conversion / analytics events on the host page when a lead lands
