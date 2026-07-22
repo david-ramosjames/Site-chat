@@ -2036,9 +2036,12 @@
           target: c.type === "schedule" || c.type === "link" ? "_blank" : undefined,
           rel: "noopener",
         };
-        attrs.onClick = (function (ctaType) {
-          return function () { trackEvent("cta_click", ctaType); };
-        })(c.type);
+        attrs.onClick = (function (ctaType, ctaDest) {
+          return function () {
+            trackEvent("cta_click", ctaType);
+            fireCtaClick(ctaType, ctaDest);
+          };
+        })(c.type, c.destination);
         if (c.type === "call" || c.type === "text") {
           var displayedNumber = resolvePhone(c.destination);
           var iconWrap = el("span", { className: "cta-icon" }, [endCtaIconSvg(c.type)]);
@@ -2158,6 +2161,26 @@
         });
       } catch (e) {
         // dataLayer push is best-effort; never block the success render.
+      }
+    }
+
+    // Push a dataLayer event when a visitor taps an end-of-chat CTA
+    // (Call, Text, Schedule, Link). Configure a GTM Custom Event trigger
+    // on "rjl_chat_cta_click" with an optional condition on cta_type to
+    // fire the tag you want (e.g. cta_type equals "call" for the Call
+    // Us Now button).
+    function fireCtaClick(ctaType, ctaDestination) {
+      try {
+        window.dataLayer = window.dataLayer || [];
+        window.dataLayer.push({
+          event: "rjl_chat_cta_click",
+          cta_type: ctaType,
+          cta_destination: ctaDestination || null,
+          clientId: config.clientId,
+          businessName: config.business && config.business.name,
+        });
+      } catch (e) {
+        // dataLayer push is best-effort; never block the tap through.
       }
     }
 
