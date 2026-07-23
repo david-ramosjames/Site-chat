@@ -196,11 +196,15 @@ export async function POST(req: NextRequest) {
         formUrl: payload.sourceUrl ?? null,
         landingPage: payload.landingPageUrl ?? null,
         referrer: payload.referrer ?? null,
-        utmSource: payload.utm?.source ?? null,
-        utmMedium: payload.utm?.medium ?? null,
-        utmCampaign: payload.utm?.campaign ?? null,
-        utmTerm: payload.utm?.term ?? null,
-        utmContent: payload.utm?.content ?? null,
+        // Use the derived attribution so CallRail gets utm_source=google
+        // when only a gclid is present (Google Ads auto-tagging never
+        // includes utm_*). Otherwise CallRail's Source column falls back
+        // to the referrer URL, which looks nothing like "google".
+        utmSource: derived.utmSource,
+        utmMedium: derived.utmMedium,
+        utmCampaign: derived.utmCampaign,
+        utmTerm: derived.utmTerm,
+        utmContent: derived.utmContent,
         gclid: payload.gclid ?? null,
         msclkid: payload.msclkid ?? null,
         fbclid: payload.fbclid ?? null,
