@@ -175,8 +175,8 @@ async function postSlack(
     fieldLine("Phone", lead.phone),
     fieldLine("Email", lead.email),
     fieldLine("Service", lead.serviceRequested),
-    lead.sourceUrl ? `*From:* <${lead.sourceUrl}>` : null,
     fieldLine("UTM", utmSummary(lead)),
+    formatQaDetail(lead),
     adminLink ? `\n<${adminLink}|Open in admin →>` : null,
   ]
     .filter((s): s is string => !!s)
@@ -235,6 +235,77 @@ async function postGenericWebhook(
 function fieldLine(label: string, value: string | null | undefined) {
   if (!value) return null;
   return `*${label}:* ${value}`;
+}
+
+type TranscriptEntry = { role: string; text: string };
+
+// Slack incoming-webhook messages cap at 40k chars; keep Q&A well under
+// that so the contact fields and admin link stay visible.
+const QA_MAX_CHARS = 3500;
+
+function formatQaDetail(lead: Lead): string | null {
+  const pairs = qaPairsFromTranscript(lead.transcript);
+  const lines =
+    pairs.length > 0
+      ? pairs.map(formatQaLine)
+      : answersFallbackLines(lead.answers);
+  if (lines.length === 0) return null;
+
+  let body = lines.join("\n");
+  if (body.length > QA_MAX_CHARS) {
+    body = body.slice(0, QA_MAX_CHARS).replace(/\n[^\n]*$/, "") + "\n• …(truncated)";
+  }
+  return `*Q&A:*\n${body}`;
+}
+
+function formatQaLine(pair: { question?: string; answer?: string }) {
+  if (pair.question && pair.answer) {
+    return `• ${escapeSlack(pair.question)} — *${escapeSlack(pair.answer)}*`;
+  }
+  return `• ${escapeSlack(pair.answer || pair.question || "")}`;
+}
+
+function qaPairsFromTranscript(raw: unknown): { question?: string; answer?: string }[] {
+  if (!Array.isArray(raw)) return [];
+  const entries: TranscriptEntry[] = [];
+  for (const item of raw) {
+    if (!item || typeof item !== "object") continue;
+    const rec = item as { role?: unknown; text?: unknown };
+    const role = typeof rec.role === "string" ? rec.role : "";
+    const text = typeof rec.text === "string" ? rec.text.trim() : "";
+    if (!text || (role !== "bot" && role !== "user")) continue;
+    entries.push({ role, text });
+  }
+
+  const pairs: { question?: string; answer?: string }[] = [];
+  for (let i = 0; i < entries.length; i++) {
+    const cur = entries[i];
+    const next = entries[i + 1];
+    if (cur.role === "bot" && next?.role === "user") {
+      pairs.push({ question: cur.text, answer: next.text });
+      i++;
+    } else if (cur.role === "user") {
+      pairs.push({ answer: cur.text });
+    }
+    // Unpaired bot lines are greetings / intros — skip them in Slack.
+  }
+  return pairs;
+}
+
+function answersFallbackLines(raw: unknown): string[] {
+  if (!raw || typeof raw !== "object" || Array.isArray(raw)) return [];
+  return Object.entries(raw as Record<string, unknown>)
+    .filter(([, v]) => v != null && String(v).trim() !== "")
+    .map(([k, v]) => `• ${escapeSlack(k)} — *${escapeSlack(String(v))}*`);
+}
+
+function escapeSlack(s: string): string {
+  return s
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/\*/g, "∗")
+    .replace(/\n+/g, " ");
 }
 
 function formatYesNo(v: string | null | undefined): string | null {
