@@ -102,19 +102,35 @@ export async function POST(req: NextRequest) {
   // Ads ValueTrack params on the landing page). Explicit utm_* always
   // wins; this only kicks in for visitors who arrived via a campaign URL
   // without UTM tagging.
+  function clickIdFromLanding(key: string): string | null {
+    const url = payload.landingPageUrl ?? payload.sourceUrl ?? null;
+    if (!url) return null;
+    try {
+      return new URL(url).searchParams.get(key);
+    } catch {
+      return null;
+    }
+  }
+  const gclid = payload.gclid || clickIdFromLanding("gclid");
+  const msclkid = payload.msclkid || clickIdFromLanding("msclkid");
+  const fbclid = payload.fbclid || clickIdFromLanding("fbclid");
+  const ttclid = payload.ttclid || clickIdFromLanding("ttclid");
+  const wbraid = payload.wbraid || clickIdFromLanding("wbraid");
+  const gbraid = payload.gbraid || clickIdFromLanding("gbraid");
+  const ndclid = payload.ndclid || clickIdFromLanding("ndclid");
   const derived = deriveAttribution({
     utmSource: payload.utm?.source ?? null,
     utmMedium: payload.utm?.medium ?? null,
     utmCampaign: payload.utm?.campaign ?? null,
     utmTerm: payload.utm?.term ?? null,
     utmContent: payload.utm?.content ?? null,
-    gclid: payload.gclid ?? null,
-    msclkid: payload.msclkid ?? null,
-    fbclid: payload.fbclid ?? null,
-    ttclid: payload.ttclid ?? null,
-    wbraid: payload.wbraid ?? null,
-    gbraid: payload.gbraid ?? null,
-    ndclid: payload.ndclid ?? null,
+    gclid,
+    msclkid,
+    fbclid,
+    ttclid,
+    wbraid,
+    gbraid,
+    ndclid,
     landingPageUrl: payload.landingPageUrl ?? null,
   });
 
@@ -135,13 +151,13 @@ export async function POST(req: NextRequest) {
       utmCampaign: client.featureToggles?.collectUtm ? derived.utmCampaign : null,
       utmTerm: client.featureToggles?.collectUtm ? derived.utmTerm : null,
       utmContent: client.featureToggles?.collectUtm ? derived.utmContent : null,
-      gclid: payload.gclid ?? null,
-      msclkid: payload.msclkid ?? null,
-      fbclid: payload.fbclid ?? null,
-      ttclid: payload.ttclid ?? null,
-      wbraid: payload.wbraid ?? null,
-      gbraid: payload.gbraid ?? null,
-      ndclid: payload.ndclid ?? null,
+      gclid,
+      msclkid,
+      fbclid,
+      ttclid,
+      wbraid,
+      gbraid,
+      ndclid,
       landingPageUrl: payload.landingPageUrl ?? null,
       callrailSessionId: payload.callrailSessionId ?? null,
       chatSessionId: payload.chatSessionId ?? null,
@@ -196,22 +212,21 @@ export async function POST(req: NextRequest) {
         formUrl: payload.sourceUrl ?? null,
         landingPage: payload.landingPageUrl ?? null,
         referrer: payload.referrer ?? null,
-        // Use the derived attribution so CallRail gets utm_source=google
-        // when only a gclid is present (Google Ads auto-tagging never
-        // includes utm_*). Otherwise CallRail's Source column falls back
-        // to the referrer URL, which looks nothing like "google".
+        // Derived UTMs fill Google Ads auto-tagging (gclid, no utm_*).
+        // CallRail's Source column is driven by `referrer` as a source
+        // name (google_paid), not by these UTM fields — see callrail.ts.
         utmSource: derived.utmSource,
         utmMedium: derived.utmMedium,
         utmCampaign: derived.utmCampaign,
         utmTerm: derived.utmTerm,
         utmContent: derived.utmContent,
-        gclid: payload.gclid ?? null,
-        msclkid: payload.msclkid ?? null,
-        fbclid: payload.fbclid ?? null,
-        ttclid: payload.ttclid ?? null,
-        wbraid: payload.wbraid ?? null,
-        gbraid: payload.gbraid ?? null,
-        ndclid: payload.ndclid ?? null,
+        gclid,
+        msclkid,
+        fbclid,
+        ttclid,
+        wbraid,
+        gbraid,
+        ndclid,
         trackerSession: payload.callrailSessionId ?? null,
         answers: payload.answers as Record<string, unknown>,
         defaultPhoneCountry:

@@ -8,7 +8,7 @@ export type CallRailContext = {
   formUrl?: string | null;
   /** First page in the visitor's session (sessionStorage-persisted by widget). */
   landingPage?: string | null;
-  /** document.referrer at submit time. */
+  /** First-touch document.referrer (a URL). Mapped to CallRail's source name. */
   referrer?: string | null;
   utmSource?: string | null;
   utmMedium?: string | null;
@@ -39,6 +39,147 @@ export type CallRailResult = {
   formSubmissionId?: string;
   error?: string;
 };
+
+const PAID_MEDIUMS = new Set([
+  "cpc",
+  "ppc",
+  "paid",
+  "paidsearch",
+  "paid_search",
+  "display",
+  "video",
+  "cpm",
+  "cpv",
+]);
+
+function hostnameOf(url: string | null | undefined): string | null {
+  if (!url) return null;
+  try {
+    return new URL(url).hostname.replace(/^www\./i, "").toLowerCase();
+  } catch {
+    return null;
+  }
+}
+
+function isHttpUrl(value: string | null | undefined): boolean {
+  if (!value) return false;
+  try {
+    const u = new URL(value);
+    return u.protocol === "http:" || u.protocol === "https:";
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * CallRail's Form Capture `referrer` field is a SOURCE NAME
+ * (`google_paid`, `google_organic`, `direct`), not document.referrer.
+ * Sending the referring URL here is why the dashboard Source column
+ * showed `https://www.google.com/` instead of "Google Ads".
+ *
+ * Native CallRail forms inherit the swap.js session, which already
+ * classified the visit. External Form POSTs have to send the name
+ * ourselves — CallRail then pretty-prints `google_paid` as "Google Ads".
+ */
+export function callRailReferrerName(ctx: CallRailContext): string {
+  const source = (ctx.utmSource || "").trim().toLowerCase();
+  const medium = (ctx.utmMedium || "").trim().toLowerCase();
+  const paid = PAID_MEDIUMS.has(medium);
+
+  if (ctx.gclid || ctx.gbraid || ctx.wbraid) return "google_paid";
+  if (ctx.msclkid) return "bing_paid";
+  if (ctx.fbclid) return "facebook";
+  if (ctx.ttclid) return "tiktok";
+  if (ctx.ndclid) return "nextdoor";
+
+  if (source === "google" || source === "adwords" || source === "google ads") {
+    if (medium === "ai_overview") return "google";
+    return paid ? "google_paid" : "google_organic";
+  }
+  if (source === "bing" || source === "microsoft" || source === "msn") {
+    return paid ? "bing_paid" : "bing_organic";
+  }
+  if (
+    source === "facebook" ||
+    source === "fb" ||
+    source === "meta" ||
+    source === "instagram" ||
+    source === "ig"
+  ) {
+    return "facebook";
+  }
+  if (source === "tiktok") return "tiktok";
+  if (source === "youtube") return paid ? "google_paid" : "youtube";
+  if (source) return source.replace(/\s+/g, "_");
+
+  const host = hostnameOf(ctx.referrer);
+  if (!host) return "direct";
+  if (
+    host === "googleadservices.com" ||
+    host === "googlesyndication.com" ||
+    host === "doubleclick.net" ||
+    host.endsWith(".doubleclick.net")
+  ) {
+    return "google_paid";
+  }
+  if (host === "google.com" || host.endsWith(".google.com")) return "google_organic";
+  if (host === "bing.com" || host.endsWith(".bing.com")) return "bing_organic";
+  if (
+    host.includes("facebook.com") ||
+    host.includes("instagram.com") ||
+    host === "l.facebook.com"
+  ) {
+    return "facebook";
+  }
+  if (host.includes("tiktok.com")) return "tiktok";
+  if (host.includes("youtube.com") || host === "youtu.be") return "youtube";
+  if (host.includes("yahoo.")) return "yahoo";
+  if (host.includes("duckduckgo.")) return "duckduckgo";
+  if (
+    host.includes("chatgpt.com") ||
+    host.includes("openai.com") ||
+    host.includes("perplexity.ai") ||
+    host.includes("claude.ai")
+  ) {
+    return "ai_search";
+  }
+  return host;
+}
+
+/**
+ * CallRail's `referring_url` is the referring entity's URL (document.referrer),
+ * not the page the form lived on — that's `form_url`.
+ */
+export function callRailReferringUrl(ctx: CallRailContext, fallback: string): string {
+  if (isHttpUrl(ctx.referrer)) return ctx.referrer as string;
+  return fallback;
+}
+
+/**
+ * Make sure click IDs CallRail uses to classify "Google Ads" are visible
+ * on the landing page URL, even if the stored landing URL had them stripped.
+ */
+export function callRailLandingPageUrl(ctx: CallRailContext, fallback: string): string {
+  const raw = ctx.landingPage || fallback;
+  try {
+    const u = new URL(raw);
+    const ids: Array<[string, string | null | undefined]> = [
+      ["gclid", ctx.gclid],
+      ["gbraid", ctx.gbraid],
+      ["wbraid", ctx.wbraid],
+      ["msclkid", ctx.msclkid],
+      ["fbclid", ctx.fbclid],
+      ["ttclid", ctx.ttclid],
+      ["ndclid", ctx.ndclid],
+    ];
+    for (const [key, value] of ids) {
+      if (value && !u.searchParams.has(key)) u.searchParams.set(key, value);
+    }
+    return u.toString();
+  } catch {
+    return raw;
+  }
+}
 
 /**
  * Submits a completed lead to CallRail's Form Capture API.
@@ -107,12 +248,17 @@ export async function postToCallRail(
   // CallRail requires either session_id, or all three of referrer +
   // referring_url + landing_page_url. Send session_id when we have it
   // and ALWAYS send the trio as a fallback so the request never 400s
-  // with "either session_id or all 3 of … are required". Use formUrl
-  // as the safe default when a specific URL is missing.
+  // with "either session_id or all 3 of … are required".
+  //
+  // `referrer` must be a source name (google_paid), NOT document.referrer.
+  // `referring_url` is the actual referring URL. Mixing those up makes
+  // CallRail's Source column print https://www.google.com/ instead of
+  // "Google Ads". Native CallRail forms avoid this because swap.js
+  // already classified the session.
   if (ctx.trackerSession) submission["session_id"] = ctx.trackerSession;
-  submission["referrer"] = ctx.referrer || formUrl;
-  submission["referring_url"] = formUrl;
-  submission["landing_page_url"] = ctx.landingPage || formUrl;
+  submission["referrer"] = callRailReferrerName(ctx);
+  submission["referring_url"] = callRailReferringUrl(ctx, formUrl);
+  submission["landing_page_url"] = callRailLandingPageUrl(ctx, formUrl);
 
   if (ctx.gclid) submission["gclid"] = ctx.gclid;
   if (ctx.utmSource) submission["utm_source"] = ctx.utmSource;

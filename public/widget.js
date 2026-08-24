@@ -63,20 +63,33 @@
       return null;
     }
 
+    function paramFromUrl(url, key) {
+      if (!url) return null;
+      try {
+        return new URL(url).searchParams.get(key);
+      } catch (e) {
+        return null;
+      }
+    }
+
+    var landingPage = stored.landingPage || (window.location && window.location.href) || null;
     var snapshot = {
-      utmSource: pickFirst(params.utm_source, stored.utmSource),
-      utmMedium: pickFirst(params.utm_medium, stored.utmMedium),
-      utmCampaign: pickFirst(params.utm_campaign, stored.utmCampaign),
-      utmTerm: pickFirst(params.utm_term, stored.utmTerm),
-      utmContent: pickFirst(params.utm_content, stored.utmContent),
-      gclid: pickFirst(params.gclid, stored.gclid),
-      msclkid: pickFirst(params.msclkid, stored.msclkid),
-      fbclid: pickFirst(params.fbclid, stored.fbclid),
-      ttclid: pickFirst(params.ttclid, stored.ttclid),
-      wbraid: pickFirst(params.wbraid, stored.wbraid),
-      gbraid: pickFirst(params.gbraid, stored.gbraid),
-      ndclid: pickFirst(params.ndclid, stored.ndclid),
-      landingPage: stored.landingPage || (window.location && window.location.href) || null,
+      utmSource: pickFirst(params.utm_source, stored.utmSource, paramFromUrl(landingPage, "utm_source")),
+      utmMedium: pickFirst(params.utm_medium, stored.utmMedium, paramFromUrl(landingPage, "utm_medium")),
+      utmCampaign: pickFirst(params.utm_campaign, stored.utmCampaign, paramFromUrl(landingPage, "utm_campaign")),
+      utmTerm: pickFirst(params.utm_term, stored.utmTerm, paramFromUrl(landingPage, "utm_term")),
+      utmContent: pickFirst(params.utm_content, stored.utmContent, paramFromUrl(landingPage, "utm_content")),
+      gclid: pickFirst(params.gclid, stored.gclid, paramFromUrl(landingPage, "gclid")),
+      msclkid: pickFirst(params.msclkid, stored.msclkid, paramFromUrl(landingPage, "msclkid")),
+      fbclid: pickFirst(params.fbclid, stored.fbclid, paramFromUrl(landingPage, "fbclid")),
+      ttclid: pickFirst(params.ttclid, stored.ttclid, paramFromUrl(landingPage, "ttclid")),
+      wbraid: pickFirst(params.wbraid, stored.wbraid, paramFromUrl(landingPage, "wbraid")),
+      gbraid: pickFirst(params.gbraid, stored.gbraid, paramFromUrl(landingPage, "gbraid")),
+      ndclid: pickFirst(params.ndclid, stored.ndclid, paramFromUrl(landingPage, "ndclid")),
+      landingPage: landingPage,
+      // First-touch only. Later in-site navigations rewrite document.referrer
+      // to our own pages; CallRail still needs the original Google URL.
+      referrer: stored.referrer || document.referrer || null,
     };
 
     try { sessionStorage.setItem(ATTR_KEY, JSON.stringify(snapshot)); } catch (e) {}
@@ -96,7 +109,7 @@
       ndclid: snapshot.ndclid,
       landingPage: snapshot.landingPage,
       currentPage: (window.location && window.location.href) || null,
-      referrer: document.referrer || null,
+      referrer: snapshot.referrer,
     };
   }
 
@@ -111,9 +124,18 @@
       }
     } catch (e) {}
     try {
-      var match = document.cookie.match(/(?:^|;\s*)__ctmid=([^;]+)/);
-      if (match) return decodeURIComponent(match[1]);
+      if (window.CallTrk && typeof window.CallTrk.session_id === "string" && window.CallTrk.session_id) {
+        return window.CallTrk.session_id;
+      }
     } catch (e) {}
+    var cookieNames = ["__ctmid", "calltrk-session", "_callrail_session"];
+    for (var i = 0; i < cookieNames.length; i++) {
+      try {
+        var re = new RegExp("(?:^|;\\s*)" + cookieNames[i].replace(/[.*+?^${}()|[\]\\]/g, "\\$&") + "=([^;]+)");
+        var match = document.cookie.match(re);
+        if (match) return decodeURIComponent(match[1]);
+      } catch (e) {}
+    }
     return null;
   }
 

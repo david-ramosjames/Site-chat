@@ -7,7 +7,7 @@
     "build": "prisma generate && next build",
     "start": "next start -H 0.0.0.0 -p ${PORT:-3000}",
     "lint": "next lint",
-    "test:integration": "tsx tests/integration.test.ts",
+    "test:integration": "tsx --test tests/integration.test.ts tests/callrail.test.ts",
     "postinstall": "prisma generate",
     "db:push": "prisma db push",
     "db:migrate": "prisma migrate deploy",
