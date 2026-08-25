@@ -206,27 +206,67 @@ export default function FlowBuilder({
   const [steps, setSteps] = useState<Step[]>(
     initialSteps.length ? initialSteps : [blankStep([])]
   );
+  // Collapsed by default so long flows are easy to scan. Newly added
+  // steps open so you can fill them in immediately. A brand-new empty
+  // flow starts with its placeholder step open.
+  const [expanded, setExpanded] = useState<Set<number>>(
+    () => (initialSteps.length ? new Set() : new Set([0]))
+  );
   const [saving, startTransition] = useTransition();
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+
+  const isOpen = (i: number) => expanded.has(i);
+  const toggle = (i: number) =>
+    setExpanded((open) => {
+      const next = new Set(open);
+      if (next.has(i)) next.delete(i);
+      else next.add(i);
+      return next;
+    });
+  const expandAll = () => setExpanded(new Set(steps.map((_, i) => i)));
+  const collapseAll = () => setExpanded(new Set());
 
   const update = (i: number, patch: Partial<Step>) =>
     setSteps((s) => s.map((step, idx) => (idx === i ? { ...step, ...patch } : step)));
 
   const move = (i: number, delta: -1 | 1) => {
+    const swap = i + delta;
     setSteps((s) => {
       const next = [...s];
-      const swap = i + delta;
       if (swap < 0 || swap >= next.length) return s;
       [next[i], next[swap]] = [next[swap], next[i]];
       return next.map((st, idx) => ({ ...st, order: idx }));
     });
+    setExpanded((open) => {
+      if (swap < 0 || swap >= steps.length) return open;
+      const next = new Set(open);
+      const a = next.has(i);
+      const b = next.has(swap);
+      if (a) next.add(swap);
+      else next.delete(swap);
+      if (b) next.add(i);
+      else next.delete(i);
+      return next;
+    });
   };
 
-  const remove = (i: number) =>
+  const remove = (i: number) => {
     setSteps((s) => s.filter((_, idx) => idx !== i).map((st, idx) => ({ ...st, order: idx })));
+    setExpanded((open) => {
+      const next = new Set<number>();
+      for (const idx of open) {
+        if (idx === i) continue;
+        next.add(idx > i ? idx - 1 : idx);
+      }
+      return next;
+    });
+  };
 
-  const addStep = () => setSteps((s) => [...s, blankStep(s)]);
+  const addStep = () => {
+    setExpanded((open) => new Set(open).add(steps.length));
+    setSteps((s) => [...s, blankStep(s)]);
+  };
 
   function save() {
     setError(null);
@@ -246,18 +286,37 @@ export default function FlowBuilder({
     });
     if (empty.length) {
       setError(`Step ${empty.join(", ")} is missing a step key.`);
+      setExpanded((open) => {
+        const next = new Set(open);
+        empty.forEach((n) => next.add(n - 1));
+        return next;
+      });
       return;
     }
     if (invalid.size) {
       setError(
         `Step keys can only contain letters, numbers, dash, and underscore: ${[...invalid].join(", ")}`
       );
+      setExpanded((open) => {
+        const next = new Set(open);
+        steps.forEach((s, i) => {
+          if (invalid.has(s.stepKey.trim())) next.add(i);
+        });
+        return next;
+      });
       return;
     }
     if (dup.size) {
       setError(
         `Duplicate step keys: ${[...dup].join(", ")}. Each step needs a unique key.`
       );
+      setExpanded((open) => {
+        const next = new Set(open);
+        steps.forEach((s, i) => {
+          if (dup.has(s.stepKey.trim())) next.add(i);
+        });
+        return next;
+      });
       return;
     }
 
@@ -296,8 +355,21 @@ export default function FlowBuilder({
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <p className="text-sm text-ink-500">{steps.length} step{steps.length === 1 ? "" : "s"}</p>
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <div className="flex items-center gap-3">
+          <p className="text-sm text-ink-500">{steps.length} step{steps.length === 1 ? "" : "s"}</p>
+          {steps.length > 1 && (
+            <div className="flex gap-2 text-xs">
+              <button type="button" className="text-brand-600 hover:underline" onClick={expandAll}>
+                Expand all
+              </button>
+              <span className="text-ink-300">·</span>
+              <button type="button" className="text-brand-600 hover:underline" onClick={collapseAll}>
+                Collapse all
+              </button>
+            </div>
+          )}
+        </div>
         <div className="flex gap-2">
           <button type="button" onClick={addStep} className="btn-secondary">
             + Add step
@@ -311,22 +383,47 @@ export default function FlowBuilder({
       {message && <p className="text-sm text-emerald-600">{message}</p>}
       {error && <p className="text-sm text-rose-600">{error}</p>}
 
-      <ol className="space-y-4">
+      <ol className="space-y-2">
         {steps.map((s, i) => (
-          <li key={i} className="card p-5">
-            <div className="flex items-center justify-between gap-3">
-              <div className="flex items-center gap-2">
-                <span className="inline-flex h-7 w-7 items-center justify-center rounded-full bg-brand-500 text-xs font-semibold text-white">
+          <li key={i} className="card overflow-hidden">
+            <div className="flex items-center gap-2 px-3 py-2.5 sm:px-4">
+              <button
+                type="button"
+                className="flex min-w-0 flex-1 items-center gap-3 rounded-lg px-1 py-1 text-left hover:bg-ink-100/60"
+                onClick={() => toggle(i)}
+                aria-expanded={isOpen(i)}
+                aria-controls={`flow-step-${i}`}
+              >
+                <svg
+                  viewBox="0 0 20 20"
+                  className={`h-4 w-4 shrink-0 text-ink-500 transition-transform ${
+                    isOpen(i) ? "rotate-90" : ""
+                  }`}
+                  aria-hidden
+                >
+                  <path
+                    d="M7 5l6 5-6 5"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="1.8"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
+                </svg>
+                <span className="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-brand-500 text-xs font-semibold text-white">
                   {i + 1}
                 </span>
-                <input
-                  className="input mt-0 w-52"
-                  value={s.stepKey}
-                  onChange={(e) => update(i, { stepKey: e.target.value })}
-                  placeholder="step_key"
-                />
-              </div>
-              <div className="flex gap-1">
+                <span className="min-w-0 flex-1">
+                  <span className="block truncate text-sm font-medium text-ink-900">
+                    {s.question.trim() || "Untitled question"}
+                  </span>
+                  <span className="mt-0.5 block truncate text-xs text-ink-500">
+                    {s.stepKey || "no key"} · {INPUT_TYPE_LABELS[s.inputType]}
+                    {s.isRequired ? "" : " · optional"}
+                  </span>
+                </span>
+              </button>
+              <div className="flex shrink-0 gap-1">
                 <button type="button" className="btn-secondary" onClick={() => move(i, -1)} disabled={i === 0}>
                   ↑
                 </button>
@@ -348,7 +445,18 @@ export default function FlowBuilder({
               </div>
             </div>
 
-            <div className="mt-4 grid gap-4 md:grid-cols-2">
+            {isOpen(i) && (
+              <div id={`flow-step-${i}`} className="border-t border-ink-300/60 p-5">
+                <div className="grid gap-4 md:grid-cols-2">
+              <div>
+                <label className="label">Step key</label>
+                <input
+                  className="input"
+                  value={s.stepKey}
+                  onChange={(e) => update(i, { stepKey: e.target.value })}
+                  placeholder="step_key"
+                />
+              </div>
               <div className="md:col-span-2">
                 <label className="label">Question text</label>
                 <textarea
@@ -692,6 +800,8 @@ export default function FlowBuilder({
                 </div>
               )}
             </div>
+              </div>
+            )}
           </li>
         ))}
       </ol>
