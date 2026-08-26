@@ -4,6 +4,7 @@ import { useState, useTransition } from "react";
 
 type Option = { value: string; label: string };
 type NextLogic = { byOption?: Record<string, string> | null; default?: string | null } | null;
+type LeadFieldByOption = Record<string, string> | null;
 type Step = {
   stepKey: string;
   order: number;
@@ -28,6 +29,7 @@ type Step = {
   leadField: "" | "name" | "phone" | "email" | "service" | "qualified" | "referral";
   leadFieldOnYes: string;
   leadFieldOnNo: string;
+  leadFieldByOption: LeadFieldByOption;
   translations: {
     es: { question: string; options: Option[] };
   };
@@ -86,6 +88,33 @@ function setDefaultBranch(current: NextLogic, target: string | null): NextLogic 
   if (current?.byOption) next.byOption = current.byOption;
   if (target) next.default = target;
   if (!next.byOption && !next.default) return null;
+  return next;
+}
+
+function getLeadWrite(step: Step, optionValue: string): string {
+  return step.leadFieldByOption?.[optionValue] ?? "";
+}
+
+function setLeadWrite(
+  current: LeadFieldByOption,
+  optionValue: string,
+  write: string
+): LeadFieldByOption {
+  const next: Record<string, string> = { ...(current ?? {}) };
+  if (write) next[optionValue] = write;
+  else delete next[optionValue];
+  return Object.keys(next).length ? next : null;
+}
+
+function renameLeadWrite(
+  current: LeadFieldByOption,
+  from: string,
+  to: string
+): LeadFieldByOption {
+  if (!current || from === to || !(from in current)) return current;
+  const next = { ...current };
+  next[to] = next[from];
+  delete next[from];
   return next;
 }
 
@@ -190,6 +219,7 @@ function blankStep(existing: Step[]): Step {
     leadField: "",
     leadFieldOnYes: "",
     leadFieldOnNo: "",
+    leadFieldByOption: null,
     translations: { es: { question: "", options: [] } },
   };
 }
@@ -335,6 +365,8 @@ export default function FlowBuilder({
             leadField: s.leadField || null,
             leadFieldOnYes: s.leadFieldOnYes || null,
             leadFieldOnNo: s.leadFieldOnNo || null,
+            leadFieldByOption:
+              s.inputType === "multiple_choice" ? s.leadFieldByOption : null,
             translations: {
               es: {
                 question: s.translations.es.question || undefined,
@@ -475,6 +507,8 @@ export default function FlowBuilder({
                     update(i, {
                       inputType: e.target.value as Step["inputType"],
                       options: e.target.value === "multiple_choice" ? s.options : [],
+                      leadFieldByOption:
+                        e.target.value === "multiple_choice" ? s.leadFieldByOption : null,
                     })
                   }
                 >
@@ -562,6 +596,13 @@ export default function FlowBuilder({
                   <label className="label">Choices &amp; branching</label>
                   <p className="help mt-0 mb-2">
                     Each option can route to a different question, or end the flow early.
+                    {(s.leadField === "qualified" || s.leadField === "referral") && (
+                      <>
+                        {" "}
+                        Because this step saves to {s.leadField}, pick what each choice writes
+                        to that column (Yes / No) — otherwise the raw option value is stored.
+                      </>
+                    )}
                   </p>
                   <div className="space-y-2">
                     {s.options.map((opt, idx) => (
@@ -582,7 +623,14 @@ export default function FlowBuilder({
                           value={opt.value}
                           onChange={(e) =>
                             update(i, {
-                              options: s.options.map((o, j) => (j === idx ? { ...o, value: e.target.value } : o)),
+                              options: s.options.map((o, j) =>
+                                j === idx ? { ...o, value: e.target.value } : o
+                              ),
+                              leadFieldByOption: renameLeadWrite(
+                                s.leadFieldByOption,
+                                opt.value,
+                                e.target.value
+                              ),
                             })
                           }
                         />
@@ -592,6 +640,26 @@ export default function FlowBuilder({
                           steps={steps}
                           currentStepKey={s.stepKey}
                         />
+                        {(s.leadField === "qualified" || s.leadField === "referral") && (
+                          <select
+                            className="select mt-0 w-36"
+                            value={getLeadWrite(s, opt.value)}
+                            onChange={(e) =>
+                              update(i, {
+                                leadFieldByOption: setLeadWrite(
+                                  s.leadFieldByOption,
+                                  opt.value,
+                                  e.target.value
+                                ),
+                              })
+                            }
+                            title={`What to write to the ${s.leadField} column`}
+                          >
+                            <option value="">→ Raw value</option>
+                            <option value="yes">→ Write Yes</option>
+                            <option value="no">→ Write No</option>
+                          </select>
+                        )}
                         <button
                           type="button"
                           className="btn-secondary"
@@ -599,6 +667,11 @@ export default function FlowBuilder({
                             update(i, {
                               options: s.options.filter((_, j) => j !== idx),
                               nextLogic: setBranch(s.nextLogic, opt.value, null),
+                              leadFieldByOption: setLeadWrite(
+                                s.leadFieldByOption,
+                                opt.value,
+                                ""
+                              ),
                             })
                           }
                         >

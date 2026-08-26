@@ -137,7 +137,7 @@ export default async function AnalyticsPage({
 
   // Load leads submitted in the same window to split "completed_success"
   // into referral vs non-referral. The Lead row carries the referral flag
-  // (set by the flow step's leadFieldOnYes/No mapping); events don't.
+  // (set by the flow step's lead-column mapping); events don't.
   const leadsInRange = await prisma.lead.findMany({
     where: {
       clientId: params.clientId,

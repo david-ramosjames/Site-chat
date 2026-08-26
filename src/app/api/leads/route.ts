@@ -8,6 +8,7 @@ import { sendLeadNotifications } from "@/lib/notifications";
 import { postToCallRail } from "@/lib/callrail";
 import { generateLeadIntelligence } from "@/lib/lead-intelligence";
 import { deriveAttribution } from "@/lib/attribution";
+import { asLeadFieldByOption, resolveLeadColumnValue } from "@/lib/lead-field";
 
 export const dynamic = "force-dynamic";
 
@@ -55,9 +56,9 @@ export async function POST(req: NextRequest) {
 
   // Build the lead column → step lookup from the flow's per-step
   // leadField setting. Falls back to legacy stepKey-name conventions
-  // when no step has explicitly claimed a column. Invert flips
-  // yes/no answers before storing — useful for "Do you have an
-  // attorney?" where No means qualified=yes.
+  // when no step has explicitly claimed a column. Multiple-choice
+  // options map through leadFieldByOption (e.g. "No" and "second
+  // opinion" → qualified=yes); yes/no steps use leadFieldOnYes/OnNo.
   const stepByColumn: Record<string, (typeof client.flowSteps)[number]> = {};
   client.flowSteps.forEach((s) => {
     if (s.leadField && !stepByColumn[s.leadField]) stepByColumn[s.leadField] = s;
@@ -66,16 +67,13 @@ export async function POST(req: NextRequest) {
     const mapped = stepByColumn[col];
     if (mapped) {
       const raw = pick(mapped.stepKey);
-      // Per-answer override (yes_no steps): if the admin set
-      // leadFieldOnYes / leadFieldOnNo, use that value instead of the raw
-      // answer. Empty string means "leave the column blank".
-      if (raw === "yes" && mapped.leadFieldOnYes != null) {
-        return mapped.leadFieldOnYes || undefined;
+      if (raw !== undefined) {
+        return resolveLeadColumnValue(raw, {
+          leadFieldOnYes: mapped.leadFieldOnYes,
+          leadFieldOnNo: mapped.leadFieldOnNo,
+          leadFieldByOption: asLeadFieldByOption(mapped.leadFieldByOption),
+        });
       }
-      if (raw === "no" && mapped.leadFieldOnNo != null) {
-        return mapped.leadFieldOnNo || undefined;
-      }
-      if (raw !== undefined) return raw;
     }
     return legacyKeys.map((k) => pick(k)).find((v) => v !== undefined);
   }

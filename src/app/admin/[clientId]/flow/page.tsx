@@ -84,6 +84,12 @@ export default async function FlowPage({ params }: { params: { clientId: string 
               "",
             leadFieldOnYes: s.leadFieldOnYes ?? "",
             leadFieldOnNo: s.leadFieldOnNo ?? "",
+            leadFieldByOption:
+              s.leadFieldByOption &&
+              typeof s.leadFieldByOption === "object" &&
+              !Array.isArray(s.leadFieldByOption)
+                ? (s.leadFieldByOption as Record<string, string>)
+                : null,
             translations: {
               es: {
                 question: t?.es?.question ?? "",

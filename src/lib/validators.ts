@@ -263,6 +263,7 @@ export const flowStepInputSchema = z.object({
     .nullable(),
   leadFieldOnYes: z.string().max(60).optional().nullable(),
   leadFieldOnNo: z.string().max(60).optional().nullable(),
+  leadFieldByOption: z.record(z.string().max(60)).optional().nullable(),
   translations: z
     .object({
       es: z

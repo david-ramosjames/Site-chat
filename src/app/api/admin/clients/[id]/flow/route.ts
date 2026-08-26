@@ -47,6 +47,7 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
           leadField: s.leadField || null,
           leadFieldOnYes: s.leadFieldOnYes || null,
           leadFieldOnNo: s.leadFieldOnNo || null,
+          leadFieldByOption: (s.leadFieldByOption ?? undefined) as object | undefined,
           translations: (s.translations ?? undefined) as object | undefined,
         })),
       }),
