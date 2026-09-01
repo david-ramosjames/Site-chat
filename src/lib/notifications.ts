@@ -1,4 +1,5 @@
 import type { Lead, NotificationSettings } from "@prisma/client";
+import { leadSourceLabel } from "@/lib/lead-source";
 
 // MVP: stub the outbound notifications. In production replace with SendGrid /
 // Twilio / etc. Slack receives a properly-formatted Block Kit message;
@@ -175,7 +176,7 @@ async function postSlack(
     fieldLine("Phone", lead.phone),
     fieldLine("Email", lead.email),
     fieldLine("Service", lead.serviceRequested),
-    fieldLine("UTM", utmSummary(lead)),
+    fieldLine("Source", leadSourceLabel(lead)),
     formatQaDetail(lead),
     adminLink ? `\n<${adminLink}|Open in admin →>` : null,
   ]
@@ -314,10 +315,3 @@ function formatYesNo(v: string | null | undefined): string | null {
   return v ?? null;
 }
 
-function utmSummary(lead: Lead) {
-  const parts: string[] = [];
-  if (lead.utmSource) parts.push(`source=${lead.utmSource}`);
-  if (lead.utmMedium) parts.push(`medium=${lead.utmMedium}`);
-  if (lead.utmCampaign) parts.push(`campaign=${lead.utmCampaign}`);
-  return parts.length ? parts.join(" / ") : null;
-}
