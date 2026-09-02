@@ -30,10 +30,31 @@
   // Per-page overrides on the script tag. Same client/flow.
   //   data-show-when="#cta" — mobile only: bubble appears while that
   //     element is on screen. Desktop stays the normal corner bubble.
+  //   data-tooltip="ten" — desktop: park the pink message at ~10 o'clock
   //   data-open-on-load="true|false" — optional override of the admin setting
   //   data-mobile="bubble|hidden|section" — optional; section is implied by data-show-when
+  //
+  // Read from EVERY widget.js tag, not just the one that executed first.
+  // Landing pages often still have the site-wide footer script; that one
+  // wins the load race and would otherwise ignore the page-specific attrs.
+  function widgetScripts() {
+    var out = [];
+    var list = document.getElementsByTagName("script");
+    for (var i = 0; i < list.length; i++) {
+      var s = list[i];
+      if (s.src && s.src.indexOf("/widget.js") !== -1) out.push(s);
+    }
+    if (currentScript && out.indexOf(currentScript) === -1) out.unshift(currentScript);
+    return out;
+  }
   function scriptAttr(name) {
-    return (currentScript.getAttribute(name) || "").trim();
+    var val = "";
+    var scripts = widgetScripts();
+    for (var i = 0; i < scripts.length; i++) {
+      var v = (scripts[i].getAttribute(name) || "").trim();
+      if (v) val = v;
+    }
+    return val;
   }
   function scriptBoolAttr(name) {
     var v = scriptAttr(name).toLowerCase();
@@ -42,9 +63,20 @@
     if (v === "false" || v === "0" || v === "no") return false;
     return null;
   }
-  var pageOpenOnLoad = scriptBoolAttr("data-open-on-load");
-  var pageMobile = scriptAttr("data-mobile").toLowerCase();
-  var pageShowWhen = scriptAttr("data-show-when");
+  var pageOpenOnLoad = null;
+  var pageMobile = "";
+  var pageShowWhen = "";
+  var pageTooltip = "";
+  function refreshPageAttrs() {
+    pageOpenOnLoad = scriptBoolAttr("data-open-on-load");
+    pageMobile = scriptAttr("data-mobile").toLowerCase();
+    pageShowWhen = scriptAttr("data-show-when");
+    pageTooltip = scriptAttr("data-tooltip").toLowerCase();
+  }
+  refreshPageAttrs();
+  function usesTenOclockTip() {
+    return !!(pageShowWhen || pageTooltip === "ten");
+  }
 
   function apiUrl(path) {
     return (scriptOrigin || "") + path;
@@ -205,7 +237,7 @@
     return (
       ":host{all:initial;}" +
       "*{box-sizing:border-box;font-family:ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;}" +
-      ".root{position:fixed;z-index:2147483000;bottom:28px;}" +
+      ".root{position:fixed;z-index:2147483000;bottom:28px;overflow:visible;}" +
       ".root.right{right:16px;} .root.left{left:16px;}" +
       ".bubble{display:inline-flex;align-items:center;gap:8px;background:" + primary + ";color:#fff;border:none;border-radius:999px;padding:13px 20px;font-weight:600;font-size:15px;box-shadow:0 8px 24px rgba(15,23,42,.18);cursor:pointer;}" +
       ".bubble:hover{filter:brightness(1.05);}" +
@@ -214,11 +246,14 @@
       ".root.left .avatar-wrap{align-items:flex-start;}" +
       ".tooltip{position:relative;background:#fff;color:#0b1220;border:1px solid #e2e8f0;padding:11px 34px 11px 16px;border-radius:18px;font-size:15px;font-weight:500;line-height:1.3;max-width:180px;box-shadow:0 8px 24px rgba(15,23,42,.18);transform-origin:100% 100%;animation:tc-fanout .55s cubic-bezier(.34,1.56,.64,1) .5s both,tc-fanout-glow 3.2s ease-in-out 1.4s infinite;pointer-events:none;}" +
       ".root.left .tooltip{transform-origin:0% 100%;}" +
-      // Landing page, desktop only: park the tooltip at ~10 o'clock,
-      // left of the avatar instead of stacked above it.
+      // Landing page, desktop only: sit the tooltip to the left of the
+      // avatar and lift it to ~10 o'clock. Row layout (not absolute) so
+      // the wrap grows left and nothing gets clipped at the corner.
       "@media (min-width:769px){" +
-        ".avatar-wrap.tip-ten{position:relative;}" +
-        ".avatar-wrap.tip-ten .tooltip{position:absolute;right:calc(100% + 6px);bottom:44px;transform-origin:100% 85%;}" +
+        ".avatar-wrap.tip-ten{flex-direction:row;align-items:flex-end;overflow:visible;}" +
+        ".avatar-wrap.tip-ten .tooltip{position:relative;right:auto;bottom:auto;margin:0 10px 44px 0;transform-origin:100% 85%;}" +
+        ".root.left .avatar-wrap.tip-ten{flex-direction:row-reverse;}" +
+        ".root.left .avatar-wrap.tip-ten .tooltip{margin:0 0 44px 10px;transform-origin:0% 85%;}" +
       "}" +
       ".tooltip .x{position:absolute;top:6px;right:8px;background:transparent;border:none;cursor:pointer;color:#94a3b8;font-size:14px;line-height:1;padding:2px;pointer-events:auto;}" +
       ".tooltip .x:hover{color:#0b1220;}" +
@@ -979,7 +1014,7 @@
       if (imgUrl) {
         // Avatar + speech-bubble tooltip pattern.
         var wrapClass = "avatar-wrap";
-        if (pageShowWhen) wrapClass += " tip-ten";
+        if (usesTenOclockTip()) wrapClass += " tip-ten";
         var wrap = el("div", { className: wrapClass });
         if (tip) {
           tooltipNode = el("div", { className: "tooltip" }, [
@@ -2302,6 +2337,7 @@
   }
 
   function load() {
+    refreshPageAttrs();
     fetchJson(apiUrl("/api/widget-config?clientId=" + encodeURIComponent(clientId)))
       .then(function (cfg) {
         if (!cfg || !cfg.active) return;

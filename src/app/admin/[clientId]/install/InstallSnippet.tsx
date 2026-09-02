@@ -44,7 +44,7 @@ export default function InstallSnippet({ clientId, baseUrl }: { clientId: string
 
   const src = `${origin}/widget.js`;
   const siteSnippet = `<script\n  src="${src}"\n  data-client-id="${clientId}"\n  async>\n</script>`;
-  const pageSnippet = `<script\n  src="${src}"\n  data-client-id="${clientId}"\n  data-show-when="#YOUR-SECTION-ID"\n  async>\n</script>`;
+  const pageSnippet = `<script\n  src="${src}"\n  data-client-id="${clientId}"\n  data-show-when="#YOUR-SECTION-ID"\n  data-tooltip="ten"\n  async>\n</script>`;
 
   return (
     <div className="space-y-4">
@@ -74,8 +74,9 @@ export default function InstallSnippet({ clientId, baseUrl }: { clientId: string
         </p>
         <ul className="list-disc space-y-1 pl-5">
           <li>
-            <strong>Desktop:</strong> corner bubble, same as the main website. Chat does not
-            auto-open. The pink message sits to the left of the avatar (about 10 o&apos;clock).
+            <strong>Desktop:</strong> corner bubble, chat stays closed until they click.{" "}
+            <code className="rounded bg-ink-100 px-1">data-tooltip=&quot;ten&quot;</code> puts
+            the pink message to the left of the avatar (about 10 o&apos;clock).
           </li>
           <li>
             <strong>Mobile:</strong> bubble only while the tagged section is on screen. Hidden
