@@ -250,6 +250,11 @@
       "*{box-sizing:border-box;font-family:ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;}" +
       ".root{position:fixed;z-index:2147483000;bottom:28px;overflow:visible;}" +
       ".root.right{right:16px;} .root.left{left:16px;}" +
+      // Lead landing, mobile: sit above the sticky CALL NOW bar.
+      "@media (max-width:768px){" +
+        ".root.lead-host{bottom:calc(88px + env(safe-area-inset-bottom,0px));}" +
+        ".root.lead-host .panel{bottom:calc(148px + env(safe-area-inset-bottom,0px));max-height:calc(100vh - 170px);}" +
+      "}" +
       ".bubble{display:inline-flex;align-items:center;gap:8px;background:" + primary + ";color:#fff;border:none;border-radius:999px;padding:13px 20px;font-weight:600;font-size:15px;box-shadow:0 8px 24px rgba(15,23,42,.18);cursor:pointer;}" +
       ".bubble:hover{filter:brightness(1.05);}" +
       ".bubble .dot{width:8px;height:8px;background:#22c55e;border-radius:999px;}" +
@@ -262,7 +267,7 @@
       // only `right` set shrinks to min-content (one word per line).
       "@media (min-width:769px){" +
         ".avatar-wrap.tip-ten{position:relative;overflow:visible;}" +
-        ".avatar-wrap.tip-ten .tooltip{position:absolute !important;left:auto !important;top:auto !important;right:calc(100% + 14px) !important;bottom:50px !important;margin:0 !important;width:max-content !important;min-width:168px !important;max-width:220px !important;transform-origin:100% 85%;}" +
+        ".avatar-wrap.tip-ten .tooltip{position:absolute !important;left:auto !important;top:auto !important;right:calc(100% + 14px) !important;bottom:50px !important;margin:0 !important;width:max-content !important;min-width:168px !important;max-width:none !important;white-space:nowrap !important;transform-origin:100% 85%;}" +
         ".root.left .avatar-wrap.tip-ten .tooltip{right:auto !important;left:calc(100% + 14px) !important;transform-origin:0% 85%;}" +
       "}" +
       ".tooltip .x{position:absolute;top:6px;right:8px;background:transparent;border:none;cursor:pointer;color:#94a3b8;font-size:14px;line-height:1;padding:2px;pointer-events:auto;}" +
@@ -743,7 +748,10 @@
       shadow.appendChild(style);
 
       root = el("div", {
-        className: "root " + (config.widget.widgetPosition === "bottom-left" ? "left" : "right"),
+        className:
+          "root " +
+          (config.widget.widgetPosition === "bottom-left" ? "left" : "right") +
+          (isLeadLandingHost() ? " lead-host" : ""),
       });
       shadow.appendChild(root);
       document.body.appendChild(host);
@@ -1031,7 +1039,8 @@
       tooltip.style.setProperty("margin", "0", "important");
       tooltip.style.setProperty("width", "max-content", "important");
       tooltip.style.setProperty("min-width", "168px", "important");
-      tooltip.style.setProperty("max-width", "220px", "important");
+      tooltip.style.setProperty("max-width", "none", "important");
+      tooltip.style.setProperty("white-space", "nowrap", "important");
     }
 
     function renderBubble() {
