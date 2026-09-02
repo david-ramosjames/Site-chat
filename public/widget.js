@@ -27,6 +27,25 @@
     try { return new URL(currentScript.src).origin; } catch (e) { return ""; }
   })();
 
+  // Per-page overrides on the script tag. Same client/flow.
+  //   data-show-when="#cta" — mobile only: bubble appears while that
+  //     element is on screen. Desktop stays the normal corner bubble.
+  //   data-open-on-load="true|false" — optional override of the admin setting
+  //   data-mobile="bubble|hidden|section" — optional; section is implied by data-show-when
+  function scriptAttr(name) {
+    return (currentScript.getAttribute(name) || "").trim();
+  }
+  function scriptBoolAttr(name) {
+    var v = scriptAttr(name).toLowerCase();
+    if (!v) return null;
+    if (v === "true" || v === "1" || v === "yes") return true;
+    if (v === "false" || v === "0" || v === "no") return false;
+    return null;
+  }
+  var pageOpenOnLoad = scriptBoolAttr("data-open-on-load");
+  var pageMobile = scriptAttr("data-mobile").toLowerCase();
+  var pageShowWhen = scriptAttr("data-show-when");
+
   function apiUrl(path) {
     return (scriptOrigin || "") + path;
   }
@@ -680,20 +699,37 @@
 
       pendingResume = loadProgress();
 
-      // Auto-open is desktop-only — on mobile we keep the floating bubble
-      // so visitors aren't smacked with a full-screen panel uninvited.
-      var willAutoOpen = !!(config.widget.openOnLoad && !isMobileViewport());
+      // Snapshot attribution immediately so we don't lose first-touch
+      // UTM/GCLID if the visitor navigates before opening the chat.
+      try { captureAttribution(); } catch (e) {}
+
+      var mobile = isMobileViewport();
+      var openOnLoad = pageOpenOnLoad != null ? pageOpenOnLoad : !!config.widget.openOnLoad;
+      var mobileMode = pageMobile || (pageShowWhen ? "section" : "bubble");
+      if (mobileMode !== "bubble" && mobileMode !== "hidden" && mobileMode !== "section") {
+        mobileMode = "bubble";
+      }
+
+      // Auto-open is desktop-only — on mobile a full-screen panel on load
+      // is too aggressive. Use data-show-when / data-mobile for phones.
+      var willAutoOpen = !!(openOnLoad && !mobile);
+
+      if (mobile && mobileMode === "hidden") {
+        if (host.parentNode) host.parentNode.removeChild(host);
+        host = null;
+        return;
+      }
+
+      if (mobile && mobileMode === "section") {
+        watchSectionThenShow(pageShowWhen);
+        return;
+      }
 
       if (!willAutoOpen) {
         renderBubble();
         scheduleSecondWelcome();
       }
       renderSideButtons();
-
-      // Snapshot attribution into sessionStorage immediately so we don't
-      // lose first-touch UTM/GCLID if the visitor navigates before opening
-      // the chat. Subsequent submits read the persisted snapshot.
-      try { captureAttribution(); } catch (e) {}
 
       if (willAutoOpen) {
         // Skip the floating bubble entirely; go straight to the panel.
@@ -702,6 +738,54 @@
           if (!isOpen) open("auto");
         }, 100);
       }
+    }
+
+    // Mobile: keep the widget hidden until `selector` is on screen, then
+    // show the bubble. Hide again if they scroll away — unless they've
+    // already opened or started the chat.
+    function watchSectionThenShow(selector) {
+      var shown = false;
+      function setVisible(visible) {
+        if (isOpen || hasStartedFlow) visible = true;
+        if (!host) return;
+        host.style.visibility = visible ? "" : "hidden";
+        host.style.pointerEvents = visible ? "" : "none";
+        if (sideStackHost) {
+          sideStackHost.style.visibility = visible ? "" : "hidden";
+          sideStackHost.style.pointerEvents = visible ? "" : "none";
+        }
+        if (visible && !shown) {
+          shown = true;
+          renderBubble();
+          scheduleSecondWelcome();
+          renderSideButtons();
+        }
+      }
+
+      setVisible(false);
+
+      var target = null;
+      try { if (selector) target = document.querySelector(selector); } catch (e) {}
+      if (!target) {
+        console.warn("[RJL-Chat] data-show-when did not match any element:", selector || "(empty)");
+        setVisible(true);
+        return;
+      }
+      if (typeof IntersectionObserver === "undefined") {
+        setVisible(true);
+        return;
+      }
+      var io = new IntersectionObserver(
+        function (entries) {
+          var vis = false;
+          for (var i = 0; i < entries.length; i++) {
+            if (entries[i].isIntersecting) vis = true;
+          }
+          setVisible(vis);
+        },
+        { threshold: 0.12, rootMargin: "0px 0px -8% 0px" }
+      );
+      io.observe(target);
     }
 
     function renderSideButtons() {

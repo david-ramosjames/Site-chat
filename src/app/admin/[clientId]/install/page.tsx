@@ -23,8 +23,8 @@ export default async function InstallPage({ params }: { params: { clientId: stri
         <div>
           <h2 className="text-base font-semibold">Install script</h2>
           <p className="text-sm text-ink-500">
-            Paste this snippet into <strong>{client.name}</strong>&apos;s website to turn on the
-            chat widget.
+            Two snippets, same chatbot. Use the site-wide one on the main website. Use the
+            landing-page one only on the lead page.
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
@@ -43,15 +43,15 @@ export default async function InstallPage({ params }: { params: { clientId: stri
       <section className="card p-6">
         <h2 className="text-sm font-semibold">Where to paste it</h2>
         <p className="mt-2 text-sm text-ink-700">
-          Paste this before the closing <code className="rounded bg-ink-100 px-1">&lt;/body&gt;</code>{" "}
-          tag of your website, or add it through your WordPress header/footer plugin.
+          Paste before the closing <code className="rounded bg-ink-100 px-1">&lt;/body&gt;</code>{" "}
+          tag, or through your CMS footer / code-injection tool.
         </p>
         <ul className="mt-4 list-disc space-y-1 pl-5 text-sm text-ink-700">
-          <li><strong>WordPress:</strong> Insert Headers and Footers, WPCode, or your theme&apos;s footer.php.</li>
-          <li><strong>Webflow:</strong> Project settings → Custom code → Footer code.</li>
-          <li><strong>Squarespace:</strong> Settings → Advanced → Code injection → Footer.</li>
-          <li><strong>Shopify:</strong> Online store → Themes → Edit code → theme.liquid, before <code className="rounded bg-ink-100 px-1">&lt;/body&gt;</code>.</li>
-          <li><strong>Custom site:</strong> Paste before <code className="rounded bg-ink-100 px-1">&lt;/body&gt;</code> in your main template.</li>
+          <li><strong>WordPress:</strong> Insert Headers and Footers, WPCode, or your theme&apos;s footer.php. For the landing page, add the second snippet on that page only (page-specific custom code) and do not also load the site-wide one there.</li>
+          <li><strong>Webflow:</strong> Project settings → Custom code → Footer for the main site. Landing page → Page settings → Custom code for the second snippet.</li>
+          <li><strong>Squarespace:</strong> Settings → Advanced → Code injection → Footer for the main site. Landing page → Page header injection for the second snippet.</li>
+          <li><strong>Shopify:</strong> theme.liquid for the main site. Landing-page template only for the second snippet.</li>
+          <li><strong>Custom site:</strong> Main layout footer vs. that landing page&apos;s template.</li>
         </ul>
       </section>
     </div>
