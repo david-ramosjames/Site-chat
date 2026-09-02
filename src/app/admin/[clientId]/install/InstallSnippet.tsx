@@ -75,7 +75,7 @@ export default function InstallSnippet({ clientId, baseUrl }: { clientId: string
         <ul className="list-disc space-y-1 pl-5">
           <li>
             <strong>Desktop:</strong> corner bubble, same as the main website. Chat does not
-            auto-open.
+            auto-open. The pink message sits to the left of the avatar (about 10 o&apos;clock).
           </li>
           <li>
             <strong>Mobile:</strong> bubble only while the tagged section is on screen. Hidden
