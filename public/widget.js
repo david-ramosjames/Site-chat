@@ -74,8 +74,19 @@
     pageTooltip = scriptAttr("data-tooltip").toLowerCase();
   }
   refreshPageAttrs();
+  function isLeadLandingHost() {
+    try {
+      var h = (location.hostname || "").toLowerCase().replace(/^www\./, "");
+      return h === "start.ramosjames.com";
+    } catch (e) {
+      return false;
+    }
+  }
   function usesTenOclockTip() {
-    return !!(pageShowWhen || pageTooltip === "ten");
+    // start.ramosjames.com injects the script itself (no data-tooltip on
+    // the tag). Detect that host so the lead pages get 10 o'clock without
+    // depending on the Install snippet. ramosjames.com stays stacked.
+    return !!(pageShowWhen || pageTooltip === "ten" || isLeadLandingHost());
   }
 
   function apiUrl(path) {
@@ -250,10 +261,9 @@
       // avatar and lift it to ~10 o'clock. Row layout (not absolute) so
       // the wrap grows left and nothing gets clipped at the corner.
       "@media (min-width:769px){" +
-        ".avatar-wrap.tip-ten{flex-direction:row;align-items:flex-end;overflow:visible;}" +
-        ".avatar-wrap.tip-ten .tooltip{position:relative;right:auto;bottom:auto;margin:0 10px 44px 0;transform-origin:100% 85%;}" +
-        ".root.left .avatar-wrap.tip-ten{flex-direction:row-reverse;}" +
-        ".root.left .avatar-wrap.tip-ten .tooltip{margin:0 0 44px 10px;transform-origin:0% 85%;}" +
+        ".avatar-wrap.tip-ten{position:relative;overflow:visible;}" +
+        ".avatar-wrap.tip-ten .tooltip{position:absolute !important;left:auto !important;top:auto !important;right:100% !important;bottom:50px !important;margin:0 10px 0 0 !important;transform-origin:100% 85%;}" +
+        ".root.left .avatar-wrap.tip-ten .tooltip{right:auto !important;left:100% !important;margin:0 0 0 10px !important;transform-origin:0% 85%;}" +
       "}" +
       ".tooltip .x{position:absolute;top:6px;right:8px;background:transparent;border:none;cursor:pointer;color:#94a3b8;font-size:14px;line-height:1;padding:2px;pointer-events:auto;}" +
       ".tooltip .x:hover{color:#0b1220;}" +
@@ -984,6 +994,7 @@
         applyTooltipColors(tooltipNode, true);
         if (wrap.firstChild) wrap.insertBefore(tooltipNode, wrap.firstChild);
         else wrap.appendChild(tooltipNode);
+        pinTooltipTen(wrap, tooltipNode);
       }, delaySec * 1000);
     }
 
@@ -1004,6 +1015,20 @@
         var x = node.querySelector(".x");
         if (x) x.style.color = fg;
       }
+    }
+
+    // Lead landing (desktop): pin the pink message to the left of the
+    // avatar at ~10 o'clock. Inline + !important so host CSS / flex
+    // column layout cannot keep it stacked above.
+    function pinTooltipTen(wrap, tooltip) {
+      if (!usesTenOclockTip() || isMobileViewport() || !wrap || !tooltip) return;
+      wrap.style.position = "relative";
+      tooltip.style.setProperty("position", "absolute", "important");
+      tooltip.style.setProperty("left", "auto", "important");
+      tooltip.style.setProperty("top", "auto", "important");
+      tooltip.style.setProperty("right", "100%", "important");
+      tooltip.style.setProperty("bottom", "50px", "important");
+      tooltip.style.setProperty("margin", "0 10px 0 0", "important");
     }
 
     function renderBubble() {
@@ -1032,6 +1057,7 @@
           ]);
           applyTooltipColors(tooltipNode, false);
           wrap.appendChild(tooltipNode);
+          pinTooltipTen(wrap, tooltipNode);
         }
         // The image/video lives inside an inner wrapper that clips to the
         // circle; the button itself has overflow:visible so the green
