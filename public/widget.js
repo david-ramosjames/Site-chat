@@ -258,12 +258,12 @@
       ".tooltip{position:relative;background:#fff;color:#0b1220;border:1px solid #e2e8f0;padding:11px 34px 11px 16px;border-radius:18px;font-size:15px;font-weight:500;line-height:1.3;max-width:180px;box-shadow:0 8px 24px rgba(15,23,42,.18);transform-origin:100% 100%;animation:tc-fanout .55s cubic-bezier(.34,1.56,.64,1) .5s both,tc-fanout-glow 3.2s ease-in-out 1.4s infinite;pointer-events:none;}" +
       ".root.left .tooltip{transform-origin:0% 100%;}" +
       // Landing page, desktop only: sit the tooltip to the left of the
-      // avatar and lift it to ~10 o'clock. Row layout (not absolute) so
-      // the wrap grows left and nothing gets clipped at the corner.
+      // avatar at ~10 o'clock. Give it an explicit width — abspos with
+      // only `right` set shrinks to min-content (one word per line).
       "@media (min-width:769px){" +
         ".avatar-wrap.tip-ten{position:relative;overflow:visible;}" +
-        ".avatar-wrap.tip-ten .tooltip{position:absolute !important;left:auto !important;top:auto !important;right:100% !important;bottom:50px !important;margin:0 10px 0 0 !important;transform-origin:100% 85%;}" +
-        ".root.left .avatar-wrap.tip-ten .tooltip{right:auto !important;left:100% !important;margin:0 0 0 10px !important;transform-origin:0% 85%;}" +
+        ".avatar-wrap.tip-ten .tooltip{position:absolute !important;left:auto !important;top:auto !important;right:calc(100% + 14px) !important;bottom:50px !important;margin:0 !important;width:max-content !important;min-width:168px !important;max-width:220px !important;transform-origin:100% 85%;}" +
+        ".root.left .avatar-wrap.tip-ten .tooltip{right:auto !important;left:calc(100% + 14px) !important;transform-origin:0% 85%;}" +
       "}" +
       ".tooltip .x{position:absolute;top:6px;right:8px;background:transparent;border:none;cursor:pointer;color:#94a3b8;font-size:14px;line-height:1;padding:2px;pointer-events:auto;}" +
       ".tooltip .x:hover{color:#0b1220;}" +
@@ -1026,9 +1026,12 @@
       tooltip.style.setProperty("position", "absolute", "important");
       tooltip.style.setProperty("left", "auto", "important");
       tooltip.style.setProperty("top", "auto", "important");
-      tooltip.style.setProperty("right", "100%", "important");
+      tooltip.style.setProperty("right", "calc(100% + 14px)", "important");
       tooltip.style.setProperty("bottom", "50px", "important");
-      tooltip.style.setProperty("margin", "0 10px 0 0", "important");
+      tooltip.style.setProperty("margin", "0", "important");
+      tooltip.style.setProperty("width", "max-content", "important");
+      tooltip.style.setProperty("min-width", "168px", "important");
+      tooltip.style.setProperty("max-width", "220px", "important");
     }
 
     function renderBubble() {
