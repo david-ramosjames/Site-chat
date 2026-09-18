@@ -170,6 +170,7 @@ async function postSlack(
   const lines = [
     header,
     "",
+    fieldLine("From", "Web Chat"),
     fieldLine("Qualified", formatYesNo(lead.qualified)),
     fieldLine("Referral", formatYesNo(lead.referral)),
     fieldLine("Name", lead.name),
