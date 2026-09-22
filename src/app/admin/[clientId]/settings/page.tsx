@@ -110,6 +110,8 @@ export default async function SettingsPage({ params }: { params: { clientId: str
           showVideoControls: ws?.showVideoControls ?? false,
           introVideoStartMuted: ws?.introVideoStartMuted ?? true,
           headerButtonColor: ws?.headerButtonColor ?? "",
+          signTemplateIdEn: ws?.signTemplateIdEn ?? "",
+          signTemplateIdEs: ws?.signTemplateIdEs ?? "",
         }}
       />
     </div>

@@ -173,6 +173,12 @@ model WidgetSettings {
   // preserved as-is so international entries always win.
   defaultPhoneCountry String @default("US")
 
+  // Default DocuSeal template IDs for Sign Flow (English / Spanish). A
+  // flow "sign" step can override these; Spanish falls back to English
+  // when the ES id is blank.
+  signTemplateIdEn String?
+  signTemplateIdEs String?
+
   client Client @relation(fields: [clientId], references: [id], onDelete: Cascade)
 }
 
@@ -238,6 +244,11 @@ model NotificationSettings {
   slackPostReferral         Boolean @default(true)
   slackPostDefault          Boolean @default(true)
 
+  // Optional Slack bot API so follow-ups (contract sent, more details) can
+  // reply in the original lead thread. Incoming webhooks cannot return a ts.
+  slackBotToken String?
+  slackChannel  String?
+
   client Client @relation(fields: [clientId], references: [id], onDelete: Cascade)
 }
 
@@ -275,6 +286,10 @@ model FlowStep {
 
   // Optional translated copy. Shape: { es: { question, options: [{value,label}] } }
   translations Json?
+
+  // Signing config when inputType is "sign". Shape:
+  // { mode, url, templateIdEn, templateIdEs, dateOfLossKey, buttonLabel }
+  signing Json?
 
   client Client @relation(fields: [clientId], references: [id], onDelete: Cascade)
 
@@ -316,6 +331,10 @@ model Lead {
   aiSummary        String?
   leadScore        Int?
   notes            String?
+  ending           String?  // success | decline | sign
+  contractSent     Boolean  @default(false)
+  slackTs          String?  // parent Slack message ts (for thread replies)
+  slackChannel     String?  // Slack channel id when the bot API posted
   createdAt        DateTime @default(now())
   updatedAt        DateTime @updatedAt
 

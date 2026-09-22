@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import LeadControls from "./LeadControls";
 import { deriveAttribution } from "@/lib/attribution";
+import { answerFieldLabel, MORE_DETAIL_KEY } from "@/lib/more-detail";
 
 export const dynamic = "force-dynamic";
 
@@ -100,9 +101,22 @@ export default async function LeadDetail({
             <h2 className="text-sm font-semibold">Answers</h2>
             <dl className="mt-4 grid gap-3 sm:grid-cols-2">
               {Object.entries(answers).map(([k, v]) => (
-                <div key={k} className="rounded-lg border border-ink-300/60 bg-ink-100/40 p-3">
-                  <dt className="text-xs font-medium uppercase tracking-wide text-ink-500">{k}</dt>
-                  <dd className="mt-1 break-words text-sm text-ink-900">{String(v ?? "")}</dd>
+                <div
+                  key={k}
+                  className={`rounded-lg border border-ink-300/60 bg-ink-100/40 p-3${
+                    k === MORE_DETAIL_KEY ? " sm:col-span-2" : ""
+                  }`}
+                >
+                  <dt className="text-xs font-medium uppercase tracking-wide text-ink-500">
+                    {answerFieldLabel(k)}
+                  </dt>
+                  <dd
+                    className={`mt-1 break-words text-sm text-ink-900${
+                      k === MORE_DETAIL_KEY ? " whitespace-pre-wrap" : ""
+                    }`}
+                  >
+                    {String(v ?? "")}
+                  </dd>
                 </div>
               ))}
             </dl>

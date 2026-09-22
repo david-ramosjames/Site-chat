@@ -70,6 +70,8 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
     showVideoControls: rest.showVideoControls,
     introVideoStartMuted: rest.introVideoStartMuted,
     headerButtonColor: nullable(rest.headerButtonColor),
+    signTemplateIdEn: nullable(rest.signTemplateIdEn),
+    signTemplateIdEs: nullable(rest.signTemplateIdEs),
   };
 
   const client = await prisma.client.update({

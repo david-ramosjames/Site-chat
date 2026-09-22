@@ -162,6 +162,7 @@ export async function POST(req: NextRequest) {
       userAgent: payload.userAgent ?? null,
       answers: payload.answers as object,
       transcript: payload.transcript as object,
+      ending: payload.ending ?? null,
     },
   });
 
@@ -191,9 +192,25 @@ export async function POST(req: NextRequest) {
       })
       .catch((e) => console.warn("Lead intelligence failed:", e));
 
-    await sendLeadNotifications(lead, client.notificationSettings, client.name).catch((e) =>
-      console.warn("Notification dispatch failed:", e)
-    );
+    const slackMeta = await sendLeadNotifications(
+      lead,
+      client.notificationSettings,
+      client.name
+    ).catch((e) => {
+      console.warn("Notification dispatch failed:", e);
+      return {};
+    });
+    if (slackMeta.slackTs) {
+      await prisma.lead
+        .update({
+          where: { id: lead.id },
+          data: {
+            slackTs: slackMeta.slackTs,
+            slackChannel: slackMeta.slackChannel ?? null,
+          },
+        })
+        .catch((e) => console.warn("Saving Slack thread meta failed:", e));
+    }
 
     // Forward to CallRail if configured. Runs alongside Slack/email/webhook
     // dispatch — never blocks lead creation, errors only logged.

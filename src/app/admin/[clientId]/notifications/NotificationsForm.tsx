@@ -20,6 +20,8 @@ type Notifications = {
   slackPostPriority: boolean;
   slackPostReferral: boolean;
   slackPostDefault: boolean;
+  slackBotToken: string;
+  slackChannel: string;
 };
 
 export default function NotificationsForm({
@@ -104,6 +106,32 @@ export default function NotificationsForm({
           placeholder="https://hooks.slack.com/services/..."
           value={form.slackWebhookUrl}
           onChange={(e) => set("slackWebhookUrl", e.target.value)}
+        />
+      </Field>
+      <Field
+        label="Slack bot token (optional)"
+        helpAnchor="slack"
+        help="xoxb-… token so contract-sent and more-details can reply in the original lead thread. Incoming webhooks cannot return a message ts."
+      >
+        <input
+          className="input"
+          type="password"
+          autoComplete="off"
+          placeholder="xoxb-…"
+          value={form.slackBotToken}
+          onChange={(e) => set("slackBotToken", e.target.value)}
+        />
+      </Field>
+      <Field
+        label="Slack channel (optional)"
+        helpAnchor="slack"
+        help="Channel id or #name the bot posts to. Required with the bot token for threading."
+      >
+        <input
+          className="input"
+          placeholder="C0123456789 or #leads"
+          value={form.slackChannel}
+          onChange={(e) => set("slackChannel", e.target.value)}
         />
       </Field>
 

@@ -58,6 +58,8 @@ type Initial = {
   showVideoControls: boolean;
   introVideoStartMuted: boolean;
   headerButtonColor: string;
+  signTemplateIdEn: string;
+  signTemplateIdEs: string;
 };
 
 type SideButton = {
@@ -200,6 +202,41 @@ export default function SettingsForm({ clientId, initial }: { clientId: string; 
               </p>
             </button>
           </div>
+        </Section>
+
+        <Section
+          title="Contract signing"
+          subtitle="Default DocuSeal templates for Sign Flow. A Sign contract step can override these. Spanish uses the ES id, or falls back to English."
+        >
+          <div className="grid gap-5 sm:grid-cols-2">
+            <Field
+              label="Template ID — English"
+              help="DocuSeal template id used when the chat is in English."
+            >
+              <input
+                className="input"
+                placeholder="e.g. 12"
+                value={form.signTemplateIdEn}
+                onChange={(e) => set("signTemplateIdEn", e.target.value)}
+              />
+            </Field>
+            <Field
+              label="Template ID — Spanish"
+              help="Used when the visitor is in Spanish. Blank falls back to English."
+            >
+              <input
+                className="input"
+                placeholder="e.g. 13"
+                value={form.signTemplateIdEs}
+                onChange={(e) => set("signTemplateIdEs", e.target.value)}
+              />
+            </Field>
+          </div>
+          <p className="mt-3 text-xs text-ink-500">
+            Sign Flow is configured on the server (<code>SIGNFLOW_BASE_URL</code> +{" "}
+            <code>SIGNFLOW_INTAKE_TOKEN</code>). The chat POSTs intake and embeds or links the
+            signing URL; Sign Flow sends reminders if they don&apos;t finish.
+          </p>
         </Section>
 
         <Section title="Branding & colors">

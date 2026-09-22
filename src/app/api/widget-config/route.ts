@@ -107,6 +107,18 @@ export async function GET(req: NextRequest) {
         altText: s.altText,
         mediaDisplayStyle: s.mediaDisplayStyle,
         translations: s.translations,
+        signing:
+          s.inputType === "sign"
+            ? (() => {
+                const raw =
+                  s.signing && typeof s.signing === "object" && !Array.isArray(s.signing)
+                    ? (s.signing as Record<string, unknown>)
+                    : {};
+                const mode = raw.mode === "embed" || raw.mode === "redirect" ? raw.mode : "newtab";
+                const buttonLabel = typeof raw.buttonLabel === "string" ? raw.buttonLabel : "";
+                return { mode, buttonLabel };
+              })()
+            : undefined,
       })),
     })
   );

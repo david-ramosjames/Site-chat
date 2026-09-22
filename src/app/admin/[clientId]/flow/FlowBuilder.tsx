@@ -5,6 +5,14 @@ import { useState, useTransition } from "react";
 type Option = { value: string; label: string };
 type NextLogic = { byOption?: Record<string, string> | null; default?: string | null } | null;
 type LeadFieldByOption = Record<string, string> | null;
+type Signing = {
+  mode: "embed" | "redirect" | "newtab";
+  url: string;
+  templateIdEn: string;
+  templateIdEs: string;
+  dateOfLossKey: string;
+  buttonLabel: string;
+};
 type Step = {
   stepKey: string;
   order: number;
@@ -17,7 +25,8 @@ type Step = {
     | "yes_no"
     | "textarea"
     | "date"
-    | "zip";
+    | "zip"
+    | "sign";
   isRequired: boolean;
   options: Option[];
   nextLogic: NextLogic;
@@ -30,6 +39,7 @@ type Step = {
   leadFieldOnYes: string;
   leadFieldOnNo: string;
   leadFieldByOption: LeadFieldByOption;
+  signing: Signing;
   translations: {
     es: { question: string; options: Option[] };
   };
@@ -44,6 +54,7 @@ const INPUT_TYPES: Step["inputType"][] = [
   "textarea",
   "date",
   "zip",
+  "sign",
 ];
 
 const INPUT_TYPE_LABELS: Record<Step["inputType"], string> = {
@@ -55,6 +66,7 @@ const INPUT_TYPE_LABELS: Record<Step["inputType"], string> = {
   textarea: "Long text",
   date: "Date",
   zip: "ZIP code",
+  sign: "Sign contract",
 };
 
 function getBranch(step: Step, optionValue: string): string {
@@ -139,6 +151,7 @@ function BranchSelect({
       <option value="">→ Next question</option>
       <option value="__end">→ End: success + CTAs</option>
       <option value="__decline">→ End: thanks, can&apos;t help</option>
+      <option value="__sign">→ End: send contract to sign</option>
       <optgroup label="Jump to step">
         {steps
           .filter((s) => s.stepKey && s.stepKey !== currentStepKey)
@@ -220,6 +233,14 @@ function blankStep(existing: Step[]): Step {
     leadFieldOnYes: "",
     leadFieldOnNo: "",
     leadFieldByOption: null,
+    signing: {
+      mode: "newtab",
+      url: "",
+      templateIdEn: "",
+      templateIdEs: "",
+      dateOfLossKey: "",
+      buttonLabel: "",
+    },
     translations: { es: { question: "", options: [] } },
   };
 }
@@ -367,6 +388,17 @@ export default function FlowBuilder({
             leadFieldOnNo: s.leadFieldOnNo || null,
             leadFieldByOption:
               s.inputType === "multiple_choice" ? s.leadFieldByOption : null,
+            signing:
+              s.inputType === "sign"
+                ? {
+                    mode: s.signing.mode || "newtab",
+                    url: s.signing.url || null,
+                    templateIdEn: s.signing.templateIdEn || null,
+                    templateIdEs: s.signing.templateIdEs || null,
+                    dateOfLossKey: s.signing.dateOfLossKey || null,
+                    buttonLabel: s.signing.buttonLabel || null,
+                  }
+                : null,
             translations: {
               es: {
                 question: s.translations.es.question || undefined,
@@ -490,7 +522,7 @@ export default function FlowBuilder({
                 />
               </div>
               <div className="md:col-span-2">
-                <label className="label">Question text</label>
+                <label className="label">{s.inputType === "sign" ? "Heading shown above the contract" : "Question text"}</label>
                 <textarea
                   rows={2}
                   className="input"
@@ -509,6 +541,10 @@ export default function FlowBuilder({
                       options: e.target.value === "multiple_choice" ? s.options : [],
                       leadFieldByOption:
                         e.target.value === "multiple_choice" ? s.leadFieldByOption : null,
+                      question:
+                        e.target.value === "sign" && (!s.question || s.question === "New question")
+                          ? "Last step — sign your agreement."
+                          : s.question,
                     })
                   }
                 >
@@ -519,6 +555,104 @@ export default function FlowBuilder({
                   ))}
                 </select>
               </div>
+              </div>
+              {s.inputType === "sign" && (
+                <div className="md:col-span-2 rounded-lg border border-ink-300/60 bg-ink-100/40 p-4">
+                  <p className="text-sm font-semibold">Signing (Sign Flow / DocuSeal)</p>
+                  <p className="help mt-1">
+                    Branch a qualified path to this step. We POST Sign Flow to create a pre-filled
+                    contract and send the visitor the signing link. Leave template IDs blank to use
+                    the business defaults in Settings. Spanish falls back to English when the ES id
+                    is empty.
+                  </p>
+                  <div className="mt-3 grid gap-3 sm:grid-cols-2">
+                    <div>
+                      <label className="label">How to open</label>
+                      <select
+                        className="select"
+                        value={s.signing.mode}
+                        onChange={(e) =>
+                          update(i, {
+                            signing: {
+                              ...s.signing,
+                              mode: e.target.value as Signing["mode"],
+                            },
+                          })
+                        }
+                      >
+                        <option value="newtab">Button → open in a new tab</option>
+                        <option value="embed">Embed in the chat panel</option>
+                        <option value="redirect">Button → go to the signing URL</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label className="label">Button label</label>
+                      <input
+                        className="input"
+                        placeholder="Sign now"
+                        value={s.signing.buttonLabel}
+                        onChange={(e) =>
+                          update(i, { signing: { ...s.signing, buttonLabel: e.target.value } })
+                        }
+                      />
+                    </div>
+                    <div>
+                      <label className="label">DocuSeal template ID — English</label>
+                      <input
+                        className="input"
+                        placeholder="Leave blank for Settings default"
+                        value={s.signing.templateIdEn}
+                        onChange={(e) =>
+                          update(i, { signing: { ...s.signing, templateIdEn: e.target.value } })
+                        }
+                      />
+                    </div>
+                    <div>
+                      <label className="label">DocuSeal template ID — Spanish</label>
+                      <input
+                        className="input"
+                        placeholder="Falls back to English if blank"
+                        value={s.signing.templateIdEs}
+                        onChange={(e) =>
+                          update(i, { signing: { ...s.signing, templateIdEs: e.target.value } })
+                        }
+                      />
+                    </div>
+                    <div>
+                      <label className="label">Date of loss (from a Date step)</label>
+                      <select
+                        className="select"
+                        value={s.signing.dateOfLossKey}
+                        onChange={(e) =>
+                          update(i, { signing: { ...s.signing, dateOfLossKey: e.target.value } })
+                        }
+                      >
+                        <option value="">— First date question in the flow</option>
+                        {steps
+                          .filter((st) => st.inputType === "date" && st.stepKey)
+                          .map((st) => (
+                            <option key={st.stepKey} value={st.stepKey}>
+                              {st.stepKey}
+                            </option>
+                          ))}
+                      </select>
+                    </div>
+                    <div className="sm:col-span-2">
+                      <label className="label">Static signing link (fallback if Sign Flow is down)</label>
+                      <input
+                        className="input"
+                        placeholder="https://…/s/…"
+                        value={s.signing.url}
+                        onChange={(e) =>
+                          update(i, { signing: { ...s.signing, url: e.target.value } })
+                        }
+                      />
+                    </div>
+                  </div>
+                </div>
+              )}
+              {s.inputType !== "sign" && (
+              <>
               <label className="flex items-center gap-2 pt-7">
                 <input
                   type="checkbox"
@@ -590,6 +724,8 @@ export default function FlowBuilder({
                     </div>
                   )}
               </div>
+              </>
+              )}
 
               {s.inputType === "multiple_choice" && (
                 <div className="md:col-span-2">

@@ -51,6 +51,8 @@ export default async function NotificationsPage({ params }: { params: { clientId
           slackPostPriority: n?.slackPostPriority ?? true,
           slackPostReferral: n?.slackPostReferral ?? true,
           slackPostDefault: n?.slackPostDefault ?? true,
+          slackBotToken: n?.slackBotToken ?? "",
+          slackChannel: n?.slackChannel ?? "",
         }}
       />
     </div>

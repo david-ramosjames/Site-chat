@@ -72,6 +72,8 @@ export const widgetSettingsSchema = z.object({
   callRailSwapWaitMs: z.number().int().min(0).max(5000).default(800),
   callRailDynamicNumberSelector: z.string().max(200).optional().nullable(),
   defaultPhoneCountry: z.enum(["US", "MX"]).default("US"),
+  signTemplateIdEn: z.string().max(80).optional().nullable(),
+  signTemplateIdEs: z.string().max(80).optional().nullable(),
 
   secondWelcomeMessage: z.string().max(280).optional().nullable(),
   secondWelcomeDelaySec: z.number().int().min(5).max(600).default(30),
@@ -221,6 +223,8 @@ export const notificationSettingsSchema = z.object({
   slackPostPriority: z.boolean().default(true),
   slackPostReferral: z.boolean().default(true),
   slackPostDefault: z.boolean().default(true),
+  slackBotToken: z.string().max(200).optional().nullable(),
+  slackChannel: z.string().max(80).optional().nullable(),
 });
 
 export const flowStepInputSchema = z.object({
@@ -236,6 +240,7 @@ export const flowStepInputSchema = z.object({
     "textarea",
     "date",
     "zip",
+    "sign",
   ]),
   isRequired: z.boolean().default(true),
   options: z
@@ -264,6 +269,17 @@ export const flowStepInputSchema = z.object({
   leadFieldOnYes: z.string().max(60).optional().nullable(),
   leadFieldOnNo: z.string().max(60).optional().nullable(),
   leadFieldByOption: z.record(z.string().max(60)).optional().nullable(),
+  signing: z
+    .object({
+      mode: z.enum(["embed", "redirect", "newtab"]).optional().nullable(),
+      url: z.string().max(500).optional().nullable(),
+      templateIdEn: z.string().max(80).optional().nullable(),
+      templateIdEs: z.string().max(80).optional().nullable(),
+      dateOfLossKey: z.string().max(64).optional().nullable(),
+      buttonLabel: z.string().max(60).optional().nullable(),
+    })
+    .optional()
+    .nullable(),
   translations: z
     .object({
       es: z
@@ -319,6 +335,7 @@ export const leadSubmissionSchema = z.object({
   callrailSessionId: z.string().max(200).optional().nullable(),
   chatSessionId: z.string().max(80).optional().nullable(),
   userAgent: z.string().optional().nullable(),
+  ending: z.enum(["success", "decline", "sign"]).optional().nullable(),
 });
 
 export const chatEventSchema = z.object({

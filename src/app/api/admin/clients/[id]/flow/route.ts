@@ -49,6 +49,7 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
           leadFieldOnNo: s.leadFieldOnNo || null,
           leadFieldByOption: (s.leadFieldByOption ?? undefined) as object | undefined,
           translations: (s.translations ?? undefined) as object | undefined,
+          signing: (s.signing ?? undefined) as object | undefined,
         })),
       }),
     ]);

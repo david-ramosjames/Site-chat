@@ -434,7 +434,17 @@
       ".end-cta.phone .cta-text{display:flex;flex-direction:column;align-items:center;line-height:1.2;text-align:center;}" +
       ".end-cta.phone .cta-label{font-size:16px;font-weight:700;letter-spacing:.2px;}" +
       ".end-cta.phone .cta-sub{font-size:14px;font-weight:600;opacity:.95;letter-spacing:.3px;margin-top:3px;}" +
-      "@media (max-width:420px){.panel{width:calc(100vw - 16px);height:calc(100vh - 80px);bottom:80px;} .root.right .panel,.root.left .panel{right:8px;left:8px;} .side-stack{left:8px;gap:8px;} .side-stack.bottom{bottom:8px;} .side-btn{width:53px;height:53px;} .avatar-btn{width:96px;height:96px;}}"
+      ".sign-box{display:flex;flex-direction:column;gap:10px;width:100%;margin-top:12px;}" +
+      ".sign-frame{width:100%;height:380px;border:1px solid #e2e8f0;border-radius:12px;background:#fff;}" +
+      ".sign-link{font-size:13px;color:#64748b;line-height:1.4;}" +
+      ".sign-link a{color:" + primary + ";}" +
+      ".more-detail{display:flex;flex-direction:column;gap:8px;width:100%;margin-top:16px;padding-top:14px;border-top:1px solid #e2e8f0;text-align:left;align-items:stretch;}" +
+      ".more-detail-label{font-size:13px;font-weight:600;color:#334155;line-height:1.35;}" +
+      ".more-detail textarea{width:100%;min-height:72px;border:1px solid #e2e8f0;border-radius:10px;padding:10px 12px;font-size:14px;line-height:1.4;resize:vertical;font-family:inherit;}" +
+      ".more-detail .send{align-self:flex-start;min-height:40px;}" +
+      ".more-detail .thanks{font-size:13px;color:#64748b;line-height:1.4;}" +
+      ".more-detail .err{font-size:13px;color:#be123c;}" +
+      "@media (max-width:420px){.panel{width:calc(100vw - 16px);height:calc(100vh - 80px);bottom:80px;} .root.right .panel,.root.left .panel{right:8px;left:8px;} .side-stack{left:8px;gap:8px;} .side-stack.bottom{bottom:8px;} .side-btn{width:53px;height:53px;} .avatar-btn{width:96px;height:96px;} .sign-frame{height:280px;}}"
     );
   }
 
@@ -456,6 +466,17 @@
       langSwitch: "Español",
       declineTitle: "Thanks for reaching out",
       declineBody: "Unfortunately we're not able to take this case at this time. We wish you the best of luck.",
+      signPreparing: "Preparing your agreement…",
+      signNow: "Sign now",
+      signFail: "We couldn't open the agreement. We'll follow up with a signing link.",
+      signNotShowing: "Agreement not showing?",
+      signOpenTab: "Open it in a new tab",
+      moreDetailPrompt: "Want to share more about your case? (optional)",
+      moreDetailPlaceholder: "Anything else we should know…",
+      moreDetailSend: "Send",
+      moreDetailSending: "Sending…",
+      moreDetailThanks: "Got it — thanks for the extra detail.",
+      moreDetailFail: "Couldn’t send. Please try again.",
       placeholders: {
         phone: "(555) 555-0100",
         phoneMX: "55 1234 5678",
@@ -480,6 +501,17 @@
       langSwitch: "English",
       declineTitle: "Gracias por escribirnos",
       declineBody: "Lamentablemente no podemos ayudarte con este caso. Te deseamos lo mejor.",
+      signPreparing: "Preparando tu contrato…",
+      signNow: "Firmar ahora",
+      signFail: "No pudimos abrir el contrato. Te enviaremos el enlace para firmar.",
+      signNotShowing: "¿No se muestra el contrato?",
+      signOpenTab: "Ábrelo en una pestaña nueva",
+      moreDetailPrompt: "¿Quieres compartir más sobre tu caso? (opcional)",
+      moreDetailPlaceholder: "Cualquier detalle extra que debamos saber…",
+      moreDetailSend: "Enviar",
+      moreDetailSending: "Enviando…",
+      moreDetailThanks: "Listo — gracias por el detalle extra.",
+      moreDetailFail: "No se pudo enviar. Inténtalo de nuevo.",
       placeholders: {
         phone: "(555) 555-0100",
         phoneMX: "55 1234 5678",
@@ -580,7 +612,10 @@
     var askVersion = 0;          // bumped on every askNext + on undo to cancel pending typing
     var centeredMode = false;    // panel centered as a modal vs. anchored in the corner
     var backdropEl = null;
-    var endingMode = "success";  // "success" (default + CTAs) or "decline" (no CTAs)
+    var endingMode = "success";  // "success" | "decline" | "sign"
+    var signStepKey = null;      // stepKey of the Sign contract step, if any
+    var signingUrlSaved = null;  // last signingUrl so resume doesn't recreate a submission
+    var lastLeadId = null;       // lead created this session (for more-detail PATCH)
     var inBodyOptionsEl = null;  // option pills appended into body for the current step
     var hasStartedFlow = false;  // toggled true after the visitor's first answer
     var finalState = null;       // "success" | "decline" once we've shown an end view
@@ -597,6 +632,9 @@
           hasStartedFlow: hasStartedFlow,
           finalState: finalState,
           locale: currentLocale,
+          signStepKey: signStepKey,
+          signingUrl: signingUrlSaved,
+          lastLeadId: lastLeadId,
           v: 1,
         }));
       } catch (e) {}
@@ -1131,6 +1169,9 @@
       endingMode = s.endingMode || "success";
       hasStartedFlow = !!s.hasStartedFlow;
       finalState = s.finalState || null;
+      signStepKey = s.signStepKey || null;
+      signingUrlSaved = s.signingUrl || null;
+      lastLeadId = s.lastLeadId || null;
       if (s.locale) currentLocale = s.locale;
 
       // Replay each prior message into the panel. addMsg re-pushes into
@@ -1147,6 +1188,10 @@
 
       if (finalState === "success") return renderSuccess();
       if (finalState === "decline") return renderDecline();
+      if (finalState === "sign") {
+        if (signingUrlSaved) return renderSign(signingUrlSaved, true);
+        return requestSigning(null);
+      }
 
       // Mid-flow resume: if the last replayed message is the bot's question
       // for the current step, just re-show the input instead of re-asking.
@@ -1164,17 +1209,21 @@
       // Snapshot conversation so it can resume when the visitor reopens
       // the chat (or refreshes the page in the same tab). Skip when the
       // visitor has already submitted — they shouldn't be locked into the
-      // success/decline view on reload.
-      if (hasStartedFlow && !finalState) saveProgress();
+      // success/decline view on reload. Sign is an exception: keep the
+      // signing URL so they can finish the contract without a new submission.
+      if (hasStartedFlow && (!finalState || finalState === "sign")) saveProgress();
       // After a completed flow, reset the in-memory state so reopening on
       // the same page starts fresh too.
-      if (finalState) {
+      if (finalState && finalState !== "sign") {
         finalState = null;
         hasStartedFlow = false;
         answers = {};
         transcript = [];
         stepIndex = 0;
         endingMode = "success";
+        signStepKey = null;
+        signingUrlSaved = null;
+        lastLeadId = null;
         historyStack = [];
         miniMode = false;
         introCleared = false;
@@ -1770,6 +1819,27 @@
       var step = steps[stepIndex];
       var mediaAllowed = !config.features || config.features.enableMedia !== false;
 
+      if (step.inputType === "sign") {
+        endingMode = "sign";
+        signStepKey = step.stepKey;
+        if (mediaAllowed && step.mediaDisplayStyle !== "below") addMedia(step);
+        var signVersion = ++askVersion;
+        var signTyping = showTyping();
+        setTimeout(function () {
+          if (signVersion !== askVersion) {
+            if (signTyping && signTyping.parentNode) signTyping.parentNode.removeChild(signTyping);
+            return;
+          }
+          if (signTyping && signTyping.parentNode) signTyping.parentNode.removeChild(signTyping);
+          var asked = addMsg("bot", tStepQuestion(step));
+          lastBotMsgEl = asked.msg;
+          lastBotContainer = asked.container;
+          if (mediaAllowed && step.mediaDisplayStyle === "below") addMedia(step);
+          submit();
+        }, 350);
+        return;
+      }
+
       if (mediaAllowed && step.mediaDisplayStyle !== "below") addMedia(step);
 
       var myVersion = ++askVersion;
@@ -1844,9 +1914,18 @@
       var branched = resolveBranchTarget(step, value);
       if (branched.end) {
         stepIndex = steps.length; // forces askNext to submit
-        endingMode = branched.decline ? "decline" : "success";
+        if (branched.sign) {
+          endingMode = "sign";
+          signStepKey = firstSignStepKey();
+        } else {
+          endingMode = branched.decline ? "decline" : "success";
+        }
       } else if (branched.targetIndex >= 0) {
         stepIndex = branched.targetIndex;
+        if (steps[stepIndex] && steps[stepIndex].inputType === "sign") {
+          endingMode = "sign";
+          signStepKey = steps[stepIndex].stepKey;
+        }
       }
 
       currentStepInputState = null;
@@ -1859,15 +1938,30 @@
 
     function resolveBranchTarget(step, value) {
       var nl = step && step.nextLogic;
-      if (!nl) return { end: false, decline: false, targetIndex: -1 };
+      if (!nl) return { end: false, decline: false, sign: false, targetIndex: -1 };
       var rule = (nl.byOption && nl.byOption[value]) || nl.default || null;
-      if (!rule) return { end: false, decline: false, targetIndex: -1 };
-      if (rule === "__end") return { end: true, decline: false, targetIndex: -1 };
-      if (rule === "__decline") return { end: true, decline: true, targetIndex: -1 };
-      for (var k = 0; k < steps.length; k++) {
-        if (steps[k].stepKey === rule) return { end: false, decline: false, targetIndex: k };
+      if (!rule) return { end: false, decline: false, sign: false, targetIndex: -1 };
+      if (rule === "__end") return { end: true, decline: false, sign: false, targetIndex: -1 };
+      if (rule === "__decline") return { end: true, decline: true, sign: false, targetIndex: -1 };
+      if (rule === "__sign") {
+        for (var s = 0; s < steps.length; s++) {
+          if (steps[s].inputType === "sign") {
+            return { end: false, decline: false, sign: true, targetIndex: s };
+          }
+        }
+        return { end: true, decline: false, sign: true, targetIndex: -1 };
       }
-      return { end: false, decline: false, targetIndex: -1 };
+      for (var k = 0; k < steps.length; k++) {
+        if (steps[k].stepKey === rule) return { end: false, decline: false, sign: false, targetIndex: k };
+      }
+      return { end: false, decline: false, sign: false, targetIndex: -1 };
+    }
+
+    function firstSignStepKey() {
+      for (var i = 0; i < steps.length; i++) {
+        if (steps[i].inputType === "sign") return steps[i].stepKey;
+      }
+      return null;
     }
 
     function undoLast() {
@@ -1946,6 +2040,12 @@
     function renderInputFor(step) {
       currentStepInputState = { step: step };
       clearFooter();
+      if (step.inputType === "sign") {
+        endingMode = "sign";
+        signStepKey = step.stepKey;
+        submit();
+        return;
+      }
       if (step.inputType === "multiple_choice" || step.inputType === "yes_no") {
         var options = step.inputType === "yes_no" ? tYesNoOptions() : tStepOptions(step);
         var wrap = el("div", { className: "options" });
@@ -2161,14 +2261,193 @@
             chatSessionId: sessionId,
             callrailSessionId: getCallRailSessionId(),
             userAgent: navigator.userAgent,
+            ending: endingMode,
           }),
-        }).then(function () {
+        }).then(function (res) {
+          lastLeadId = (res && res.leadId) || lastLeadId;
           if (endingMode === "decline") renderDecline();
+          else if (endingMode === "sign") requestSigning(lastLeadId);
           else renderSuccess();
         }).catch(function () {
           addMsg("bot", strings().networkBot);
         });
       }, 400);
+    }
+
+    function signStepConfig() {
+      var step = null;
+      var i;
+      if (signStepKey) {
+        for (i = 0; i < steps.length; i++) {
+          if (steps[i].stepKey === signStepKey) {
+            step = steps[i];
+            break;
+          }
+        }
+      }
+      if (!step) {
+        for (i = 0; i < steps.length; i++) {
+          if (steps[i].inputType === "sign") {
+            step = steps[i];
+            break;
+          }
+        }
+      }
+      return (step && step.signing) || {};
+    }
+
+    function requestSigning(leadId) {
+      if (signingUrlSaved) {
+        renderSign(signingUrlSaved, true);
+        return;
+      }
+      addMsg("bot", strings().signPreparing);
+      fetchJson(apiUrl("/api/sign"), {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          clientId: config.clientId,
+          stepKey: signStepKey,
+          leadId: leadId || null,
+          locale: currentLocale,
+          answers: answers,
+        }),
+      }).then(function (res) {
+        if (res && res.signingUrl) {
+          signingUrlSaved = res.signingUrl;
+          renderSign(res.signingUrl, false);
+        } else {
+          addMsg("bot", strings().signFail);
+          markSignComplete();
+          appendMoreDetailForm();
+        }
+      }).catch(function () {
+        addMsg("bot", strings().signFail);
+        markSignComplete();
+        appendMoreDetailForm();
+      });
+    }
+
+    function markSignComplete() {
+      if (finalState !== "sign") {
+        fireConversion();
+        trackEvent("completed_success");
+      }
+      finalState = "sign";
+      if (progressBar) progressBar.style.width = "100%";
+      saveProgress();
+    }
+
+    function renderSign(url, resumed) {
+      if (!resumed) markSignComplete();
+      else {
+        finalState = "sign";
+        if (progressBar) progressBar.style.width = "100%";
+      }
+      clearFooter();
+      var cfg = signStepConfig();
+      var mode = cfg.mode === "embed" || cfg.mode === "redirect" ? cfg.mode : "newtab";
+      var label = (cfg.buttonLabel && String(cfg.buttonLabel).trim()) || strings().signNow;
+
+      if (mode === "redirect") {
+        window.location.href = url;
+        return;
+      }
+
+      if (mode === "embed") {
+        while (body.firstChild) body.removeChild(body.firstChild);
+        var embedKids = [
+          el("iframe", {
+            className: "sign-frame",
+            src: url,
+            title: label,
+          }),
+          el("div", { className: "sign-link" }, [
+            strings().signNotShowing + " ",
+            el("a", { href: url, target: "_blank", rel: "noopener noreferrer" }, [
+              strings().signOpenTab,
+            ]),
+          ]),
+        ];
+        var embedForm = buildMoreDetailForm();
+        if (embedForm) embedKids.push(embedForm);
+        body.appendChild(el("div", { className: "sign-box" }, embedKids));
+        return;
+      }
+
+      var tabKids = [
+        el("a", {
+          className: "end-cta",
+          href: url,
+          target: "_blank",
+          rel: "noopener noreferrer",
+          onClick: function () {
+            trackEvent("cta_click", "link");
+          },
+        }, [label]),
+      ];
+      var tabForm = buildMoreDetailForm();
+      if (tabForm) tabKids.push(tabForm);
+      body.appendChild(el("div", { className: "sign-box" }, tabKids));
+      autoScrollToLatest();
+    }
+
+    function appendMoreDetailForm() {
+      var form = buildMoreDetailForm();
+      if (form && body) body.appendChild(form);
+    }
+
+    function buildMoreDetailForm() {
+      if (!lastLeadId) return null;
+      var s = strings();
+      var box = el("div", { className: "more-detail" });
+      var label = el("div", { className: "more-detail-label" }, [s.moreDetailPrompt]);
+      var ta = el("textarea", {
+        className: "tc-input",
+        rows: "3",
+        placeholder: s.moreDetailPlaceholder,
+      });
+      var errEl = el("div", { className: "err" });
+      errEl.style.display = "none";
+      var btn = el("button", { className: "send", type: "button" }, [s.moreDetailSend]);
+
+      function setBusy(busy) {
+        btn.disabled = busy || !ta.value.trim();
+        btn.textContent = busy ? s.moreDetailSending : s.moreDetailSend;
+      }
+
+      ta.addEventListener("input", function () {
+        errEl.style.display = "none";
+        setBusy(false);
+      });
+      btn.addEventListener("click", function () {
+        var extra = ta.value.trim();
+        if (!extra || !lastLeadId) return;
+        setBusy(true);
+        fetchJson(apiUrl("/api/leads/" + encodeURIComponent(lastLeadId)), {
+          method: "PATCH",
+          headers: { "content-type": "application/json" },
+          keepalive: true,
+          body: JSON.stringify({
+            clientId: config.clientId,
+            extraDetail: extra,
+          }),
+        }).then(function (res) {
+          if (!res || !res.ok) throw new Error("fail");
+          while (box.firstChild) box.removeChild(box.firstChild);
+          box.appendChild(el("div", { className: "thanks" }, [s.moreDetailThanks]));
+        }).catch(function () {
+          errEl.textContent = s.moreDetailFail;
+          errEl.style.display = "";
+          setBusy(false);
+        });
+      });
+      setBusy(false);
+      box.appendChild(label);
+      box.appendChild(ta);
+      box.appendChild(errEl);
+      box.appendChild(btn);
+      return box;
     }
 
     function renderSuccess() {
@@ -2207,6 +2486,9 @@
           tSuccessMessage(),
         ])
       );
+
+      var more = buildMoreDetailForm();
+      if (more) children.push(more);
 
       var wrap = el("div", { className: "success" }, children);
       body.appendChild(wrap);

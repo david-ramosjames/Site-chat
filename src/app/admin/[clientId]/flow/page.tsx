@@ -50,7 +50,8 @@ export default async function FlowPage({ params }: { params: { clientId: string 
         <h2 className="text-base font-semibold">Flow builder</h2>
         <p className="text-sm text-ink-500">
           The questions your widget asks visitors. Reorder, edit, or add steps — click Save when
-          you&apos;re done.
+          you&apos;re done. To send a contract, add a <strong>Sign contract</strong> step and branch
+          a path to it (or choose &quot;End: send contract to sign&quot;).
         </p>
       </div>
       <FlowBuilder
@@ -70,7 +71,8 @@ export default async function FlowPage({ params }: { params: { clientId: string 
               | "yes_no"
               | "textarea"
               | "date"
-              | "zip",
+              | "zip"
+              | "sign",
             isRequired: s.isRequired,
             options: (s.options as { value: string; label: string }[] | null) ?? [],
             nextLogic: (s.nextLogic as StepNextLogic) ?? null,
@@ -90,6 +92,21 @@ export default async function FlowPage({ params }: { params: { clientId: string 
               !Array.isArray(s.leadFieldByOption)
                 ? (s.leadFieldByOption as Record<string, string>)
                 : null,
+            signing: (() => {
+              const raw =
+                s.signing && typeof s.signing === "object" && !Array.isArray(s.signing)
+                  ? (s.signing as Record<string, unknown>)
+                  : {};
+              const mode = raw.mode;
+              return {
+                mode: mode === "embed" || mode === "redirect" || mode === "newtab" ? mode : "newtab",
+                url: typeof raw.url === "string" ? raw.url : "",
+                templateIdEn: typeof raw.templateIdEn === "string" ? raw.templateIdEn : "",
+                templateIdEs: typeof raw.templateIdEs === "string" ? raw.templateIdEs : "",
+                dateOfLossKey: typeof raw.dateOfLossKey === "string" ? raw.dateOfLossKey : "",
+                buttonLabel: typeof raw.buttonLabel === "string" ? raw.buttonLabel : "",
+              };
+            })(),
             translations: {
               es: {
                 question: t?.es?.question ?? "",

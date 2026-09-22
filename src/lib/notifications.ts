@@ -5,17 +5,20 @@ import { leadSourceLabel } from "@/lib/lead-source";
 // Twilio / etc. Slack receives a properly-formatted Block Kit message;
 // generic webhooks (CRM, Google Sheet, Zapier Catch Hook) receive a
 // { lead, summary } envelope.
+export type SlackPostMeta = { slackTs?: string; slackChannel?: string };
+
 export async function sendLeadNotifications(
   lead: Lead,
   settings: NotificationSettings | null,
   businessName: string
-) {
-  if (!settings) return;
+): Promise<SlackPostMeta> {
+  if (!settings) return {};
   const summary = `New lead for ${businessName}: ${lead.name ?? "(no name)"} — ${
     lead.phone ?? lead.email ?? "no contact"
   }`;
 
   const tasks: Promise<void>[] = [];
+  let slackMeta: SlackPostMeta = {};
 
   if (settings.email) {
     tasks.push(sendEmail(settings.email, lead, summary, businessName));
@@ -23,8 +26,11 @@ export async function sendLeadNotifications(
   if (settings.phone) {
     tasks.push(sendSms(settings.phone, summary));
   }
-  if (settings.slackWebhookUrl) {
-    tasks.push(postSlack(settings.slackWebhookUrl, lead, summary, businessName, settings));
+  if (settings.slackWebhookUrl || settings.slackBotToken) {
+    slackMeta = await postSlack(lead, summary, businessName, settings).catch((err) => {
+      console.warn("Slack webhook failed:", err);
+      return {};
+    });
   }
   if (settings.crmWebhookUrl) {
     tasks.push(postGenericWebhook(settings.crmWebhookUrl, lead, summary, "CRM"));
@@ -36,6 +42,7 @@ export async function sendLeadNotifications(
   }
 
   await Promise.all(tasks);
+  return slackMeta;
 }
 
 async function sendEmail(to: string, lead: Lead, summary: string, businessName: string) {
@@ -123,12 +130,11 @@ async function sendSms(to: string, summary: string) {
 }
 
 async function postSlack(
-  url: string,
   lead: Lead,
   _summary: string,
   businessName: string,
   settings: NotificationSettings
-) {
+): Promise<SlackPostMeta> {
   // Slack webhooks treat `text` as mrkdwn by default, so a simple
   // multi-line message renders as a tidy card without the strictness of
   // Block Kit (which can 400 on tiny config issues like a missing
@@ -146,22 +152,22 @@ async function postSlack(
     tpl.replace(/\{\{\s*businessName\s*\}\}/g, businessName);
   let header: string;
   if (isQualified && isReferral) {
-    if (settings.slackPostPriorityReferral === false) return;
+    if (settings.slackPostPriorityReferral === false) return {};
     header = settings.slackHeaderPriorityReferral
       ? expand(settings.slackHeaderPriorityReferral)
       : `🔥 *PRIORITY + Referral — ${businessName}*`;
   } else if (isQualified) {
-    if (settings.slackPostPriority === false) return;
+    if (settings.slackPostPriority === false) return {};
     header = settings.slackHeaderPriority
       ? expand(settings.slackHeaderPriority)
       : `🔥 *PRIORITY lead (qualified) — ${businessName}*`;
   } else if (isReferral) {
-    if (settings.slackPostReferral === false) return;
+    if (settings.slackPostReferral === false) return {};
     header = settings.slackHeaderReferral
       ? expand(settings.slackHeaderReferral)
       : `🎁 *Referral — ${businessName}*`;
   } else {
-    if (settings.slackPostDefault === false) return;
+    if (settings.slackPostDefault === false) return {};
     header = settings.slackHeaderDefault
       ? expand(settings.slackHeaderDefault)
       : `🟢 *New lead — ${businessName}*`;
@@ -173,6 +179,7 @@ async function postSlack(
     fieldLine("From", "Web Chat"),
     fieldLine("Qualified", formatYesNo(lead.qualified)),
     fieldLine("Referral", formatYesNo(lead.referral)),
+    lead.ending === "sign" ? fieldLine("Path", "Contract to sign") : null,
     fieldLine("Name", lead.name),
     fieldLine("Phone", lead.phone),
     fieldLine("Email", lead.email),
@@ -184,19 +191,7 @@ async function postSlack(
     .filter((s): s is string => !!s)
     .join("\n");
 
-  try {
-    const res = await fetch(url, {
-      method: "POST",
-      headers: { "content-type": "application/json" },
-      body: JSON.stringify({ text: lines }),
-    });
-    if (!res.ok) {
-      const body = await res.text().catch(() => "");
-      console.warn(`Slack webhook returned ${res.status}: ${body}`);
-    }
-  } catch (err) {
-    console.warn("Slack webhook failed:", err);
-  }
+  return postSlackMessage(settings, lines);
 }
 
 function safeAdminLink(lead: Lead): string | null {
@@ -314,5 +309,125 @@ function formatYesNo(v: string | null | undefined): string | null {
   if (v === "yes") return "✅ Yes";
   if (v === "no") return "No";
   return v ?? null;
+}
+
+/** Follow-up on the lead alert that a contract was created for them to sign. */
+export async function postSlackContractSent(
+  settings: NotificationSettings,
+  lead: Lead,
+  businessName: string
+) {
+  const name = (lead.name || "").trim();
+  await postSlackFollowUp(
+    settings,
+    lead,
+    "📝 *Contract sent to be signed*",
+    [
+      "📝 *Contract sent to be signed*",
+      name ? `*${name}*` : null,
+      `_From chat — ${businessName}_`,
+    ]
+      .filter((s): s is string => Boolean(s))
+      .join("\n")
+  );
+}
+
+/** Extra case text after they are already a lead. Same phrase SMS tools ignore. */
+export async function postSlackMoreDetail(
+  settings: NotificationSettings,
+  lead: Lead,
+  extra: string
+) {
+  const text = extra.trim();
+  if (!text) return;
+  const name = (lead.name || "").trim();
+  await postSlackFollowUp(
+    settings,
+    lead,
+    ["*More details they added:*", "", text].join("\n"),
+    [
+      "↪️ *More details they added*",
+      name ? `*${name}*` : null,
+      "_From RJL chat_",
+      "",
+      text,
+    ]
+      .filter((s): s is string => Boolean(s))
+      .join("\n")
+  );
+}
+
+async function postSlackFollowUp(
+  settings: NotificationSettings,
+  lead: Lead,
+  threadedText: string,
+  standaloneText: string
+) {
+  const ts = (lead.slackTs || "").trim();
+  const text = ts ? threadedText : standaloneText;
+  await postSlackMessage(settings, text, {
+    ts: ts || null,
+    channel: lead.slackChannel,
+  });
+}
+
+async function postSlackMessage(
+  settings: NotificationSettings,
+  text: string,
+  thread?: { ts?: string | null; channel?: string | null }
+): Promise<SlackPostMeta> {
+  const token = (settings.slackBotToken || "").trim();
+  const channel = (thread?.channel || settings.slackChannel || "").trim();
+  if (token && (channel || thread?.ts)) {
+    const body: Record<string, unknown> = {
+      text,
+      unfurl_links: false,
+      unfurl_media: false,
+    };
+    if (channel) body.channel = channel;
+    if (thread?.ts) {
+      body.thread_ts = thread.ts;
+      body.reply_broadcast = false;
+    }
+    try {
+      const res = await fetch("https://slack.com/api/chat.postMessage", {
+        method: "POST",
+        headers: {
+          "content-type": "application/json",
+          authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify(body),
+      });
+      const json = (await res.json()) as {
+        ok?: boolean;
+        ts?: string;
+        channel?: string;
+        error?: string;
+      };
+      if (json.ok) return { slackTs: json.ts, slackChannel: json.channel };
+      console.warn("[slack] chat.postMessage failed:", json.error ?? res.status);
+    } catch (err) {
+      console.warn("[slack] chat.postMessage threw:", err);
+    }
+  }
+
+  const url = (settings.slackWebhookUrl || "").trim();
+  if (!url) return {};
+  const payload: Record<string, unknown> = { text };
+  if (thread?.ts) payload.thread_ts = thread.ts;
+  try {
+    const res = await fetch(url, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify(payload),
+    });
+    if (!res.ok) {
+      const bodyText = await res.text().catch(() => "");
+      console.warn(`Slack webhook returned ${res.status}: ${bodyText}`);
+    }
+  } catch (err) {
+    console.warn("Slack webhook failed:", err);
+  }
+  return {};
 }
 
