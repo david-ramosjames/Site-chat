@@ -652,7 +652,7 @@ export default function FlowBuilder({
                 </div>
               )}
               {s.inputType !== "sign" && (
-              <>
+              <div className="space-y-4">
               <label className="flex items-center gap-2 pt-7">
                 <input
                   type="checkbox"
@@ -724,7 +724,7 @@ export default function FlowBuilder({
                     </div>
                   )}
               </div>
-              </>
+              </div>
               )}
 
               {s.inputType === "multiple_choice" && (
@@ -1008,7 +1008,6 @@ export default function FlowBuilder({
                   </div>
                 </div>
               )}
-            </div>
               </div>
             )}
           </li>
