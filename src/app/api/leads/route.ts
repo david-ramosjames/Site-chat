@@ -4,7 +4,7 @@ import { corsPreflight, withCors } from "@/lib/cors";
 import { leadSubmissionSchema } from "@/lib/validators";
 import { rateLimit } from "@/lib/rate-limit";
 import { looksLikeSpam } from "@/lib/spam";
-import { sendLeadNotifications } from "@/lib/notifications";
+import { sendLeadNotifications, type SlackPostMeta } from "@/lib/notifications";
 import { postToCallRail } from "@/lib/callrail";
 import { generateLeadIntelligence } from "@/lib/lead-intelligence";
 import { deriveAttribution } from "@/lib/attribution";
@@ -196,7 +196,7 @@ export async function POST(req: NextRequest) {
       lead,
       client.notificationSettings,
       client.name
-    ).catch((e) => {
+    ).catch((e): SlackPostMeta => {
       console.warn("Notification dispatch failed:", e);
       return {};
     });
