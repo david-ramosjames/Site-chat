@@ -6,9 +6,11 @@ import { rateLimit } from "@/lib/rate-limit";
 import {
   asSigningConfig,
   createSigningUrl,
+  extractSignContact,
   type SignFlowStep,
 } from "@/lib/signflow";
 import { postSlackContractSent } from "@/lib/notifications";
+import { findBlockedMatch } from "@/lib/find-blocked";
 
 export const dynamic = "force-dynamic";
 
@@ -65,6 +67,19 @@ export async function POST(req: NextRequest) {
     (stepKey ? steps.find((s) => s.stepKey === stepKey && s.inputType === "sign") : null) ||
     steps.find((s) => s.inputType === "sign") ||
     null;
+
+  const contact = extractSignContact(steps, answers as Record<string, unknown>);
+  const blocked = await findBlockedMatch(client.id, {
+    name: contact.clientName,
+    phone: contact.phone,
+    email: contact.email,
+  });
+  if (blocked) {
+    console.warn(
+      `[blocklist] skipped signing for client ${client.id} (${blocked.kind}=${blocked.value})`
+    );
+    return withCors(NextResponse.json({ ok: false, blocked: true }));
+  }
 
   const result = await createSigningUrl({
     locale: locale || "en",

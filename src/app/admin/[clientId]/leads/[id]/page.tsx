@@ -2,6 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import LeadControls from "./LeadControls";
+import BlockLeadButton from "./BlockLeadButton";
 import { deriveAttribution } from "@/lib/attribution";
 import { answerFieldLabel, MORE_DETAIL_KEY } from "@/lib/more-detail";
 
@@ -135,6 +136,11 @@ export default async function LeadDetail({
 
         <aside className="space-y-6">
           <LeadControls leadId={lead.id} status={lead.status} notes={lead.notes ?? ""} />
+          <BlockLeadButton
+            clientId={params.clientId}
+            leadId={lead.id}
+            name={lead.name ?? ""}
+          />
 
           {ctaEvents.length > 0 && (
             <div className="card p-5 text-sm">

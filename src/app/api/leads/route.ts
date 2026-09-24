@@ -9,6 +9,7 @@ import { postToCallRail } from "@/lib/callrail";
 import { generateLeadIntelligence } from "@/lib/lead-intelligence";
 import { deriveAttribution } from "@/lib/attribution";
 import { asLeadFieldByOption, resolveLeadColumnValue } from "@/lib/lead-field";
+import { findBlockedMatch } from "@/lib/find-blocked";
 
 export const dynamic = "force-dynamic";
 
@@ -91,6 +92,14 @@ export async function POST(req: NextRequest) {
   );
   const qualified = fromColumn("qualified");
   const referral = fromColumn("referral");
+
+  const blocked = await findBlockedMatch(client.id, { name, phone, email });
+  if (blocked) {
+    console.warn(
+      `[blocklist] dropped lead for client ${client.id} (${blocked.kind}=${blocked.value})`
+    );
+    return withCors(NextResponse.json({ ok: true, blocked: true }));
+  }
 
   const spam =
     client.featureToggles?.enableSpamProtection &&

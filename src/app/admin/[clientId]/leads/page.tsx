@@ -55,6 +55,9 @@ export default async function LeadsPage({
         </div>
         <div className="flex items-center gap-2">
           <span className="pill">{leads.length} shown</span>
+          <a className="btn-secondary px-3 py-1.5" href={`/admin/${params.clientId}/blocklist`}>
+            Blocked leads
+          </a>
           <a className="btn-secondary px-3 py-1.5" href={`/api/admin/leads/export?${exportParams}`}>
             Export CSV
           </a>

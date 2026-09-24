@@ -12,6 +12,7 @@ const CLIENT_NAV = [
   { suffix: "/flow", label: "Flow builder" },
   { suffix: "/features", label: "Feature toggles" },
   { suffix: "/notifications", label: "Notifications" },
+  { suffix: "/blocklist", label: "Blocked leads" },
   { suffix: "/leads", label: "Leads" },
   { suffix: "/analytics", label: "Analytics" },
 ];

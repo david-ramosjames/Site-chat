@@ -25,6 +25,7 @@ model Client {
   flowSteps            FlowStep[]
   leads                Lead[]
   chatEvents           ChatEvent[]
+  blockedLeads         BlockedLead[]
 
   @@index([status])
 }
@@ -342,4 +343,21 @@ model Lead {
 
   @@index([clientId, createdAt])
   @@index([clientId, status])
+}
+
+// Manual spam blocklist. If a visitor's name, phone, or email matches,
+// we skip creating a lead and skip Slack / CallRail / contract send.
+model BlockedLead {
+  id         String   @id @default(cuid())
+  clientId   String
+  kind       String   // name | phone | email
+  value      String   // original text as entered
+  normalized String   // lowercase name, last-10 phone digits, lowercase email
+  note       String?
+  createdAt  DateTime @default(now())
+
+  client Client @relation(fields: [clientId], references: [id], onDelete: Cascade)
+
+  @@unique([clientId, kind, normalized])
+  @@index([clientId, kind])
 }

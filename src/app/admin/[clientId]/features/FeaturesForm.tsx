@@ -45,7 +45,7 @@ const GROUPS: { title: string; items: { key: ToggleKey; label: string; help?: st
     items: [
       { key: "enableAiSummary", label: "AI lead summary", help: "Generates a short summary from the transcript." },
       { key: "enableLeadScoring", label: "Lead scoring", help: "Rank leads by urgency and quality signals." },
-      { key: "enableSpamProtection", label: "Spam protection" },
+      { key: "enableSpamProtection", label: "Spam protection", help: "Heuristic filter for obvious spam copy. Use Blocked leads to stop specific names, phones, or emails." },
     ],
   },
   {

@@ -2265,6 +2265,11 @@
           }),
         }).then(function (res) {
           lastLeadId = (res && res.leadId) || lastLeadId;
+          if (res && res.blocked) {
+            if (endingMode === "decline") renderDecline();
+            else renderSuccess(true);
+            return;
+          }
           if (endingMode === "decline") renderDecline();
           else if (endingMode === "sign") requestSigning(lastLeadId);
           else renderSuccess();
@@ -2450,9 +2455,9 @@
       return box;
     }
 
-    function renderSuccess() {
+    function renderSuccess(skipConversion) {
       var alreadyDone = finalState === "success";
-      if (!alreadyDone) {
+      if (!alreadyDone && !skipConversion) {
         fireConversion();
         trackEvent("completed_success");
       }

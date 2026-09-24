@@ -11,6 +11,7 @@ const NAV_ITEMS = [
   { suffix: "/flow", label: "Flow" },
   { suffix: "/features", label: "Features" },
   { suffix: "/notifications", label: "Notifications" },
+  { suffix: "/blocklist", label: "Blocked" },
   { suffix: "/leads", label: "Leads" },
   { suffix: "/analytics", label: "Analytics" },
 ];
